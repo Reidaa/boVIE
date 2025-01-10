@@ -1,0 +1,407 @@
+{
+    "studyLevels": [
+        {
+            "studyLevelId": 6,
+            "studyLevelName": "< Bac                                             ",
+            "studyLevelNameEn": "< High School Diploma",
+            "studyLevelOrder": "1"
+        },
+        {
+            "studyLevelId": 1,
+            "studyLevelName": "Bac                                               ",
+            "studyLevelNameEn": "High School Diploma",
+            "studyLevelOrder": "2"
+        },
+        {
+            "studyLevelId": 7,
+            "studyLevelName": "bac+1",
+            "studyLevelNameEn": "1 year of higher education - ECTS : 60",
+            "studyLevelOrder": "3"
+        },
+        {
+            "studyLevelId": 2,
+            "studyLevelName": "bac+2",
+            "studyLevelNameEn": "2 years of higher education - ECTS : 120",
+            "studyLevelOrder": "4"
+        },
+        {
+            "studyLevelId": 8,
+            "studyLevelName": "bac+3",
+            "studyLevelNameEn": "3 years of higher education - ECTS : 180 (Bachelor)",
+            "studyLevelOrder": "5"
+        },
+        {
+            "studyLevelId": 3,
+            "studyLevelName": "bac+4",
+            "studyLevelNameEn": "4 years of higher education - ECTS : 240",
+            "studyLevelOrder": "6"
+        },
+        {
+            "studyLevelId": 4,
+            "studyLevelName": "bac+5 et plus",
+            "studyLevelNameEn": "5 years of higher education or more - ECTS : 300 (Master)",
+            "studyLevelOrder": "7"
+        }
+    ],
+    "missionTypes": [
+        {
+            "missionTypeId": 1,
+            "missionTypeLabel": "VIE",
+            "missionTypeLabelEn": "VIE"
+        },
+        {
+            "missionTypeId": 3,
+            "missionTypeLabel": "VIA",
+            "missionTypeLabelEn": "VIA"
+        }
+    ],
+    "entrepriseTypes": [
+        {
+            "entrepriseTypeId": 1,
+            "typeEntreprise": "Start-up",
+            "typeEntrepriseEn": "Startup"
+        },
+        {
+            "entrepriseTypeId": 2,
+            "typeEntreprise": "PME/ETI",
+            "typeEntrepriseEn": "SME - mid-size company"
+        },
+        {
+            "entrepriseTypeId": 3,
+            "typeEntreprise": "Grandes entreprises",
+            "typeEntrepriseEn": "Large company"
+        },
+        {
+            "entrepriseTypeId": 4,
+            "typeEntreprise": "Organisme public",
+            "typeEntrepriseEn": "Public administration"
+        }
+    ],
+    "activitySectors": [
+        {
+            "sectorId": 100001,
+            "parentSectorId": 0,
+            "label": "AGROALIMENTAIRE",
+            "ordre": 1,
+            "level": 1,
+            "originalSectorId": 1,
+            "isSectorN1": false,
+            "codeGED": null
+        },
+        {
+            "sectorId": 100002,
+            "parentSectorId": 0,
+            "label": "BEAUTE, ESTHETIQUE",
+            "ordre": 2,
+            "level": 1,
+            "originalSectorId": 2,
+            "isSectorN1": false,
+            "codeGED": null
+        },
+        {
+            "sectorId": 100003,
+            "parentSectorId": 0,
+            "label": "MODE, TEXTILE, UNIVERS DE L'ENFANT",
+            "ordre": 3,
+            "level": 1,
+            "originalSectorId": 3,
+            "isSectorN1": false,
+            "codeGED": null
+        },
+        {
+            "sectorId": 100004,
+            "parentSectorId": 0,
+            "label": "ACTIVITES\u00A0DE COMMERCE (de gros et détail)",
+            "ordre": 4,
+            "level": 1,
+            "originalSectorId": 4,
+            "isSectorN1": false,
+            "codeGED": null
+        },
+        {
+            "sectorId": 100005,
+            "parentSectorId": 0,
+            "label": "DECORATION, AMENAGEMENT ET DESIGN",
+            "ordre": 5,
+            "level": 1,
+            "originalSectorId": 5,
+            "isSectorN1": false,
+            "codeGED": null
+        },
+        {
+            "sectorId": 100006,
+            "parentSectorId": 0,
+            "label": "ENERGIES",
+            "ordre": 6,
+            "level": 1,
+            "originalSectorId": 6,
+            "isSectorN1": false,
+            "codeGED": null
+        },
+        {
+            "sectorId": 100007,
+            "parentSectorId": 0,
+            "label": "ENVIRONNEMENT",
+            "ordre": 7,
+            "level": 1,
+            "originalSectorId": 7,
+            "isSectorN1": false,
+            "codeGED": null
+        },
+        {
+            "sectorId": 100008,
+            "parentSectorId": 0,
+            "label": "INDUSTRIES CHIMIQUES ET PLASTURGIE",
+            "ordre": 8,
+            "level": 1,
+            "originalSectorId": 8,
+            "isSectorN1": false,
+            "codeGED": null
+        },
+        {
+            "sectorId": 100009,
+            "parentSectorId": 0,
+            "label": "SANTE",
+            "ordre": 9,
+            "level": 1,
+            "originalSectorId": 9,
+            "isSectorN1": false,
+            "codeGED": null
+        },
+        {
+            "sectorId": 100010,
+            "parentSectorId": 0,
+            "label": "EMBALLAGE ET CONDITIONNEMENT",
+            "ordre": 10,
+            "level": 1,
+            "originalSectorId": 10,
+            "isSectorN1": false,
+            "codeGED": null
+        },
+        {
+            "sectorId": 100011,
+            "parentSectorId": 0,
+            "label": "TECHNOLOGIES DE L'INFORMATION ET DES TELECOMMUNICATIONS",
+            "ordre": 11,
+            "level": 1,
+            "originalSectorId": 11,
+            "isSectorN1": false,
+            "codeGED": null
+        },
+        {
+            "sectorId": 100012,
+            "parentSectorId": 0,
+            "label": "TOURISME, HOTELLERIE-RESTAURATION, SPORTS & LOISIRS",
+            "ordre": 12,
+            "level": 1,
+            "originalSectorId": 12,
+            "isSectorN1": false,
+            "codeGED": null
+        },
+        {
+            "sectorId": 100013,
+            "parentSectorId": 0,
+            "label": "BTP, CONSTRUCTION, INFRASTRUCTURES",
+            "ordre": 13,
+            "level": 1,
+            "originalSectorId": 13,
+            "isSectorN1": false,
+            "codeGED": null
+        },
+        {
+            "sectorId": 100014,
+            "parentSectorId": 0,
+            "label": "TRANSPORT, LOGISTIQUE",
+            "ordre": 14,
+            "level": 1,
+            "originalSectorId": 14,
+            "isSectorN1": false,
+            "codeGED": null
+        },
+        {
+            "sectorId": 100015,
+            "parentSectorId": 0,
+            "label": "INDUSTRIE AUTOMOBILE",
+            "ordre": 15,
+            "level": 1,
+            "originalSectorId": 15,
+            "isSectorN1": false,
+            "codeGED": null
+        },
+        {
+            "sectorId": 100016,
+            "parentSectorId": 0,
+            "label": "EQUIPEMENTS INDUSTRIELS",
+            "ordre": 16,
+            "level": 1,
+            "originalSectorId": 16,
+            "isSectorN1": false,
+            "codeGED": null
+        },
+        {
+            "sectorId": 100017,
+            "parentSectorId": 0,
+            "label": "SECURITE, SURETE, DEFENSE",
+            "ordre": 17,
+            "level": 1,
+            "originalSectorId": 17,
+            "isSectorN1": false,
+            "codeGED": null
+        },
+        {
+            "sectorId": 100018,
+            "parentSectorId": 0,
+            "label": "SERVICES, FORMATION, ENSEIGNEMENT, RESSOURCES HUMAINES",
+            "ordre": 18,
+            "level": 1,
+            "originalSectorId": 18,
+            "isSectorN1": false,
+            "codeGED": null
+        },
+        {
+            "sectorId": 100019,
+            "parentSectorId": 0,
+            "label": "FINANCE ET ASSURANCE",
+            "ordre": 19,
+            "level": 1,
+            "originalSectorId": 19,
+            "isSectorN1": false,
+            "codeGED": null
+        }
+    ],
+    "specializations": [
+        {
+            "specializationId": 19,
+            "specializationCode": "FI   ",
+            "specializationLabel": "FINANCE COMPTABILITE GESTION BANQUE",
+            "specializationLabelEn": "FINANCE ACCOUNTING CONTROLLING BANKING",
+            "specializationParentId": 0
+        },
+        {
+            "specializationId": 24,
+            "specializationCode": "SI   ",
+            "specializationLabel": "SYSTEMES D'INFORMATION",
+            "specializationLabelEn": "INFORMATION SYSTEMS",
+            "specializationParentId": 0
+        },
+        {
+            "specializationId": 36,
+            "specializationCode": "AL   ",
+            "specializationLabel": "ARTS ET LITTERATURE",
+            "specializationLabelEn": "ART AND LITERATURE",
+            "specializationParentId": 0
+        },
+        {
+            "specializationId": 58,
+            "specializationCode": "GP   ",
+            "specializationLabel": "GESTION DE LA PRODUCTION INDUSTRIELLE",
+            "specializationLabelEn": "INDUSTRIAL PRODUCTION MANAGEMENT",
+            "specializationParentId": 0
+        },
+        {
+            "specializationId": 59,
+            "specializationCode": "PI   ",
+            "specializationLabel": "PRODUCTION INDUSTRIELLE",
+            "specializationLabelEn": "INDUSTRIAL PRODUCTION",
+            "specializationParentId": 0
+        },
+        {
+            "specializationId": 81,
+            "specializationCode": "SP   ",
+            "specializationLabel": "SANTE BEAUTE PARAMEDICAL",
+            "specializationLabelEn": "HEALTH BEAUTY PARAMEDICAL",
+            "specializationParentId": 0
+        },
+        {
+            "specializationId": 89,
+            "specializationCode": "CS   ",
+            "specializationLabel": "COMMERCES SERVICES",
+            "specializationLabelEn": "BUSINESSES SERVICES",
+            "specializationParentId": 0
+        },
+        {
+            "specializationId": 100,
+            "specializationCode": "RH   ",
+            "specializationLabel": "RESSOURCES HUMAINES",
+            "specializationLabelEn": "HUMAN RESSOURCES",
+            "specializationParentId": 0
+        },
+        {
+            "specializationId": 190,
+            "specializationCode": "AG   ",
+            "specializationLabel": "AGRI AGRO",
+            "specializationLabelEn": "AGRI AND AGRO INDUSTRY",
+            "specializationParentId": 0
+        },
+        {
+            "specializationId": 193,
+            "specializationCode": "CC   ",
+            "specializationLabel": "COMMERCE",
+            "specializationLabelEn": "BUSINESS",
+            "specializationParentId": 0
+        },
+        {
+            "specializationId": 196,
+            "specializationCode": "CO   ",
+            "specializationLabel": "CONSTRUCTION",
+            "specializationLabelEn": "CONSTRUCTION",
+            "specializationParentId": 0
+        },
+        {
+            "specializationId": 210,
+            "specializationCode": "IM   ",
+            "specializationLabel": "INFORMATION ET MEDIAS",
+            "specializationLabelEn": "INFORMATION MEDIA",
+            "specializationParentId": 0
+        },
+        {
+            "specializationId": 212,
+            "specializationCode": "IS   ",
+            "specializationLabel": "INFORMATIQUE SCIENTIFIQUE ET INDUSTRIELLE",
+            "specializationLabelEn": "SCIENTIFIC AND INDUSTRIAL COMPUTING",
+            "specializationParentId": 0
+        },
+        {
+            "specializationId": 214,
+            "specializationCode": "JF   ",
+            "specializationLabel": "JURIDIQUE & FISCAL",
+            "specializationLabelEn": "LAW & TAXATION",
+            "specializationParentId": 0
+        },
+        {
+            "specializationId": 216,
+            "specializationCode": "MC   ",
+            "specializationLabel": "MARKETING - COMMUNICATION",
+            "specializationLabelEn": "MARKETING COMMUNICATION",
+            "specializationParentId": 0
+        },
+        {
+            "specializationId": 227,
+            "specializationCode": "PP   ",
+            "specializationLabel": "PUBLIC & PARAPUBLIC",
+            "specializationLabelEn": "PUBLIC SECTOR",
+            "specializationParentId": 0
+        },
+        {
+            "specializationId": 239,
+            "specializationCode": "SA   ",
+            "specializationLabel": "SCIENCES ACADEMIQUES",
+            "specializationLabelEn": "ACADEMIC SCIENCES",
+            "specializationParentId": 0
+        },
+        {
+            "specializationId": 243,
+            "specializationCode": "SC   ",
+            "specializationLabel": "ACHATS LOGISTIQUE TRANSPORT",
+            "specializationLabelEn": "PURCHASING LOGISTICS TRANSPORT",
+            "specializationParentId": 0
+        },
+        {
+            "specializationId": 255,
+            "specializationCode": "SN   ",
+            "specializationLabel": "SCIENCES DE LA NATURE",
+            "specializationLabelEn": "NATURAL SCIENCES",
+            "specializationParentId": 0
+        }
+    ]
+}
