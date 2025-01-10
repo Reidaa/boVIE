@@ -1,33 +1,20 @@
 import os
 
+
 import click
 from dotenv import load_dotenv
 
 load_dotenv()
 
-from bovie.businessFrance.BFClient import BFClient  # noqa: E402
+from bovie.businessFrance.Client import Client  # noqa: E402
 from bovie.businessFrance.OfferRepository import SearchParameters  # noqa: E402
-
-
-def main():
-    c = BFClient()
-
-    params = SearchParameters(limit=2000)
-    offers = c.offers.search(params)
-    for i in offers:
-        id = i["id"]
-        offer = c.offers.findOne(id)
-        if offer["countryName"] not in ["JAPON", "ETATS-UNIS", "SUISSE", "AUSTRALIE"]:
-            continue
-        print(
-            f"{offer['missionTitle']} - {offer['organizationName']} - {offer['countryName']} - {offer['indemnite']}e"
-        )
+from bovie.discord.bot import Start  # noqa: E402
 
 
 @click.command()
-@click.option("--limit", default=10)
+@click.option("--limit", default=os.environ.get("BOVIE_OFFER_MAX", "10"))
 def offers(limit: int):
-    c = BFClient()
+    c = Client()
 
     params = SearchParameters(limit=limit)
     offers = c.offers.search(params)
@@ -42,9 +29,9 @@ def offers(limit: int):
 
 
 @click.command()
-@click.option("--token", default=os.environ.get("DISCORD_TOKEN", ""))
+@click.option("--token", default=os.environ.get("BOVIE_DISCORD_TOKEN", ""))
 def bot(token: str):
-    pass
+    Start(token=token)
 
 
 @click.command()

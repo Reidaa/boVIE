@@ -1,6 +1,6 @@
 from bovie.businessFrance.OfferRepository import OfferRepository
 
 
-class BFClient:
+class Client:
     def __init__(self):
         self.offers = OfferRepository()

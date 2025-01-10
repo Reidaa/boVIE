@@ -3,7 +3,7 @@ from typing import List
 
 import httpx
 
-from bovie.businessFrance.IRepository import IRepository
+from bovie.businessFrance.interfaces.IRepository import IRepository
 
 
 @dataclass
