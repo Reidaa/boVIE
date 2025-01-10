@@ -1,6 +1,4 @@
-import json
 from dataclasses import asdict, dataclass, field
-from pprint import pprint
 from typing import List
 
 import httpx
@@ -29,7 +27,6 @@ class SearchParameters:
 
 
 class OfferRepository(IRepository):
-
     def __init__(self):
         super().__init__()
         self.url = f"{self.url}/Offers"

@@ -1,12 +1,10 @@
-from pprint import pprint
-
 import click
 from dotenv import load_dotenv
 
 load_dotenv()
 
-from bovie.businessFrance.BFClient import BFClient
-from bovie.businessFrance.OfferRepository import SearchParameters
+from bovie.businessFrance.BFClient import BFClient  # noqa: E402
+from bovie.businessFrance.OfferRepository import SearchParameters  # noqa: E402
 
 
 def main():
@@ -20,7 +18,7 @@ def main():
         if offer["countryName"] not in ["JAPON", "ETATS-UNIS", "SUISSE", "AUSTRALIE"]:
             continue
         print(
-            f"{offer["missionTitle"]} - {offer["organizationName"]} - {offer["countryName"]} - {offer["indemnite"]}e"
+            f"{offer['missionTitle']} - {offer['organizationName']} - {offer['countryName']} - {offer['indemnite']}e"
         )
 
 
@@ -37,7 +35,7 @@ def offers(limit: int):
         if offer["countryName"] not in ["JAPON", "ETATS-UNIS", "SUISSE", "AUSTRALIE"]:
             continue
         print(
-            f"{offer["missionTitle"]} - {offer["organizationName"]} - {offer["countryName"]} - {offer["indemnite"]}e"
+            f"{offer['missionTitle']} - {offer['organizationName']} - {offer['countryName']} - {offer['indemnite']}e"
         )
 
 

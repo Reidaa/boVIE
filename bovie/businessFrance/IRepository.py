@@ -1,7 +1,3 @@
-from typing import List
-
-import httpx
-
 BASE_ENDPOINT = ""
 
 SEARCH_ENDPOINT = "/Offers/search"

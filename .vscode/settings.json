@@ -8,5 +8,8 @@
         "**/Thumbs.db": true,
         "**/__pycache__": true
     },
-    "ansible.python.interpreterPath": "/home/thomas/dev/davidBovie/.venv/bin/python",
+    "[python]": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "charliermarsh.ruff"
+    }
 }

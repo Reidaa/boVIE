@@ -6,8 +6,17 @@ REPOSITORY ?= reidaa
 DOCKERFILE ?= Dockerfile
 DOCKERTAG ?= latest
 
+.PHONY: run lint format
+
 run:
 	uv run pyvie_bot/
+
+lint:
+	ruff check
+
+format:
+	ruff format
+
 
 ### Docker-related
 
