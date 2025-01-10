@@ -1,3 +1,5 @@
+import os
+
 import click
 from dotenv import load_dotenv
 
@@ -39,6 +41,17 @@ def offers(limit: int):
         )
 
 
+@click.command()
+@click.option("--token", default=os.environ.get("DISCORD_TOKEN", ""))
+def bot(token: str):
+    pass
+
+
+@click.command()
+def version():
+    pass
+
+
 @click.group()
 def cli():
     pass
@@ -46,4 +59,6 @@ def cli():
 
 if __name__ == "__main__":
     cli.add_command(offers)
+    cli.add_command(bot)
+    cli.add_command(version)
     cli()

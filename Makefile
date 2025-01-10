@@ -1,6 +1,6 @@
 SHELL := /bin/sh
 
-TARGET := pyvie.bot
+TARGET := bovie
 
 REPOSITORY ?= reidaa
 DOCKERFILE ?= Dockerfile
@@ -9,14 +9,13 @@ DOCKERTAG ?= latest
 .PHONY: run lint format
 
 run:
-	uv run pyvie_bot/
+	uv run ${TARGET}.py
 
 lint:
 	ruff check
 
 format:
 	ruff format
-
 
 ### Docker-related
 
@@ -29,5 +28,5 @@ docker-build-debug:
 .PHONY: docker-build-debug
 
 docker-run: docker
-		docker run -p 8080:8080 ${REPOSITORY}/${TARGET}:${DOCKERTAG}
+		docker run ${REPOSITORY}/${TARGET}:${DOCKERTAG}
 .PHONY: docker-run
