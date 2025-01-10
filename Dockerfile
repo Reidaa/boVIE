@@ -13,4 +13,4 @@ COPY bovie.py uv.lock pyproject.toml ./
 
 RUN uv sync --frozen --no-dev
 
-ENTRYPOINT [ "uv", "run", "bovie.py" ]
+ENTRYPOINT [ "uv", "run", "python", "-OO", "bovie.py" ]
