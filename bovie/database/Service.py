@@ -1,4 +1,4 @@
-from bovie.database.Repository import OfferRepository
+from bovie.database.resources.OfferRepository import OfferRepository
 
 
 class DatabaseService:
