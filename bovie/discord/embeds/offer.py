@@ -10,7 +10,7 @@ class OfferEmbed(hikari.Embed):
         super().__init__(
             title=offer.missionTitle,
             description=None,
-            url="https://mon-vie-via.businessfrance.fr/offres/recherche?query=",
+            url=None,
             color=hikari.Color.from_hex_code("053599"),
             colour=None,
             timestamp=None,
