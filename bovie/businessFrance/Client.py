@@ -13,6 +13,11 @@ class Client:
         self._offer_repository = OfferRepository()
         self._id_file = Path("ids.txt").absolute()
 
+        try:
+            open(self._id_file, "x")
+        except FileExistsError:
+            pass
+
     def _retrieve_existing_ids(self):
         with open(self._id_file, "r") as f:
             exising_ids = f.read().rstrip().lstrip().split("\n")
