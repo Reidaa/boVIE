@@ -4,7 +4,7 @@ from typing import Dict, List
 import hikari
 from dateutil.parser import isoparse
 
-from bovie.businessFrance.generated.models import Offer
+from bovie.businessFrance.models import Offer
 
 logger = logging.getLogger("bovie.discord.bot")
 

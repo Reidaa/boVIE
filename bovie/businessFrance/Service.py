@@ -21,9 +21,8 @@ class Service:
 
         return ids
 
-    def get_new_offers(self, limit: int) -> List[Offer]:
+    def get_new_offers(self, params: SearchParameters) -> List[Offer]:
         new_offers: List[Offer] = []
-        params = SearchParameters(limit=limit)
 
         offers = self._offers_api.search(params)
         ids = [i.id for i in offers]

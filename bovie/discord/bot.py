@@ -3,6 +3,7 @@ import logging
 
 import hikari
 
+from bovie.businessFrance.models import SearchParameters
 from bovie.businessFrance.Service import Service
 from bovie.discord.Config import Config
 from bovie.discord.embeds.offer import OfferEmbed
@@ -16,9 +17,11 @@ async def loop(bot: hikari.GatewayBot, cfg: Config, cooldown: int = 60):
     client = Service()
     channel = await bot.rest.fetch_channel(cfg.channel_ID)
 
+    p = SearchParameters(limit=cfg.max_pull)
+
     while True:
         logger.info("Waking Up.")
-        new_offers = client.get_new_offers(limit=cfg.max_pull)
+        new_offers = client.get_new_offers(p)
         for o in new_offers:
             embed = OfferEmbed(o)
             logger.info("sending message")

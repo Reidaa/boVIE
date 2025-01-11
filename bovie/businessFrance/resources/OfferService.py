@@ -1,29 +1,8 @@
-from dataclasses import asdict, dataclass, field
 from typing import List
 
 import httpx
 
-from bovie.businessFrance.generated.models import Offer
-
-
-@dataclass
-class SearchParameters:
-    activitySectorId: List[int] = field(default_factory=lambda: [])
-    companiesSizes: List[str] = field(default_factory=lambda: [])
-    countriesIds: List[int] = field(default_factory=lambda: [])
-    entreprisesIds: List[int] = field(default_factory=lambda: [])
-    gerographicZones: List[int] = field(default_factory=lambda: [])
-    missionsDurations: List[str] = field(default_factory=lambda: [])
-    missionsTypesIds: List[str] = field(default_factory=lambda: [])
-    specializationsIds: List[str] = field(default_factory=lambda: [])
-    studiesLevelId: List[str] = field(default_factory=lambda: [])
-    missionStartDate: str = None
-    limit: int = 10
-    query: str = ""
-    skip: int = 0
-
-    def dict(self):
-        return asdict(self)
+from bovie.businessFrance.models import Offer, SearchParameters
 
 
 class OfferService:

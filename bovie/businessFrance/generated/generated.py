@@ -1,4 +1,4 @@
-from bovie.businessFrance.generated.models import (
+from bovie.businessFrance.models import (
     ActivitySector,
     Dataset,
     EntrepriseType,
