@@ -4,22 +4,26 @@ import os
 import click
 from dotenv import load_dotenv
 
-load_dotenv()
+from bovie.businessFrance.Service import Service
+from bovie.discord.bot import Start
+from bovie.discord.Config import Config
 
-from bovie.businessFrance.Client import Client  # noqa: E402
-from bovie.discord.bot import Start  # noqa: E402
+load_dotenv()
 
 
 @click.command()
 @click.option("--token", default=os.environ.get("BOVIE_DISCORD_TOKEN", ""))
-def bot(token: str):
-    Start(token=token)
+@click.option("--limit", default=os.environ.get("BOVIE_OFFER_MAX", "50"))
+@click.option("--channel", default=os.environ.get("BOVIE_DISCORD_CHANNEL", ""))
+def bot(token: str, limit: int, channel: str):
+    cfg = Config(token=token, max_pull=limit, channel_ID=channel)
+    Start(cfg)
 
 
 @click.command()
-@click.option("--limit", default=os.environ.get("BOVIE_OFFER_MAX", "50"))
+@click.option("--limit", default=os.environ.get("BOVIE_OFFER_MAX", "1"))
 def pull(limit: int):
-    c = Client()
+    c = Service()
     for o in c.get_new_offers(limit):
         print(
             f"{o.missionTitle} - {o.organizationName} - {o.countryName} - {o.indemnite}e"

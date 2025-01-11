@@ -4,7 +4,6 @@ from typing import List
 import httpx
 
 from bovie.businessFrance.generated.models import Offer
-from bovie.businessFrance.interfaces.IRepository import IRepository
 
 
 @dataclass
@@ -27,10 +26,9 @@ class SearchParameters:
         return asdict(self)
 
 
-class OfferRepository(IRepository):
-    def __init__(self):
-        super().__init__()
-        self.url = f"{self.url}/Offers"
+class OfferService:
+    def __init__(self, api_url: str):
+        self.url = f"{api_url}/Offers"
 
     def search(self, params: SearchParameters):
         results: List[Offer] = []
@@ -92,7 +90,7 @@ class OfferRepository(IRepository):
 
         return results
 
-    def find_one(self, offer_id: int) -> Offer:
+    def details(self, offer_id: int) -> Offer:
         url = f"{self.url}/details/{offer_id}"
         r = httpx.get(url)
 

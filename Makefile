@@ -8,8 +8,8 @@ DOCKERTAG ?= latest
 
 .PHONY: run lint format
 
-run:
-	uv run ${TARGET}.py
+fclean:
+	rm -rf ids.txt
 
 lint:
 	ruff check
@@ -18,6 +18,13 @@ format:
 	black ${TARGET}
 	isort ${TARGET}
 	ruff format
+
+run:
+	uv run ${TARGET}.py
+
+bot:
+	uv run python -O ${TARGET}.py bot
+
 
 ### Docker-related
 
