@@ -56,11 +56,12 @@ class OfferEmbed(hikari.Embed):
         )
         self.add_field(
             emoji.emojize(":globe_with_meridians: Business France"),
-            value="[Voir offre](https://stackoverflow.com/questions/62528272/what-does-asyncio-create-task-do)",
+            value=f"[Voir offre](ttps://mon-vie-via.businessfrance.fr/offres/{offer.id})",
             inline=True,
         )
-        self.add_field(
-            emoji.emojize(":globe_with_meridians: LinkedIn"),
-            value="[Voir Profil Recruteur](https://stackoverflow.com/questions/62528272/what-does-asyncio-create-task-do)",
-            inline=True,
-        )
+        # if offer.contactName.strip() and offer.contactName is not None:
+        #     self.add_field(
+        #         emoji.emojize(":globe_with_meridians: LinkedIn"),
+        #         value="[Voir Profil Recruteur](https://link)",
+        #         inline=True,
+        #     )
