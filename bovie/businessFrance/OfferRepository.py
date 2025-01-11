@@ -92,8 +92,8 @@ class OfferRepository(IRepository):
 
         return results
 
-    def findOne(self, offerID: int) -> Offer:
-        url = f"{self.url}/details/{offerID}"
+    def find_one(self, offer_id: int) -> Offer:
+        url = f"{self.url}/details/{offer_id}"
         r = httpx.get(url)
 
         if r.status_code != httpx.codes.OK:

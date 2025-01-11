@@ -13,13 +13,13 @@ from bovie.discord.bot import Start  # noqa: E402
 
 @click.command()
 @click.option("--limit", default=os.environ.get("BOVIE_OFFER_MAX", "10"))
-def offers(limit: int):
+def pull(limit: int):
     c = Client()
 
     params = SearchParameters(limit=limit)
     offers = c.offers.search(params)
     for i in offers:
-        offer = c.offers.findOne(i.id)
+        offer = c.offers.find_one(i.id)
         if offer.countryName not in ["JAPON", "ETATS-UNIS", "SUISSE", "AUSTRALIE"]:
             continue
         print(
@@ -33,18 +33,12 @@ def bot(token: str):
     Start(token=token)
 
 
-@click.command()
-def version():
-    pass
-
-
 @click.group()
 def cli():
     pass
 
 
 if __name__ == "__main__":
-    cli.add_command(offers)
+    cli.add_command(pull)
     cli.add_command(bot)
-    cli.add_command(version)
     cli()
