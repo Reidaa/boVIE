@@ -15,6 +15,8 @@ lint:
 	ruff check
 
 format:
+	black ${TARGET}
+	isort ${TARGET}
 	ruff format
 
 ### Docker-related

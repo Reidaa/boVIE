@@ -19,12 +19,11 @@ def offers(limit: int):
     params = SearchParameters(limit=limit)
     offers = c.offers.search(params)
     for i in offers:
-        id = i["id"]
-        offer = c.offers.findOne(id)
-        if offer["countryName"] not in ["JAPON", "ETATS-UNIS", "SUISSE", "AUSTRALIE"]:
+        offer = c.offers.findOne(i.id)
+        if offer.countryName not in ["JAPON", "ETATS-UNIS", "SUISSE", "AUSTRALIE"]:
             continue
         print(
-            f"{offer['missionTitle']} - {offer['organizationName']} - {offer['countryName']} - {offer['indemnite']}e"
+            f"{offer.missionTitle} - {offer.organizationName} - {offer.countryName} - {offer.indemnite}e"
         )
 
 

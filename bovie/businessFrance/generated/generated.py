@@ -1,12 +1,12 @@
 from bovie.businessFrance.generated.models import (
-    Dataset,
-    StudyLevel,
-    MissionType,
-    EntrepriseType,
     ActivitySector,
-    Specialization,
+    Dataset,
+    EntrepriseType,
     GeographicZone,
     GeographicZonesDataset,
+    MissionType,
+    Specialization,
+    StudyLevel,
 )
 
 searchParameters = Dataset(

@@ -1,5 +1,5 @@
-import miru
 import hikari
+import miru
 
 
 class MyView(miru.View):

@@ -68,3 +68,58 @@ class GeographicZonesDataset:
     fileShareUrl: Optional[str]
     logosContainer: Optional[str]
     fileShareSasToken: Optional[str]
+
+
+@dataclass
+class Offer:
+    activitySectorN1: str
+    activitySectorN1Id: int
+    activitySectorN2: Optional[str]
+    activitySectorN3: Optional[str]
+    activitySectorOfferId: int
+    ca: Optional[str]
+    candidateCounter: int
+    cityAffectation: str
+    cityAffectationId: int
+    cityName: Optional[str]
+    cityNameEn: str
+    contactEmail: Optional[str]
+    contactName: Optional[str]
+    countryId: str
+    countryName: str
+    countryNameEn: str
+    creationDate: str
+    durationBroadcast: int
+    effectif: int
+    id: int
+    idMotifDesactivationOffre: int
+    idNomenclatureSecteur: Optional[str]
+    indemnite: int
+    levelStudyIds: Optional[str]
+    missionDescription: str
+    missionDuration: int
+    missionEndDate: str
+    missionProfile: Optional[str]
+    missionStartDate: str
+    missionTitle: str
+    missionType: str
+    missionTypeEn: str
+    organizationCountryCounter: str
+    organizationExpertise: Optional[str]
+    organizationId: int
+    organizationName: str
+    organizationPathImage: Optional[str]
+    organizationPresentation: Optional[str]
+    organizationUrlImage: str
+    pathImage: Optional[str]
+    reference: Optional[str]
+    specializations: Optional[str]
+    startBroadcastDate: str
+    viewCounter: int
+    externalJobId: Optional[str] = ""
+    dateCandidature: Optional[str] = ""
+
+
+@dataclass
+class SearchDataset:
+    results: List[Offer]
