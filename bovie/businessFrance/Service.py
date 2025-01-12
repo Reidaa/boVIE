@@ -21,7 +21,7 @@ class Service:
         offers = self._offers_api.search(params)
         ids = [i.id for i in offers]
         existing_ids = self._db.offers.read()
-        new_ids = [id for id in ids if str(id) not in existing_ids]
+        new_ids = [id for id in ids if id not in existing_ids]
 
         for id in new_ids:
             new_offers.append(self._offers_api.details(id))
