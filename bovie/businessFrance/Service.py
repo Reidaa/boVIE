@@ -15,18 +15,13 @@ class Service:
         self._offers_api = OfferService(api_url=API_URL)
         self._db = DatabaseService()
 
-    def _get_new_ids(self, ids: List[int]) -> List[int]:
-        existing_ids = self._db.offers.read()
-        ids = [id for id in ids if str(id) not in existing_ids]
-
-        return ids
-
     def get_new_offers(self, params: SearchParameters) -> List[Offer]:
         new_offers: List[Offer] = []
 
         offers = self._offers_api.search(params)
         ids = [i.id for i in offers]
-        new_ids = self._get_new_ids(ids)
+        existing_ids = self._db.offers.read()
+        new_ids = [id for id in ids if str(id) not in existing_ids]
 
         for id in new_ids:
             new_offers.append(self._offers_api.details(id))
