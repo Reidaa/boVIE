@@ -1,0 +1,488 @@
+[
+    {
+        "countryId": 5,
+        "countryName": "ALLEMAGNE",
+        "countryNameEn": "GERMANY",
+        "geographicZoneId": "5"
+    },
+    {
+        "countryId": 7,
+        "countryName": "ANGOLA",
+        "countryNameEn": "ANGOLA",
+        "geographicZoneId": "1"
+    },
+    {
+        "countryId": 9,
+        "countryName": "ARABIE SAOUDITE",
+        "countryNameEn": "SAUDI ARABIA",
+        "geographicZoneId": "8"
+    },
+    {
+        "countryId": 10,
+        "countryName": "ARGENTINE",
+        "countryNameEn": "ARGENTINA",
+        "geographicZoneId": "3"
+    },
+    {
+        "countryId": 12,
+        "countryName": "AUSTRALIE",
+        "countryNameEn": "AUSTRALIA",
+        "geographicZoneId": "4"
+    },
+    {
+        "countryId": 13,
+        "countryName": "AUTRICHE",
+        "countryNameEn": "AUSTRIA",
+        "geographicZoneId": "5"
+    },
+    {
+        "countryId": 20,
+        "countryName": "BELGIQUE",
+        "countryNameEn": "BELGIUM",
+        "geographicZoneId": "5"
+    },
+    {
+        "countryId": 22,
+        "countryName": "BENIN",
+        "countryNameEn": "BENIN",
+        "geographicZoneId": "1"
+    },
+    {
+        "countryId": 29,
+        "countryName": "BRESIL",
+        "countryNameEn": "BRAZIL",
+        "geographicZoneId": "3"
+    },
+    {
+        "countryId": 34,
+        "countryName": "CAMBODGE",
+        "countryNameEn": "CAMBODIA",
+        "geographicZoneId": "4"
+    },
+    {
+        "countryId": 35,
+        "countryName": "CAMEROUN",
+        "countryNameEn": "CAMEROON",
+        "geographicZoneId": "1"
+    },
+    {
+        "countryId": 36,
+        "countryName": "CANADA",
+        "countryNameEn": "CANADA",
+        "geographicZoneId": "2"
+    },
+    {
+        "countryId": 39,
+        "countryName": "CHILI",
+        "countryNameEn": "CHILE",
+        "geographicZoneId": "3"
+    },
+    {
+        "countryId": 40,
+        "countryName": "CHINE",
+        "countryNameEn": "CHINA",
+        "geographicZoneId": "4"
+    },
+    {
+        "countryId": 42,
+        "countryName": "COLOMBIE",
+        "countryNameEn": "COLOMBIA",
+        "geographicZoneId": "3"
+    },
+    {
+        "countryId": 44,
+        "countryName": "CONGO",
+        "countryNameEn": "CONGO",
+        "geographicZoneId": "1"
+    },
+    {
+        "countryId": 45,
+        "countryName": "CONGO (REPUBLIQUE DEMOCRATIQUE)",
+        "countryNameEn": "DEMOCRATIC REPUBLIC OF THE CONGO",
+        "geographicZoneId": "1"
+    },
+    {
+        "countryId": 47,
+        "countryName": "COREE DU SUD",
+        "countryNameEn": "SOUTH KOREA",
+        "geographicZoneId": "4"
+    },
+    {
+        "countryId": 49,
+        "countryName": "COTE D'IVOIRE",
+        "countryNameEn": "COTE D'IVOIRE",
+        "geographicZoneId": "1"
+    },
+    {
+        "countryId": 51,
+        "countryName": "CUBA",
+        "countryNameEn": "CUBA",
+        "geographicZoneId": "3"
+    },
+    {
+        "countryId": 52,
+        "countryName": "DANEMARK",
+        "countryNameEn": "DENMARK",
+        "geographicZoneId": "5"
+    },
+    {
+        "countryId": 53,
+        "countryName": "DJIBOUTI",
+        "countryNameEn": "DJIBOUTI",
+        "geographicZoneId": "1"
+    },
+    {
+        "countryId": 54,
+        "countryName": "DOMINICAINE (REPUBLIQUE)",
+        "countryNameEn": "DOMINICAN REPUBLIC",
+        "geographicZoneId": "3"
+    },
+    {
+        "countryId": 56,
+        "countryName": "EGYPTE",
+        "countryNameEn": "EGYPT",
+        "geographicZoneId": "7"
+    },
+    {
+        "countryId": 57,
+        "countryName": "EMIRATS ARABES UNIS",
+        "countryNameEn": "UNITED ARAB EMIRATES",
+        "geographicZoneId": "8"
+    },
+    {
+        "countryId": 60,
+        "countryName": "ESPAGNE",
+        "countryNameEn": "SPAIN",
+        "geographicZoneId": "5"
+    },
+    {
+        "countryId": 62,
+        "countryName": "ETATS-UNIS",
+        "countryNameEn": "UNITED STATES",
+        "geographicZoneId": "2"
+    },
+    {
+        "countryId": 63,
+        "countryName": "ETHIOPIE",
+        "countryNameEn": "ETHIOPIA",
+        "geographicZoneId": "1"
+    },
+    {
+        "countryId": 64,
+        "countryName": "FIDJI",
+        "countryNameEn": "FIJI",
+        "geographicZoneId": "4"
+    },
+    {
+        "countryId": 65,
+        "countryName": "FINLANDE",
+        "countryNameEn": "FINLAND",
+        "geographicZoneId": "5"
+    },
+    {
+        "countryId": 67,
+        "countryName": "GABON",
+        "countryNameEn": "GABON",
+        "geographicZoneId": "1"
+    },
+    {
+        "countryId": 71,
+        "countryName": "GRECE",
+        "countryNameEn": "GREECE",
+        "geographicZoneId": "5"
+    },
+    {
+        "countryId": 80,
+        "countryName": "HONGRIE",
+        "countryNameEn": "HUNGARY",
+        "geographicZoneId": "6"
+    },
+    {
+        "countryId": 81,
+        "countryName": "INDE",
+        "countryNameEn": "INDIA",
+        "geographicZoneId": "4"
+    },
+    {
+        "countryId": 82,
+        "countryName": "INDONESIE",
+        "countryNameEn": "INDONESIA",
+        "geographicZoneId": "4"
+    },
+    {
+        "countryId": 85,
+        "countryName": "IRLANDE",
+        "countryNameEn": "IRELAND",
+        "geographicZoneId": "5"
+    },
+    {
+        "countryId": 88,
+        "countryName": "ITALIE",
+        "countryNameEn": "ITALY",
+        "geographicZoneId": "5"
+    },
+    {
+        "countryId": 90,
+        "countryName": "JAPON",
+        "countryNameEn": "JAPAN",
+        "geographicZoneId": "4"
+    },
+    {
+        "countryId": 91,
+        "countryName": "JORDANIE",
+        "countryNameEn": "JORDAN",
+        "geographicZoneId": "8"
+    },
+    {
+        "countryId": 92,
+        "countryName": "KAZAKHSTAN",
+        "countryNameEn": "KAZAKHSTAN",
+        "geographicZoneId": "6"
+    },
+    {
+        "countryId": 93,
+        "countryName": "KENYA",
+        "countryNameEn": "KENYA",
+        "geographicZoneId": "1"
+    },
+    {
+        "countryId": 98,
+        "countryName": "LETTONIE",
+        "countryNameEn": "LETTONIA",
+        "geographicZoneId": "6"
+    },
+    {
+        "countryId": 104,
+        "countryName": "LUXEMBOURG",
+        "countryNameEn": "LUXEMBOURG",
+        "geographicZoneId": "5"
+    },
+    {
+        "countryId": 107,
+        "countryName": "MADAGASCAR",
+        "countryNameEn": "MADAGASCAR",
+        "geographicZoneId": "1"
+    },
+    {
+        "countryId": 108,
+        "countryName": "MALAISIE",
+        "countryNameEn": "MALAYSIA",
+        "geographicZoneId": "4"
+    },
+    {
+        "countryId": 112,
+        "countryName": "MALTE",
+        "countryNameEn": "MALTA",
+        "geographicZoneId": "6"
+    },
+    {
+        "countryId": 113,
+        "countryName": "MAROC",
+        "countryNameEn": "MOROCCO",
+        "geographicZoneId": "7"
+    },
+    {
+        "countryId": 114,
+        "countryName": "MAURICE",
+        "countryNameEn": "MAURITIUS",
+        "geographicZoneId": "1"
+    },
+    {
+        "countryId": 115,
+        "countryName": "MAURITANIE",
+        "countryNameEn": "MAURITANIA",
+        "geographicZoneId": "1"
+    },
+    {
+        "countryId": 116,
+        "countryName": "MEXIQUE",
+        "countryNameEn": "MEXICO",
+        "geographicZoneId": "3"
+    },
+    {
+        "countryId": 119,
+        "countryName": "MONGOLIE",
+        "countryNameEn": "MONGOLIA",
+        "geographicZoneId": "4"
+    },
+    {
+        "countryId": 120,
+        "countryName": "MOZAMBIQUE",
+        "countryNameEn": "MOZAMBIQUE",
+        "geographicZoneId": "1"
+    },
+    {
+        "countryId": 125,
+        "countryName": "NIGERIA",
+        "countryNameEn": "NIGERIA",
+        "geographicZoneId": "1"
+    },
+    {
+        "countryId": 126,
+        "countryName": "NORVEGE",
+        "countryNameEn": "NORWAY",
+        "geographicZoneId": "5"
+    },
+    {
+        "countryId": 129,
+        "countryName": "OUGANDA",
+        "countryNameEn": "UGANDA",
+        "geographicZoneId": "1"
+    },
+    {
+        "countryId": 130,
+        "countryName": "OUZBEKISTAN",
+        "countryNameEn": "UZBEKISTAN",
+        "geographicZoneId": "6"
+    },
+    {
+        "countryId": 133,
+        "countryName": "PANAMA",
+        "countryNameEn": "PANAMA",
+        "geographicZoneId": "3"
+    },
+    {
+        "countryId": 134,
+        "countryName": "PAPOUASIE-NOUVELLE-GUINEE",
+        "countryNameEn": "PAPUA NEW GUINEA",
+        "geographicZoneId": "4"
+    },
+    {
+        "countryId": 136,
+        "countryName": "PAYS-BAS",
+        "countryNameEn": "NETHERLANDS",
+        "geographicZoneId": "5"
+    },
+    {
+        "countryId": 137,
+        "countryName": "PEROU",
+        "countryNameEn": "PERU",
+        "geographicZoneId": "3"
+    },
+    {
+        "countryId": 138,
+        "countryName": "PHILIPPINES",
+        "countryNameEn": "PHILIPPINES",
+        "geographicZoneId": "4"
+    },
+    {
+        "countryId": 139,
+        "countryName": "POLOGNE",
+        "countryNameEn": "POLAND",
+        "geographicZoneId": "6"
+    },
+    {
+        "countryId": 141,
+        "countryName": "PORTUGAL",
+        "countryNameEn": "PORTUGAL",
+        "geographicZoneId": "5"
+    },
+    {
+        "countryId": 142,
+        "countryName": "QATAR",
+        "countryNameEn": "QATAR",
+        "geographicZoneId": "8"
+    },
+    {
+        "countryId": 143,
+        "countryName": "ROUMANIE",
+        "countryNameEn": "ROMANIA",
+        "geographicZoneId": "6"
+    },
+    {
+        "countryId": 144,
+        "countryName": "ROYAUME-UNI",
+        "countryNameEn": "UNITED KINGDOM",
+        "geographicZoneId": "5"
+    },
+    {
+        "countryId": 153,
+        "countryName": "SENEGAL",
+        "countryNameEn": "SENEGAL",
+        "geographicZoneId": "1"
+    },
+    {
+        "countryId": 156,
+        "countryName": "SINGAPOUR",
+        "countryNameEn": "SINGAPORE",
+        "geographicZoneId": "4"
+    },
+    {
+        "countryId": 157,
+        "countryName": "SLOVAQUIE",
+        "countryNameEn": "SLOVAKIA",
+        "geographicZoneId": "6"
+    },
+    {
+        "countryId": 162,
+        "countryName": "SUEDE",
+        "countryNameEn": "SWEDEN",
+        "geographicZoneId": "5"
+    },
+    {
+        "countryId": 164,
+        "countryName": "SUISSE",
+        "countryNameEn": "SWITZERLAND",
+        "geographicZoneId": "5"
+    },
+    {
+        "countryId": 170,
+        "countryName": "TANZANIE",
+        "countryNameEn": "TANZANIA",
+        "geographicZoneId": "1"
+    },
+    {
+        "countryId": 172,
+        "countryName": "REPUBLIQUE TCHEQUE",
+        "countryNameEn": "CZECH REPUBLIC",
+        "geographicZoneId": "6"
+    },
+    {
+        "countryId": 173,
+        "countryName": "THAILANDE",
+        "countryNameEn": "THAILAND",
+        "geographicZoneId": "4"
+    },
+    {
+        "countryId": 174,
+        "countryName": "TOGO",
+        "countryNameEn": "TOGO",
+        "geographicZoneId": "1"
+    },
+    {
+        "countryId": 175,
+        "countryName": "TUNISIE",
+        "countryNameEn": "TUNISIA",
+        "geographicZoneId": "7"
+    },
+    {
+        "countryId": 177,
+        "countryName": "TURQUIE",
+        "countryNameEn": "TURKEY",
+        "geographicZoneId": "8"
+    },
+    {
+        "countryId": 180,
+        "countryName": "VANUATU",
+        "countryNameEn": "VANUATU",
+        "geographicZoneId": "4"
+    },
+    {
+        "countryId": 182,
+        "countryName": "VIETNAM",
+        "countryNameEn": "VIETNAM",
+        "geographicZoneId": "4"
+    },
+    {
+        "countryId": 186,
+        "countryName": "ZIMBABWE",
+        "countryNameEn": "ZIMBABWE",
+        "geographicZoneId": "1"
+    },
+    {
+        "countryId": 191,
+        "countryName": "SERBIE",
+        "countryNameEn": "SERBIA",
+        "geographicZoneId": "6"
+    }
+]

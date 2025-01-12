@@ -3,6 +3,7 @@ import logging
 
 import hikari
 
+from bovie.businessFrance.enum import Regions, Specializations
 from bovie.businessFrance.models import SearchParameters
 from bovie.businessFrance.Service import Service
 from bovie.discord.Config import Config
@@ -17,7 +18,19 @@ async def loop(bot: hikari.GatewayBot, cfg: Config, cooldown: int = 60):
     client = Service()
     channel = await bot.rest.fetch_channel(cfg.channel_ID)
 
-    p = SearchParameters(limit=cfg.max_pull)
+    p = SearchParameters(
+        limit=cfg.max_pull,
+        specializationsIds=[
+            Specializations.INFORMATION_SYSTEMS.value,
+            Specializations.SCIENTIFIC_AND_INDUSTRIAL_COMPUTING.value,
+        ],
+        gerographicZones=[
+            Regions.ASIA_PACIFIC.value,
+            Regions.NORTH_AMERICA.value,
+            Regions.SOUTH_AMERICA.value,
+            Regions.WESTERN_EUROPE.value,
+        ],
+    )
 
     while True:
         logger.info("Waking Up.")

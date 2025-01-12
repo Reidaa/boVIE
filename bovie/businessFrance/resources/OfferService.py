@@ -16,6 +16,7 @@ class OfferService:
         r = httpx.post(url, json=p)
 
         if r.status_code != httpx.codes.OK:
+            print(p)
             raise Exception()
 
         for r in r.json()["result"]:

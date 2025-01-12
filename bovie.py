@@ -4,9 +4,11 @@ import os
 import click
 from dotenv import load_dotenv
 
-from bovie.businessFrance.Service import Service
+from bovie.businessFrance.Service import Service as BFService
 from bovie.discord.bot import Start
 from bovie.discord.Config import Config
+from bovie.businessFrance.models import SearchParameters
+from bovie.businessFrance.enum import Specializations, Regions
 
 load_dotenv()
 
@@ -23,8 +25,25 @@ def bot(token: str, limit: int, channel: str):
 @click.command()
 @click.option("--limit", default=os.environ.get("BOVIE_OFFER_MAX", "1"))
 def pull(limit: int):
-    c = Service()
-    for o in c.get_new_offers(limit):
+    import logging
+
+    logging.basicConfig(level=logging.INFO)
+    c = BFService()
+    p = SearchParameters(
+        limit=limit,
+        specializationsIds=[
+            Specializations.INFORMATION_SYSTEMS.value,
+            Specializations.SCIENTIFIC_AND_INDUSTRIAL_COMPUTING.value,
+        ],
+        gerographicZones=[
+            Regions.ASIA_PACIFIC.value,
+            Regions.NORTH_AMERICA.value,
+            Regions.SOUTH_AMERICA.value,
+            Regions.WESTERN_EUROPE.value,
+        ],
+    )
+
+    for o in c.get_new_offers(p):
         print(
             f"{o.missionTitle} - {o.organizationName} - {o.countryName} - {o.indemnite}e"
         )

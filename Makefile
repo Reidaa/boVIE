@@ -22,6 +22,9 @@ format:
 run:
 	uv run ${TARGET}.py
 
+pull:
+	uv run python  ${TARGET}.py pull
+
 bot:
 	uv run python -O ${TARGET}.py bot
 

@@ -131,7 +131,7 @@ class SearchParameters:
     companiesSizes: List[str] = field(default_factory=lambda: [])
     countriesIds: List[int] = field(default_factory=lambda: [])
     entreprisesIds: List[int] = field(default_factory=lambda: [])
-    gerographicZones: List[int] = field(default_factory=lambda: [])
+    gerographicZones: List[str] = field(default_factory=lambda: [])
     missionsDurations: List[str] = field(default_factory=lambda: [])
     missionsTypesIds: List[str] = field(default_factory=lambda: [])
     specializationsIds: List[str] = field(default_factory=lambda: [])
