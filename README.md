@@ -4,7 +4,7 @@ A Discord bot that helps you discover VIE/VIA (Volontariat International en Entr
 
 ## Acknowledgments
 
-- Inspired by a TikTok video from [@ingesclave](https://www.tiktok.com/@ingesclave/video/7431604779899456801)
+- Inspired by this [TikTok](https://www.tiktok.com/@ingesclave/video/7431604779899456801)
 - Uses the Business France VIE/VIA platform as data source
 
 ## Features
