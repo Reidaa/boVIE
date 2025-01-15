@@ -1,7 +1,7 @@
 import logging
 from typing import Dict, List
 
-import hikari
+from nextcord import Embed, Color
 from dateutil.parser import isoparse
 
 from bovie.businessFrance.models import Offer
@@ -9,15 +9,11 @@ from bovie.businessFrance.models import Offer
 logger = logging.getLogger("bovie.discord.bot")
 
 
-class OfferEmbed(hikari.Embed):
+class OfferEmbed(Embed):
     def __init__(self, offer: Offer):
         super().__init__(
             title=offer.missionTitle,
-            description=None,
-            url=None,
-            color=hikari.Color.from_hex_code("053599"),
-            colour=None,
-            timestamp=None,
+            color=Color().from_rgb(5, 53, 153),
         )
 
         self._offer = offer
