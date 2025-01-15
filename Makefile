@@ -15,9 +15,11 @@ lint:
 	ruff check
 
 format:
-	black ${TARGET}
-	isort ${TARGET}
+	black ${TARGET}.py src/
+	isort ${TARGET}.py src/
 	ruff format
+
+fmt: format
 
 run:
 	uv run ${TARGET}.py
