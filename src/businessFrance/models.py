@@ -46,28 +46,10 @@ class Specialization:
 
 
 @dataclass
-class Dataset:
-    studyLevels: List[StudyLevel]
-    missionTypes: List[MissionType]
-    entrepriseTypes: List[EntrepriseType]
-    activitySectors: List[ActivitySector]
-    specializations: List[Specialization]
-
-
-@dataclass
 class GeographicZone:
     geographicZoneId: int
     geographicZoneLabel: str
     geographicZoneLabelEn: str
-
-
-@dataclass
-class GeographicZonesDataset:
-    result: List[GeographicZone]
-    count: int
-    fileShareUrl: Optional[str]
-    logosContainer: Optional[str]
-    fileShareSasToken: Optional[str]
 
 
 @dataclass
@@ -121,17 +103,14 @@ class Offer:
 
 
 @dataclass
-class SearchDataset:
-    results: List[Offer]
-
-
-@dataclass
 class SearchParameters:
     activitySectorId: List[int] = field(default_factory=lambda: [])
     companiesSizes: List[str] = field(default_factory=lambda: [])
     countriesIds: List[int] = field(default_factory=lambda: [])
     entreprisesIds: List[int] = field(default_factory=lambda: [])
-    gerographicZones: List[str] = field(default_factory=lambda: [])
+    gerographicZones: List[str] = field(
+        default_factory=lambda: []
+    )  # Spelling mistake from the VIE API
     missionsDurations: List[str] = field(default_factory=lambda: [])
     missionsTypesIds: List[str] = field(default_factory=lambda: [])
     specializationsIds: List[str] = field(default_factory=lambda: [])
