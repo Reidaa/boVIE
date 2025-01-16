@@ -25,10 +25,10 @@ run:
 	uv run ${TARGET}.py
 
 pull:
-	uv run python  ${TARGET}.py pull
+	uv run ${TARGET}.py pull
 
 bot:
-	uv run python -O ${TARGET}.py bot
+	uv run ${TARGET}.py bot
 
 
 ### Docker-related

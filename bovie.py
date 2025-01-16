@@ -20,8 +20,7 @@ from src.repository.SimpleRepository import SimpleRepository
 from src.writer.DiscordWriter import DiscordWriter
 from src.writer.TerminalWriter import TerminalWriter
 
-load_dotenv()
-
+load_dotenv(override=True)
 
 repoFactory: Dict[str, BaseRepository] = {
     "memory": InMemoryRepository,
@@ -62,9 +61,6 @@ class OfferFetcher:
 
     def fetch(self, id: int) -> Offer:
         return self._service.details(id)
-
-
-# @click.option("--continuous", default=os.environ.get("BOVIE_CONTINUOUS", "10"))
 
 
 @click.command()
@@ -118,44 +114,32 @@ def bot(
 
     logger.info("Starting ...")
 
+    def task():
+        try:
+            ids = fetcher.fetch_offers(limit)
+            for id in ids:
+                if id in repository.read():
+                    continue
+                # Let's go easy on them
+                time.sleep(0.5)
+                offer = fetcher.fetch(id)
+                ok = notifier.write(offer)
+                if ok:
+                    repository.insert(offer.id)
+                    logger.info(f"Posted new offer: {offer.missionTitle}")
+        except Exception as e:
+            logger.error(f"Error in bot execution: {str(e)}")
+            raise Exception
+
     if not continuous:
-        try:
-            ids = fetcher.fetch_offers(limit)
-            for id in ids:
-                if id in repository.read():
-                    continue
-                # Let's go easy on them
-                time.sleep(0.5)
-                offer = fetcher.fetch(id)
-                ok = notifier.write(offer)
-                if ok:
-                    repository.insert(offer.id)
-                    logger.info(f"Posted new offer: {offer.missionTitle}")
-        except Exception as e:
-            logger.error(f"Error in bot loop: {str(e)}")
-            raise Exception
-
-    while True:
-        logger.info(f"Set to wake up every {sleep_duration} seconds")
-        logger.info("Waking Up ...")
-        try:
-            ids = fetcher.fetch_offers(limit)
-            for id in ids:
-                if id in repository.read():
-                    continue
-                # Let's go easy on them
-                time.sleep(0.5)
-                offer = fetcher.fetch(id)
-                ok = notifier.write(offer)
-                if ok:
-                    repository.insert(offer.id)
-                    logger.info(f"Posted new offer: {offer.missionTitle}")
-        except Exception as e:
-            logger.error(f"Error in bot loop: {str(e)}")
-            raise Exception
-
-        logger.info("Going to sleep. Zzz")
-        time.sleep(sleep_duration)
+        task()
+    else:
+        while True:
+            logger.info(f"Set to wake up every {sleep_duration} seconds")
+            logger.info("Waking Up ...")
+            task()
+            logger.info("Going to sleep. Zzz")
+            time.sleep(sleep_duration)
 
 
 @click.command()
