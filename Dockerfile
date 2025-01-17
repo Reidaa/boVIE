@@ -14,4 +14,4 @@ COPY bovie.py uv.lock pyproject.toml ./
 RUN uv sync --frozen --no-dev
 
 ENTRYPOINT [ "uv", "run",  "bovie.py" ]
-CMD [ "bot", "--continuous"]
+CMD [ "bot", "--continuous", "true"]
