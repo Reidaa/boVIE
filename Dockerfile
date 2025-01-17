@@ -8,7 +8,7 @@ ENV UV_COMPILE_BYTECODE=1
 
 WORKDIR /app
 
-COPY bovie/ bovie/
+COPY src/ src/
 COPY bovie.py uv.lock pyproject.toml ./
 
 RUN uv sync --frozen --no-dev
