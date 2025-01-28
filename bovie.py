@@ -5,6 +5,7 @@ Bovie - A tool to discover VIE/VIA opportunities from Business France
 
 import logging
 import os
+import sys
 import time
 from typing import Dict, List
 
@@ -109,6 +110,7 @@ def bot(
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        stream=sys.stdout,
     )
     logger = logging.getLogger("bovie")
 
