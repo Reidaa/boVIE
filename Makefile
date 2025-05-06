@@ -9,10 +9,13 @@ DOCKERTAG ?= latest
 .PHONY: run lint format
 
 fclean:
-	rm -rf ids.txt
+	rm -rf database.db
+
+check:
+	uv run mypy bovie.py
 
 lint:
-	ruff check
+	uv run ruff check
 
 format:
 	black ${TARGET}.py src/
@@ -21,15 +24,17 @@ format:
 
 fmt: format
 
-run:
+run: check
 	uv run ${TARGET}.py
 
-pull:
-	uv run ${TARGET}.py pull
+pull: check
+	uv run ${TARGET}.py
 
-bot:
-	uv run ${TARGET}.py bot
+bot: check
+	uv run ${TARGET}.py --continuous
 
+help:
+	uv run ${TARGET}.py --help
 
 ### Docker-related
 

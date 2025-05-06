@@ -13,5 +13,8 @@ COPY bovie.py uv.lock pyproject.toml ./
 
 RUN uv sync --frozen --no-dev
 
-ENTRYPOINT [ "uv", "run",  "bovie.py" ]
-CMD [ "bot", "--continuous", "true"]
+# Place executables in the environment at the front of the path
+ENV PATH="/app/.venv/bin:$PATH"
+
+ENTRYPOINT [ "python3",  "bovie.py" ]
+CMD ["bot"]

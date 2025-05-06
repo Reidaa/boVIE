@@ -10,5 +10,12 @@
     },
     "[python]": {
         "editor.defaultFormatter": "charliermarsh.ruff",
-    }
+    },
+    "[dockerfile]": {
+        "editor.quickSuggestions": {
+            "strings": true
+        },
+        "editor.defaultFormatter": "ms-azuretools.vscode-containers"
+    },
+    "makefile.configureOnOpen": false,
 }
