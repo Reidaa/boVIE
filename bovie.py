@@ -111,8 +111,9 @@ def cli(
                     writer.write_one(j)
                     repository.insert(id)
         except Exception as e:
-            logger.error(e)
-            raise click.ClickException(f"Error during task execution : {str(e)}") from e
+            error = f"Error during task execution -> {str(e)}"
+            logger.error(error)
+            raise click.ClickException(error) from e
 
     logger.info("Starting ...")
 
