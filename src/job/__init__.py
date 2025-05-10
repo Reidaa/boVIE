@@ -37,7 +37,7 @@ def get_by_id(id: int) -> Job | None:
 
 
 def search_id(params: SearchParameters) -> list[int]:
-    url = f"/search"
+    url = "/search"
     p = params.model_dump()
     try:
         r = CLIENT.post(url, json=p)

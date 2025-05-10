@@ -21,8 +21,8 @@ ENV = os.environ.get("ENVIRONMENT", "development").lower()
 if ENV == "production":
     logger.remove()
     logger.add(sys.stdout, level="INFO")
-    logger.add("error.log", level="ERROR", rotation="10 MB")
-
+    logger.add(sys.stdout, level="WARNING")
+    logger.add(sys.stdout, level="ERROR")
 
 DEFAULT_BOVIE_OFFER_MAX = 25
 DEFAULT_BOVIE_CONTINUOUS = False
@@ -112,7 +112,7 @@ def cli(
                     repository.insert(id)
         except Exception as e:
             logger.error(e)
-            raise click.ClickException(str(e)) from e
+            raise click.ClickException(f"Error during task execution : {str(e)}") from e
 
     logger.info("Starting ...")
 
