@@ -29,7 +29,7 @@ DEFAULT_BOVIE_CONTINUOUS = False
 DEFAULT_BOVIE_SLEEP_DURATION = 60
 DEFAULT_DISCORD_WEBHOOK_URL = ""
 DEFAULT_NOTIFIER = "terminal"
-
+DEFAULT_QUIET = False
 
 @click.command()
 @click.option(
@@ -70,10 +70,10 @@ DEFAULT_NOTIFIER = "terminal"
 )
 @click.option(
     "--quiet",
-    default=True,
+    default=DEFAULT_QUIET,
     type=click.BOOL,
     is_flag=True,
-    show_default=True,
+    show_default=DEFAULT_QUIET,
     envvar="BOVIE_QUIET",
 )
 def cli(

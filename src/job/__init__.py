@@ -27,8 +27,8 @@ def get_by_id(id: int) -> Job | None:
     try:
         r = CLIENT.get(url)
         r.raise_for_status()
-    except httpx.HTTPStatusError as e:
-        logger.error(f"Failed to fetch job: {str(e)}")
+    except Exception as e:
+        logger.error(f"Failed to fetch job -> {str(e)}")
         return None
 
     job = Job.model_validate(r.json(), strict=True, by_alias=True)
@@ -42,8 +42,8 @@ def search_id(params: SearchParameters) -> list[int]:
     try:
         r = CLIENT.post(url, json=p)
         r.raise_for_status()
-    except httpx.HTTPStatusError as e:
-        logger.error(f"Failed to search offers: {str(e)}")
+    except Exception as e:
+        logger.error(f"Failed to search offers -> {str(e)}")
         return []
 
     ids = [Job.model_validate(result).id for result in r.json()["result"]]
