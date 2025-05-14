@@ -31,6 +31,7 @@ DEFAULT_DISCORD_WEBHOOK_URL = ""
 DEFAULT_NOTIFIER = "terminal"
 DEFAULT_QUIET = False
 
+
 @click.command()
 @click.option(
     "--webhook-url",

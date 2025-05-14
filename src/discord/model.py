@@ -34,14 +34,16 @@ class JobEmbed(Embed):
             EmbedField(name=":person_running: Début", value=start),
             EmbedField(name=":checkered_flag: Fin", value=end),
             EmbedField(name=":e_mail: Email", value=str(job.contactEmail)),
+            EmbedField(name=":person_bald: Contact", value=str(job.contactName)),
             EmbedField(
                 name=":globe_with_meridians: Business France",
                 value=f"[Voir offre](https://mon-vie-via.businessfrance.fr/offres/{job.id})",
             ),
-            EmbedField(name=":person_bald: Contact", value=job.contactName),
         ]
 
         for f in fields:
+            if not f.value:
+                continue
             logger.debug(
                 f"With offer ID {job.id} creating field '{f.name}' with value '{f.value}'"
             )
