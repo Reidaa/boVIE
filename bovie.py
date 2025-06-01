@@ -11,9 +11,9 @@ from dotenv import load_dotenv
 from loguru import logger
 
 import src.job as job
+from src.env import EnvEnum, env
 from src.job.repository import FileRepository
 from src.job.writer import DiscordWriter, RichWriter, TerminalWriter
-from src.env import env, EnvEnum
 
 load_dotenv(override=True)
 

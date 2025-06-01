@@ -30,3 +30,6 @@ dev = [
 
 [tool.mypy]
 plugins = ['pydantic.mypy']
+
+[tool.ruff.lint]
+extend-select = ["I"]

@@ -1,7 +1,8 @@
-from pydantic import BaseModel, Field, field_validator, SecretStr
-from enum import Enum, IntEnum
 import os
+from enum import Enum
+
 from dotenv import load_dotenv
+from pydantic import BaseModel, SecretStr
 
 load_dotenv(override=True)
 
