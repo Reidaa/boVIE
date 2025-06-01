@@ -3,9 +3,11 @@ from abc import ABC, abstractmethod
 from typing import List
 
 from sqlmodel import Field, Session, SQLModel, create_engine, select
+from src.env import env
 
 
 class Job(SQLModel, table=True):
+    __tablename__ = "bovie_job"
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     offer_id: int
 
@@ -27,8 +29,7 @@ class JobRepository(ABC):
 class FileRepository(JobRepository):
     def __init__(self):
         super().__init__()
-        url = "sqlite:///database.db"
-        self._engine = create_engine(url)
+        self._engine = create_engine(env.DATABASE_URL.get_secret_value())
 
         SQLModel.metadata.create_all(self._engine)
 

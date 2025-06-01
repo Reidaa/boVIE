@@ -5,7 +5,6 @@
         "charliermarsh.ruff",
         "dotenv.dotenv-vscode",
         "ms-python.isort",
-        "ms-python.python",
-        "njpwerner.autodocstring",
+        "ms-python.python"
     ],
 }

@@ -2,7 +2,7 @@ import httpx
 from loguru import logger
 
 from .enum import Regions, Specializations
-from .model import Job, SearchParameters
+from .models import Job, SearchParameters
 
 DEFAULT_SEARCH_PARAMS = SearchParameters(
     limit=101,

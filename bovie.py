@@ -3,7 +3,6 @@
 Bovie - A tool to discover VIE/VIA opportunities from Business France
 """
 
-import os
 import sys
 import time
 
@@ -14,11 +13,11 @@ from loguru import logger
 import src.job as job
 from src.job.repository import FileRepository
 from src.job.writer import DiscordWriter, RichWriter, TerminalWriter
+from src.env import env, EnvEnum
 
 load_dotenv(override=True)
 
-ENV = os.environ.get("ENVIRONMENT", "development").lower()
-if ENV == "production":
+if env.PYTHON_ENV == EnvEnum.PRODUCTION:
     logger.remove()
     logger.add(sys.stdout, level="INFO")
     logger.add(sys.stdout, level="WARNING")

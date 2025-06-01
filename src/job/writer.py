@@ -10,7 +10,7 @@ from tenacity import RetryError, retry, stop_after_attempt, wait_exponential
 import src.discord as discord
 from src.discord.model import JobEmbed
 
-from .model import Job
+from .models import Job
 
 
 class JobWriter(ABC):

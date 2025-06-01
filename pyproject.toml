@@ -9,6 +9,7 @@ dependencies = [
     "httpx>=0.28.1",
     "loguru>=0.7.3",
     "nextcord>=3.0.1",
+    "psycopg2-binary>=2.9.10",
     "pydantic>=2.11.3",
     "python-dateutil>=2.9.0.post0",
     "python-dotenv>=1.0.1",
