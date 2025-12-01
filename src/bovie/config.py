@@ -1,67 +1,67 @@
+from collections.abc import Iterable
 from pydantic import BaseModel, PositiveInt
 
-from .job.enum import Countries, Regions, Specializations
+from .job.models.country import (
+    get_countries_id_by_geographic_zone,
+    get_country_code_from_name,
+    get_country_ids,
+    get_country_names,
+)
+from .job.models.geo import get_zone_id_from_name, get_zone_names
+from .job.models.specialization import (
+    get_specialization_id_from_name,
+    get_specialization_names,
+)
 
 
 class SearchConfig(BaseModel):
     limit: PositiveInt
-    regions: list[str] = []
-    countries: list[str] = []
-    specializations: list[str] = []
+    regions: Iterable[str] = []
+    countries: Iterable[str] = []
+    specializations: Iterable[str] = []
 
 
 class Config(BaseModel):
     search: SearchConfig
 
 
-regionsFactory = {
-    name.lower().replace("_", " "): spec for name, spec in Regions.__members__.items()
-}
-
-regions_names = [name.lower().replace("_", " ") for name in Regions.__members__.keys()]
-
-specializationsFactory = {
-    name.lower().replace("_", " "): spec
-    for name, spec in Specializations.__members__.items()
-}
-
-specialization_names = [
-    name.lower().replace("_", " ") for name in Specializations.__members__.keys()
-]
-
-countriesFactory = {
-    name.lower().replace("_", " "): spec for name, spec in Countries.__members__.items()
-}
-
-countries_names = [
-    name.lower().replace("_", " ") for name in Countries.__members__.keys()
-]
-
-
 def parseSearch(
     limit: int, regions: tuple[str], specializations: tuple[str], countries: tuple[str]
 ) -> SearchConfig:
-    regionIds: list[str] = []
-    specializationsIds: list[str] = []
-    countrieIds: list[str] = []
+    regionIds: set[str] = set()
+    specializationsIds: set[str] = set()
+    countrieIds: set[str] = set()
+
+    for spe in specializations:
+        if spe.lower() not in get_specialization_names():
+            raise ValueError(f"Invalid specialization: {spe}")
+
+        spe_id = get_specialization_id_from_name(spe)
+        if spe_id is None:
+            raise ValueError(f"Invalid specialization: {spe}")
+
+        specializationsIds.add(spe_id)
 
     for region in regions:
-        tr = regionsFactory.get(region.lower().replace("_", " "))
-        if tr is None:
+        if region.lower() not in get_zone_names():
             raise ValueError(f"Invalid geographic zone: {region}")
-        regionIds.append(tr.value)
 
-    for spec in specializations:
-        temp_spe = specializationsFactory.get(spec.lower().replace("_", " "))
-        if temp_spe is None:
-            raise ValueError(f"Invalid specialization: {spec}")
-        specializationsIds.append(temp_spe.value)
+        zone_id = get_zone_id_from_name(region)
+        if zone_id is None:
+            raise ValueError(f"Invalid geographic zone: {region}")
+
+        for country_id in get_countries_id_by_geographic_zone(zone_id):
+            if country_id not in get_country_ids():
+                raise ValueError(f"Invalid country from preset: {country_id}")
+            countrieIds.add(country_id)
 
     for country in countries:
-        temp_country = countriesFactory.get(country.lower().replace("_", " "))
-        if temp_country is None:
+        if country.lower() not in get_country_names():
             raise ValueError(f"Invalid country: {country}")
-        countrieIds.append(temp_country.value)
+        country_id = get_country_code_from_name(country)
+        if country_id is None:
+            raise ValueError(f"Invalid country: {country}")
+        countrieIds.add(country_id)
 
     return SearchConfig(
         limit=limit,

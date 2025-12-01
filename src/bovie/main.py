@@ -9,15 +9,13 @@ import click
 from dotenv import load_dotenv
 from loguru import logger
 
-from .config import (
-    configFromParams,
-    countries_names,
-    regions_names,
-    specialization_names,
-)
+from .config import configFromParams
+from .db import JobOffer
 from .job import get_from_id, search_id
-from .job.models import SearchParameters
-from .job.repository import DBRepository
+from .job.model import SearchParameters
+from .job.models.country import get_country_names
+from .job.models.geo import get_zone_names
+from .job.models.specialization import get_specialization_names
 from .job.writer import DiscordWriter, JobWriter, TerminalWriter
 from .t import Choice
 
@@ -36,11 +34,7 @@ def task(params: SearchParameters, writers: list[JobWriter] | None = None):
     if writers is None:
         writers = [TerminalWriter()]
 
-    repository = DBRepository()
-
-    logger.debug(f"Writers: {writers}")
-
-    logger.info(f"Searching offers with  parameters: {params.model_dump()}")
+    logger.info(f"Searching offers with parameters: {params.model_dump()}")
     ids = search_id(params)
     logger.debug(f"Found {len(ids)} offers")
 
@@ -50,7 +44,7 @@ def task(params: SearchParameters, writers: list[JobWriter] | None = None):
 
     logger.debug(f"Ids: {ids}")
     for id in ids:
-        if id in repository.list():
+        if id in JobOffer.all():
             continue
         j = get_from_id(id)
         if not j:
@@ -59,7 +53,7 @@ def task(params: SearchParameters, writers: list[JobWriter] | None = None):
         for writer in writers:
             logger.debug(f"Writing offer ID {id} using {writer.__class__.__name__}")
             writer.write_one(j)
-            repository.insert(id)
+            JobOffer.create(id)
 
 
 @click.command()
@@ -90,24 +84,24 @@ def task(params: SearchParameters, writers: list[JobWriter] | None = None):
     "-r",
     multiple=True,
     envvar="BOVIE_REGION",
-    type=Choice(regions_names, case_sensitive=False),
+    type=Choice(get_zone_names(), case_sensitive=False),
     help="Regions to filter on",
-)
-@click.option(
-    "--specialization",
-    "-s",
-    multiple=True,
-    envvar="BOVIE_SPECIALIZATION",
-    type=Choice(specialization_names, case_sensitive=False),
-    help="Specializations to filter on",
 )
 @click.option(
     "--country",
     "-c",
     multiple=True,
     envvar="BOVIE_COUNTRY",
-    type=Choice(countries_names, case_sensitive=False),
+    type=Choice(get_country_names(), case_sensitive=False),
     help="Countries to filter on",
+)
+@click.option(
+    "--specialization",
+    "-s",
+    multiple=True,
+    envvar="BOVIE_SPECIALIZATION",
+    type=Choice(get_specialization_names(), case_sensitive=False),
+    help="Specializations to filter on",
 )
 @click.version_option(message="Bovie %(version)s")
 def cli(
@@ -115,8 +109,8 @@ def cli(
     webhook_url: str,
     limit: int,
     region: tuple[str],
-    specialization: tuple[str],
     country: tuple[str],
+    specialization: tuple[str],
 ):
     if debug:
         logger.add(sys.stdout, level="DEBUG")
@@ -131,8 +125,9 @@ def cli(
     )
     params: SearchParameters = SearchParameters(
         limit=config.search.limit,
-        specializationsIds=config.search.specializations,
-        geographicZones=config.search.regions,
+        specializationsIds=list(config.search.specializations),
+        geographicZones=list(config.search.regions),
+        countriesIds=list(config.search.countries),
     )
 
     logger.debug(f"limit: {limit}")

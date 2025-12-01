@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from typing import Any
 
 import httpx
 from loguru import logger
@@ -8,7 +7,7 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 import bovie.discord as discord
 from bovie.discord.model import JobEmbed
 
-from .models import Job
+from .model import Job
 
 
 class JobWriter(ABC):
@@ -27,7 +26,7 @@ class TerminalWriter(JobWriter):
         self.out = ""
 
     def write_one(self, job):
-        logger.info(f"New offer: {job.missionTitle}")
+        logger.info(f"New offer: {job.missionTitle} in {job.countryName} at {job.organizationName}")
 
     def write_many(self, jobs):
         for offer in jobs:
@@ -38,7 +37,6 @@ class DiscordWriter(JobWriter):
     def __init__(self, webhook_url: str):
         super().__init__()
         self.webhook_url = webhook_url
-        self.payloads: list[dict[str, Any]] = []
 
     def write_one(self, job):
         payload = {

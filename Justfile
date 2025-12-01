@@ -22,7 +22,8 @@ lint-fix:
 	uv run ruff check --fix src tests
 
 typecheck:
-	uv run mypy src
+	# uv run mypy src
+	uv run ty check
 
 test:
 	uv run pytest

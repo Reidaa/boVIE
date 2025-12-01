@@ -9,4 +9,4 @@ load_dotenv(override=True, interpolate=True)
 class Env(BaseModel):
     DATABASE_URL: PostgresDsn
 
-env = Env(DATABASE_URL=os.getenv("DATABASE_URL"))
+env = Env(DATABASE_URL=PostgresDsn(os.getenv("DATABASE_URL", "")))

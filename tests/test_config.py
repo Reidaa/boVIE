@@ -5,21 +5,21 @@ from bovie.config import configFromParams
 
 def test_config_from_params():
     limit = 100
-    regions = ["North America"]
+    zones = ["AMERIQUE DU NORD"]
     specializations = ["Information Systems"]
-    countries = ["Germany", "Canada"]
+    countries = []
 
     config = configFromParams(
         limit=limit,
-        regions=regions,
+        regions=zones,
         specializations=specializations,
         countries=countries,
     )
 
     assert config.search.limit == limit
-    assert len(config.search.specializations) == len(specializations)
-    assert len(config.search.regions) == len(regions)
-    assert len(config.search.countries) == len(countries)
+    assert len(specializations) == len(list(config.search.specializations))
+    assert 0 == len(list(config.search.regions))
+    assert 3 == len(list(config.search.countries))
 
 
 def test_config_from_params_invalid_region():

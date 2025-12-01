@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field, field_validator
 
 
-class specialization(BaseModel):
+class Specialization(BaseModel):
     specializationId: int
     specializationLabel: str
     specializationLabelEn: str
@@ -50,7 +50,7 @@ class Job(BaseModel):
     organizationUrlImage: str | None
     pathImage: str | None
     reference: str | None
-    specializations: list[specialization] | None
+    specializations: list[Specialization] | None
     startBroadcastDate: str
     viewCounter: int
     externalJobId: str | None
