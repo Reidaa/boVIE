@@ -27,14 +27,14 @@ class JobEmbed(Embed):
         fields: List[EmbedField] = [
             EmbedField(name=":hot_springs: Entreprise", value=job.organizationName),
             EmbedField(name=":calendar: Durée", value=f"{job.missionDuration} mois"),
-            EmbedField(name=":gear: Secteur", value=job.activitySectorN1),
+            EmbedField(name=":gear: Secteur", value=job.activitySectorN1 if job.activitySectorN1 else "N/A"),
             EmbedField(name=":world_map: Pays", value=job.countryName),
-            EmbedField(name=":cityscape: Ville", value=str(job.cityName)),
+            EmbedField(name=":cityscape: Ville", value=job.cityName if job.cityName else "N/A"),
             EmbedField(name=":money_with_wings: Salaire", value=f"{job.indemnite}e"),
             EmbedField(name=":person_running: Début", value=start),
             EmbedField(name=":checkered_flag: Fin", value=end),
-            EmbedField(name=":e_mail: Email", value=str(job.contactEmail)),
-            EmbedField(name=":person_bald: Contact", value=str(job.contactName)),
+            EmbedField(name=":e_mail: Email", value=job.contactEmail if job.contactEmail else "N/A"),
+            EmbedField(name=":person_bald: Contact", value=job.contactName if job.contactName else "N/A"),
             EmbedField(
                 name=":globe_with_meridians: Business France",
                 value=f"[Voir offre](https://mon-vie-via.businessfrance.fr/offres/{job.id})",

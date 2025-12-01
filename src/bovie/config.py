@@ -39,29 +39,29 @@ countries_names = [
 
 
 def parseSearch(
-    limit: int, regions: list[str], specializations: list[str], countries: list[str]
+    limit: int, regions: tuple[str], specializations: tuple[str], countries: tuple[str]
 ) -> SearchConfig:
     regionIds: list[str] = []
     specializationsIds: list[str] = []
     countrieIds: list[str] = []
 
-    for r in regions:
-        t = regionsFactory.get(r.lower().replace("_", " "))
-        if t is None:
-            raise ValueError(f"Invalid geographic zone: {r}")
-        regionIds.append(t.value)
+    for region in regions:
+        tr = regionsFactory.get(region.lower().replace("_", " "))
+        if tr is None:
+            raise ValueError(f"Invalid geographic zone: {region}")
+        regionIds.append(tr.value)
 
-    for spe in specializations:
-        t = specializationsFactory.get(spe.lower().replace("_", " "))
-        if t is None:
-            raise ValueError(f"Invalid specialization: {spe}")
-        specializationsIds.append(t.value)
+    for spec in specializations:
+        temp_spe = specializationsFactory.get(spec.lower().replace("_", " "))
+        if temp_spe is None:
+            raise ValueError(f"Invalid specialization: {spec}")
+        specializationsIds.append(temp_spe.value)
 
-    for countrie in countries:
-        t = countriesFactory.get(countrie.lower().replace("_", " "))
-        if t is None:
-            raise ValueError(f"Invalid country: {countrie}")
-        countrieIds.append(t.value)
+    for country in countries:
+        temp_country = countriesFactory.get(country.lower().replace("_", " "))
+        if temp_country is None:
+            raise ValueError(f"Invalid country: {country}")
+        countrieIds.append(temp_country.value)
 
     return SearchConfig(
         limit=limit,
@@ -72,7 +72,7 @@ def parseSearch(
 
 
 def configFromParams(
-    limit: int, regions: list[str], specializations: list[str], countries: list[str]
+    limit: int, regions: tuple[str], specializations: tuple[str], countries: tuple[str]
 ) -> Config:
     return Config(
         search=parseSearch(

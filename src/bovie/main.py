@@ -23,6 +23,8 @@ from .t import Choice
 
 load_dotenv(override=True)
 
+logger.remove()
+
 
 DEFAULT_BOVIE_OFFER_MAX = 25
 DEFAULT_BOVIE_CONTINUOUS = False
@@ -37,7 +39,7 @@ def task(params: SearchParameters, writers: list[JobWriter] | None = None):
     repository = DBRepository()
 
     logger.debug(f"Writers: {writers}")
-    
+
     ids = search_id(params)
     logger.debug(f"Found {len(ids)} offers")
 
@@ -45,13 +47,16 @@ def task(params: SearchParameters, writers: list[JobWriter] | None = None):
         logger.info("No offers found")
         return
 
+    logger.debug(f"Ids: {ids}")
     for id in ids:
         if id in repository.list():
             continue
         j = get_from_id(id)
         if not j:
+            logger.warning(f"Failed to fetch offer ID {id}")
             continue
         for writer in writers:
+            logger.debug(f"Writing offer ID {id} using {writer.__class__.__name__}")
             writer.write_one(j)
             repository.insert(id)
 
@@ -112,17 +117,14 @@ def cli(
     specialization: tuple[str],
     country: tuple[str],
 ):
-    logger.remove()
-    logger.add(sys.stdout, level="INFO")
-    logger.add(sys.stdout, level="WARNING")
-    logger.add(sys.stdout, level="ERROR")
-
     if debug:
         logger.add(sys.stdout, level="DEBUG")
+    else:
+        logger.add(sys.stdout, level="INFO")
 
     config = configFromParams(
         limit=limit,
-        regions=list(region),
+        regions=region,
         specializations=specialization,
         countries=country,
     )
@@ -139,7 +141,6 @@ def cli(
     logger.debug(f"Config: {config}")
 
     logger.debug(f"Webhook URL: {webhook_url}")
-
 
     writers: list[JobWriter] = [
         TerminalWriter(),

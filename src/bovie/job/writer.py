@@ -3,8 +3,6 @@ from typing import Any
 
 import httpx
 from loguru import logger
-from rich.console import Console
-from rich.table import Table
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 import bovie.discord as discord
@@ -51,7 +49,7 @@ class DiscordWriter(JobWriter):
             "actions": {},
         }
 
-        self.payloads.append(payload)
+        self._send(payload)
 
     def write_many(self, jobs):
         for job in jobs:
@@ -71,34 +69,3 @@ class DiscordWriter(JobWriter):
             raise e
         else:
             logger.debug(f"Message sent {payload_id}")
-
-
-class RichWriter(JobWriter):
-    def __init__(self):
-        super().__init__()
-        self._console = Console()
-        self._table = Table(title="Latest VIE/VIA Offers", show_lines=True)
-
-        self._table.add_column("Title", style="cyan")
-        self._table.add_column("Company", style="magenta")
-        self._table.add_column("Location", style="green")
-        self._table.add_column("Start Date", style="blue")
-
-    def write_one(self, job):
-        return self.write_many([job])
-
-    def write_many(self, jobs):
-        """Display offers in a formatted table"""
-        for offer in jobs:
-            self._table.add_row(
-                offer.missionTitle.strip(),
-                offer.organizationName.strip(),
-                f"{str(offer.cityName).strip()}, {offer.countryName.strip()}",
-                offer.missionStartDate,
-            )
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self._console.print(self._table)
