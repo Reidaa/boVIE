@@ -1,7 +1,8 @@
 import httpx
 from loguru import logger
 
-from .model import Job, SearchParameters
+from .models.job import Job
+from .models.search import SearchParameters
 
 URL = "https://civiweb-api-prd.azurewebsites.net/api/Offers"
 CLIENT = httpx.Client(base_url=URL, timeout=10)

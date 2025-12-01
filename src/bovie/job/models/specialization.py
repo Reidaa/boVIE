@@ -6,7 +6,8 @@ from pydantic import BaseModel, Field
 
 class Specialization(BaseModel):
     id: str = Field(alias="specializationId")
-    name: str = Field(alias="specializationLabelEn")
+    specialization_label: str = Field(alias="specializationLabel")
+    specialization_label_en: str = Field(alias="specializationLabelEn")
     parent_id: int | None = Field(alias="specializationParentId")
 
     class Config:
@@ -164,7 +165,7 @@ SPECIALIZATIONS: List[Specialization] = [
 
 def get_specialization_names() -> List[str]:
     """Return the list of specialization names."""
-    return [spec.name.lower() for spec in SPECIALIZATIONS]
+    return [spec.specialization_label_en.lower() for spec in SPECIALIZATIONS]
 
 def get_specialization_ids() -> List[str]:
     """Return the list of specialization IDs."""
@@ -174,6 +175,6 @@ def get_specialization_id_from_name(name: str) -> str | None:
     """Return the Specialization object matching the given name, or None if not found."""
     name_norm = name.strip().lower()
     for spec in SPECIALIZATIONS:
-        if spec.name.lower() == name_norm:
+        if spec.specialization_label_en.lower() == name_norm:
             return spec.id
     return None

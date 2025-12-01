@@ -12,9 +12,9 @@ from loguru import logger
 from .config import configFromParams
 from .db import JobOffer
 from .job import get_from_id, search_id
-from .job.model import SearchParameters
 from .job.models.country import get_country_names
 from .job.models.geozone import get_zone_names
+from .job.models.search import SearchParameters
 from .job.models.specialization import get_specialization_names
 from .job.writer import DiscordWriter, JobWriter, TerminalWriter
 from .t import Choice

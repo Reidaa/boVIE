@@ -5,7 +5,7 @@ from loguru import logger
 from nextcord import Embed
 from pydantic import BaseModel, Field
 
-from bovie.job.model import Job
+from bovie.job.models.job import Job
 
 
 class EmbedField(BaseModel):

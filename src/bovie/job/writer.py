@@ -7,7 +7,7 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 import bovie.discord as discord
 from bovie.discord.model import JobEmbed
 
-from .model import Job
+from .models.job import Job
 
 
 class JobWriter(ABC):
