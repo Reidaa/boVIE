@@ -14,7 +14,7 @@ from .db import JobOffer
 from .job import get_from_id, search_id
 from .job.model import SearchParameters
 from .job.models.country import get_country_names
-from .job.models.geo import get_zone_names
+from .job.models.geozone import get_zone_names
 from .job.models.specialization import get_specialization_names
 from .job.writer import DiscordWriter, JobWriter, TerminalWriter
 from .t import Choice
@@ -34,7 +34,6 @@ def task(params: SearchParameters, writers: list[JobWriter] | None = None):
     if writers is None:
         writers = [TerminalWriter()]
 
-    logger.info(f"Searching offers with parameters: {params.model_dump()}")
     ids = search_id(params)
     logger.debug(f"Found {len(ids)} offers")
 
@@ -80,8 +79,8 @@ def task(params: SearchParameters, writers: list[JobWriter] | None = None):
     envvar="BOVIE_LIMIT",
 )
 @click.option(
-    "--region",
-    "-r",
+    "--geozone",
+    "-g",
     multiple=True,
     envvar="BOVIE_REGION",
     type=Choice(get_zone_names(), case_sensitive=False),
@@ -108,7 +107,7 @@ def cli(
     debug: bool,
     webhook_url: str,
     limit: int,
-    region: tuple[str],
+    geozone: tuple[str],
     country: tuple[str],
     specialization: tuple[str],
 ):
@@ -119,7 +118,7 @@ def cli(
 
     config = configFromParams(
         limit=limit,
-        regions=region,
+        regions=geozone,
         specializations=specialization,
         countries=country,
     )
@@ -131,9 +130,9 @@ def cli(
     )
 
     logger.debug(f"limit: {limit}")
-    logger.debug(f"region: {region}")
-    logger.debug(f"specialization: {specialization}")
-    logger.debug(f"country: {country}")
+    logger.debug(f"geozones: {geozone}")
+    logger.debug(f"specializations: {specialization}")
+    logger.debug(f"countries: {country}")
     logger.debug(f"Config: {config}")
 
     logger.debug(f"Webhook URL: {webhook_url}")

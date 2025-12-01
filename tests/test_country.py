@@ -1,5 +1,5 @@
 from bovie.job.models.country import get_countries_id_by_geographic_zone
-from bovie.job.models.geo import get_zone_id_from_name
+from bovie.job.models.geozone import get_zone_id_from_name
 
 
 def test_get_countries_by_geographic_zone_from_id():

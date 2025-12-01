@@ -8,7 +8,7 @@ from .job.models.country import (
     get_country_ids,
     get_country_names,
 )
-from .job.models.geo import get_zone_id_from_name, get_zone_names
+from .job.models.geozone import get_zone_id_from_name, get_zone_names
 from .job.models.specialization import (
     get_specialization_id_from_name,
     get_specialization_names,
