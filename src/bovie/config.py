@@ -1,4 +1,5 @@
 from collections.abc import Iterable
+
 from pydantic import BaseModel, PositiveInt
 
 from .job.models.country import (
