@@ -5,10 +5,10 @@ import httpx
 from loguru import logger
 from rich.console import Console
 from rich.table import Table
-from tenacity import RetryError, retry, stop_after_attempt, wait_exponential
+from tenacity import retry, stop_after_attempt, wait_exponential
 
-import src.discord as discord
-from src.discord.model import JobEmbed
+import bovie.discord as discord
+from bovie.discord.model import JobEmbed
 
 from .models import Job
 
@@ -22,14 +22,6 @@ class JobWriter(ABC):
     def write_many(self, jobs: list[Job]):
         pass
 
-    @abstractmethod
-    def __enter__(self):
-        pass
-
-    @abstractmethod
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        pass
-
 
 class TerminalWriter(JobWriter):
     def __init__(self):
@@ -37,20 +29,11 @@ class TerminalWriter(JobWriter):
         self.out = ""
 
     def write_one(self, job):
-        self.out += f"{job.missionTitle}\n"
+        logger.info(f"New offer: {job.missionTitle}")
 
     def write_many(self, jobs):
         for offer in jobs:
             self.write_one(offer)
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        if self.out:
-            print(self.out[:-1])
-        else:
-            print("Nothing to display ...")
 
 
 class DiscordWriter(JobWriter):
@@ -88,16 +71,6 @@ class DiscordWriter(JobWriter):
             raise e
         else:
             logger.debug(f"Message sent {payload_id}")
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        for payload in self.payloads:
-            try:
-                self._send(payload)
-            except RetryError as e:
-                logger.error(f"Failed to send Discord message: {str(e)}")
 
 
 class RichWriter(JobWriter):

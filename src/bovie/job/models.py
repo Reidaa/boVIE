@@ -9,7 +9,7 @@ class specialization(BaseModel):
 
 
 class Job(BaseModel):
-    activitySectorN1: str
+    activitySectorN1: str | None
     activitySectorN1Id: int
     activitySectorN2: str | None
     activitySectorN3: str | None
@@ -26,12 +26,12 @@ class Job(BaseModel):
     countryName: str
     countryNameEn: str
     creationDate: str
-    durationBroadcast: int
+    durationBroadcast: int | float
     effectif: int
     id: int
     idMotifDesactivationOffre: int
     idNomenclatureSecteur: str | None
-    indemnite: int
+    indemnite: int | float
     levelStudyIds: str | None
     missionDescription: str | None
     missionDuration: int
@@ -80,7 +80,7 @@ class Job(BaseModel):
 class SearchParameters(BaseModel):
     activitySectorId: list[int] = Field(default_factory=lambda: [])
     companiesSizes: list[str] = Field(default_factory=lambda: [])
-    countriesIds: list[int] = Field(default_factory=lambda: [])
+    countriesIds: list[str] = Field(default_factory=lambda: [])
     entreprisesIds: list[int] = Field(default_factory=lambda: [])
     gerographicZones: list[str] = Field(
         default_factory=lambda: [], alias="geographicZones"

@@ -8,7 +8,7 @@ class Regions(Enum):
     SOUTH_AMERICA = "3"
     ASIA_PACIFIC = "4"
     WESTERN_EUROPE = "5"
-    EASTER_EUROPE = "6"
+    EASTERN_EUROPE = "6"
     NORTH_AFRICA = "7"
     MIDDLE_EAST = "8"
 

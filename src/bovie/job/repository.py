@@ -1,16 +1,10 @@
-import uuid
 from abc import ABC, abstractmethod
 from typing import List
 
-from sqlmodel import Field, Session, SQLModel, create_engine, select
+from sqlmodel import Session, SQLModel, create_engine, select
 
-from src.env import env
-
-
-class Job(SQLModel, table=True):
-    __tablename__ = "bovie_job"
-    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    offer_id: int
+from bovie.db import Job
+from bovie.env import env
 
 
 class JobRepository(ABC):
@@ -27,10 +21,10 @@ class JobRepository(ABC):
         pass
 
 
-class FileRepository(JobRepository):
+class DBRepository(JobRepository):
     def __init__(self):
         super().__init__()
-        self._engine = create_engine(env.DATABASE_URL.get_secret_value())
+        self._engine = create_engine(env.DATABASE_URL.encoded_string())
 
         SQLModel.metadata.create_all(self._engine)
 

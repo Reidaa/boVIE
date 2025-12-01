@@ -1,28 +1,13 @@
 import httpx
 from loguru import logger
 
-from .enum import Regions, Specializations
 from .models import Job, SearchParameters
-
-DEFAULT_SEARCH_PARAMS = SearchParameters(
-    limit=101,
-    specializationsIds=[
-        Specializations.INFORMATION_SYSTEMS.value,
-        Specializations.SCIENTIFIC_AND_INDUSTRIAL_COMPUTING.value,
-    ],
-    geographicZones=[
-        Regions.ASIA_PACIFIC.value,
-        Regions.NORTH_AMERICA.value,
-        Regions.SOUTH_AMERICA.value,
-        Regions.WESTERN_EUROPE.value,
-    ],
-)
 
 URL = "https://civiweb-api-prd.azurewebsites.net/api/Offers"
 CLIENT = httpx.Client(base_url=URL)
 
 
-def get_by_id(id: int) -> Job | None:
+def get_from_id(id: int) -> Job | None:
     url = f"/details/{id}"
     try:
         r = CLIENT.get(url)
@@ -39,6 +24,10 @@ def get_by_id(id: int) -> Job | None:
 def search_id(params: SearchParameters) -> list[int]:
     url = "/search"
     p = params.model_dump()
+    ids: list[int] = []
+
+    logger.debug(f"Searching offers with parameters: {p}")
+
     try:
         r = CLIENT.post(url, json=p)
         r.raise_for_status()
@@ -46,6 +35,13 @@ def search_id(params: SearchParameters) -> list[int]:
         logger.error(f"Failed to search offers -> {str(e)}")
         return []
 
-    ids = [Job.model_validate(result).id for result in r.json()["result"]]
+    response_json = r.json()
+    logger.debug(f"Search response: {response_json}")
+    
+    for result in response_json["result"]:
+        logger.debug(f"Found offer: {result}")
+        ids.append(Job.model_validate(result).id)
+    # ids = [Job.model_validate(result).id for result in response_json["result"]]
+    # logger.debug(f"Found offer IDs: {ids}")
 
     return ids

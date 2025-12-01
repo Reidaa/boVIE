@@ -3,8 +3,8 @@
     // for the documentation about the extensions.json format
     "recommendations": [
         "charliermarsh.ruff",
-        "dotenv.dotenv-vscode",
-        "ms-python.isort",
-        "ms-python.python"
+        "ms-python.python",
+        "tamasfe.even-better-toml",
+        "sclu1034.justfile"
     ],
 }
