@@ -33,7 +33,7 @@ class Job(BaseModel):
     idNomenclatureSecteur: str | None
     indemnite: int | float
     levelStudyIds: str | None
-    missionDescription: str | None
+    missionDescription: str | None = Field(repr=False)
     missionDuration: int
     missionEndDate: str
     missionProfile: str | None

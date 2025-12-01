@@ -40,6 +40,7 @@ def task(params: SearchParameters, writers: list[JobWriter] | None = None):
 
     logger.debug(f"Writers: {writers}")
 
+    logger.info(f"Searching offers with  parameters: {params.model_dump()}")
     ids = search_id(params)
     logger.debug(f"Found {len(ids)} offers")
 

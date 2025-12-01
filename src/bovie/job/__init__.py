@@ -4,7 +4,7 @@ from loguru import logger
 from .models import Job, SearchParameters
 
 URL = "https://civiweb-api-prd.azurewebsites.net/api/Offers"
-CLIENT = httpx.Client(base_url=URL)
+CLIENT = httpx.Client(base_url=URL, timeout=10)
 
 
 def get_from_id(id: int) -> Job | None:
@@ -36,12 +36,8 @@ def search_id(params: SearchParameters) -> list[int]:
         return []
 
     response_json = r.json()
-    logger.debug(f"Search response: {response_json}")
     
     for result in response_json["result"]:
-        logger.debug(f"Found offer: {result}")
         ids.append(Job.model_validate(result).id)
-    # ids = [Job.model_validate(result).id for result in response_json["result"]]
-    # logger.debug(f"Found offer IDs: {ids}")
 
     return ids
