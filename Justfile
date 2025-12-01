@@ -44,37 +44,14 @@ clean:
 	rm -rf htmlcov
 	rm -rf dist build
 
-build:
-	uv build
-
 run:
 	uv run python -m {{PACKAGE}}.main
 
 run-help:
 	uv run python -m {{PACKAGE}}.main --help
 
-pull: typecheck
-	uv run ${TARGET}.py
-
-bot: typecheck
-	uv run ${TARGET}.py --continuous
-
-help:
-	uv run ${TARGET}.py --help
-
 up:
 	docker compose up -d
 
 down:
 	docker compose down
-
-### Docker-related
-
-docker:
-		docker build -t {{REPOSITORY}}/{{TARGET}}:{{DOCKERTAG}} -f {{DOCKERFILE}} .
-
-docker-build-debug:
-		docker build --progress=plain --no-cache -t {{REPOSITORY}}/{{TARGET}}:debug -f {{DOCKERFILE}} .
-
-docker-run: docker
-		docker run {{REPOSITORY}}/{{TARGET}}:{{DOCKERTAG}}
