@@ -36,6 +36,8 @@ def task(params: SearchParameters, writers: list[JobWriter] | None = None):
 
     repository = DBRepository()
 
+    logger.debug(f"Writers: {writers}")
+    
     ids = search_id(params)
     logger.debug(f"Found {len(ids)} offers")
 
@@ -146,9 +148,11 @@ def cli(
     if webhook_url:
         writers.append(DiscordWriter(webhook_url=webhook_url))
 
+    logger.debug(f"Writers: {writers}")
+
     logger.info("Starting ...")
     try:
-        task(params=params)
+        task(params=params, writers=writers)
     except Exception as e:
         error = f"Error during task execution -> {str(e)}"
         logger.error(error)
