@@ -23,9 +23,14 @@ class JobEmbed(Embed):
 
         start = isoparse(job.missionStartDate).strftime("%d/%m/%Y")
         end = isoparse(job.missionEndDate).strftime("%d/%m/%Y")
+        if job.creationDate:
+            posted = isoparse(job.creationDate).strftime("%d/%m/%Y")
+        else:
+            posted = "N/A"
 
         fields: List[EmbedField] = [
             EmbedField(name=":hot_springs: Entreprise", value=job.organizationName),
+            EmbedField(name=":satellite_orbital: Posté le", value=posted),
             EmbedField(name=":calendar: Durée", value=f"{job.missionDuration} mois"),
             EmbedField(name=":gear: Secteur", value=job.activitySectorN1 if job.activitySectorN1 else "N/A"),
             EmbedField(name=":world_map: Pays", value=job.countryName),
