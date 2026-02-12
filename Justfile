@@ -8,12 +8,15 @@ DOCKERTAG := "latest"
 
 PACKAGE := "bovie"
 
-sync:
+i:
 	uv sync
 
 upgrade:
 	uv lock --upgrade
 	uv sync
+
+fmt:
+	uv run ruff check --fix src tests
 
 lint:
 	uv run ruff check src tests

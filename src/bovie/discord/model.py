@@ -23,6 +23,9 @@ class JobEmbed(Embed):
 
         start = isoparse(job.missionStartDate).strftime("%d/%m/%Y")
         end = isoparse(job.missionEndDate).strftime("%d/%m/%Y")
+        tags: str = ", ".join([s.specialization_label for s in job.specializations]) if job.specializations else "N/A"
+
+
         if job.creationDate:
             posted = isoparse(job.creationDate).strftime("%d/%m/%Y")
         else:
@@ -44,6 +47,7 @@ class JobEmbed(Embed):
                 name=":globe_with_meridians: Business France",
                 value=f"[Voir offre](https://mon-vie-via.businessfrance.fr/offres/{job.id})",
             ),
+            EmbedField(name="Tags", value=tags),
         ]
 
         for f in fields:
