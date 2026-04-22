@@ -21,15 +21,15 @@ class JobEmbed(Embed):
             color=341401,
         )
 
-        start = isoparse(job.missionStartDate).strftime("%d/%m/%Y")
-        end = isoparse(job.missionEndDate).strftime("%d/%m/%Y")
+        start: str = isoparse(job.missionStartDate).strftime("%d/%m/%Y")
+        end: str = isoparse(job.missionEndDate).strftime("%d/%m/%Y")
         tags: str = ", ".join([s.specialization_label for s in job.specializations]) if job.specializations else "N/A"
 
 
         if job.creationDate:
-            posted = isoparse(job.creationDate).strftime("%d/%m/%Y")
+            posted: str = isoparse(job.creationDate).strftime("%d/%m/%Y")
         else:
-            posted = "N/A"
+            posted: str = "N/A"
 
         fields: List[EmbedField] = [
             EmbedField(name=":hot_springs: Entreprise", value=job.organizationName),

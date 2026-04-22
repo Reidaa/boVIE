@@ -45,6 +45,8 @@ class DiscordWriter(JobWriter):
             "embeds": [JobEmbed(job).to_dict()],
             "components": [],
             "actions": {},
+            # "avatar_url": "https://www.myavatar.com",
+            "username": "boVIE"
         }
 
         self._send(payload)
