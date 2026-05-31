@@ -1,17 +1,16 @@
 import json
 from typing import List
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class Specialization(BaseModel):
+    model_config = ConfigDict(validate_by_name=True)
+
     id: str = Field(alias="specializationId")
     specialization_label: str = Field(alias="specializationLabel")
     specialization_label_en: str = Field(alias="specializationLabelEn")
     parent_id: int | None = Field(alias="specializationParentId")
-
-    class Config:
-        validate_by_name = True
 
 
 """
