@@ -1,15 +1,14 @@
 import json
 from typing import List
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class GeographicZone(BaseModel):
+    model_config = ConfigDict(validate_by_name=True)
+
     id: str = Field(alias="geographicZoneId")
     name: str = Field(alias="geographicZoneLabelEn")
-
-    class Config:
-        validate_by_name = True
 
 """
 GET /api/Offers/repository/geographic-zones HTTP/1.1
