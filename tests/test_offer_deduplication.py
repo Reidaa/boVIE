@@ -1,8 +1,8 @@
 import os
 
 import pytest
-from sqlalchemy.pool import StaticPool
 from sqlmodel import SQLModel, create_engine
+from testcontainers.postgres import PostgresContainer
 
 os.environ.setdefault(
     "DATABASE_URL",
@@ -27,22 +27,25 @@ class RecordingWriter:
             self.write_one(job)
 
 
+@pytest.fixture(scope="module")
+def postgres_container():
+    with PostgresContainer("postgres:17-alpine") as postgres:
+        yield postgres
+
+
 @pytest.fixture
-def in_memory_db(monkeypatch):
-    engine = create_engine(
-        "sqlite://",
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-    )
+def postgres_db(monkeypatch, postgres_container):
+    engine = create_engine(postgres_container.get_connection_url())
     SQLModel.metadata.create_all(engine)
     monkeypatch.setattr(bovie_db, "db", engine)
 
     yield engine
 
     SQLModel.metadata.drop_all(engine)
+    engine.dispose()
 
 
-def test_job_offer_create_ignores_duplicate_offer_ids(in_memory_db):
+def test_job_offer_create_ignores_duplicate_offer_ids(postgres_db):
     assert JobOffer.create(123) is True
     assert JobOffer.create(123) is False
 
