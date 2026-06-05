@@ -43,16 +43,20 @@ def task(params: SearchParameters, writers: list[JobWriter] | None = None):
 
     logger.debug(f"Ids: {ids}")
     for id in ids:
-        if id in JobOffer.all():
+        if JobOffer.exists(id):
             continue
+
         j = get_from_id(id)
         if not j:
             logger.warning(f"Failed to fetch offer ID {id}")
             continue
+
         for writer in writers:
             logger.debug(f"Writing offer ID {id} using {writer.__class__.__name__}")
             writer.write_one(j)
-            JobOffer.create(id)
+
+        if not JobOffer.create(id):
+            logger.debug(f"Offer ID {id} was already recorded")
 
 
 @click.command()
