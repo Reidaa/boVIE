@@ -7,7 +7,29 @@ from sqlmodel import SQLModel
 from alembic import context
 
 DATABASE_URL = os.getenv("DATABASE_URL")
+import os
+from logging.config import fileConfig
 
+from sqlalchemy import engine_from_config, pool
+from sqlmodel import SQLModel
+
+from alembic import context
+
+from bovie.db import Job  # noqa: E402,F401
+
+config = context.config
+
+if config.config_file_name is not None:
+    fileConfig(config.config_file_name)
+
+target_metadata = SQLModel.metadata
+
+
+def get_url() -> str:
+    url = os.getenv("DATABASE_URL")
+    if not url:
+        raise RuntimeError("DATABASE_URL environment variable is not set")
+    return url
 from bovie.db import Job  # noqa: E402,F401
 
 config = context.config
