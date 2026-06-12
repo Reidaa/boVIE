@@ -4,19 +4,26 @@ Bovie - A tool to discover VIE/VIA opportunities from Business France
 """
 
 import sys
+from asyncio import run
 
 import click
 from dotenv import load_dotenv
 from loguru import logger
 
 from .config import configFromParams
-from .db import JobOffer
 from .job import get_from_id, search_id
 from .job.models.country import get_country_names
 from .job.models.geozone import get_zone_names
 from .job.models.search import SearchParameters
 from .job.models.specialization import get_specialization_names
-from .job.writer import DiscordWriter, JobWriter, TerminalWriter
+from .job.publisher import (
+    DEFAULT_NATS_JOB_SUBJECT,
+    DEFAULT_NATS_STREAM,
+    DEFAULT_NATS_URL,
+    JobPublisher,
+    NatsJobPublisher,
+    NatsPublisherConfig,
+)
 from .t import Choice
 
 load_dotenv(override=True)
@@ -27,13 +34,9 @@ logger.remove()
 DEFAULT_BOVIE_OFFER_MAX = 25
 DEFAULT_BOVIE_CONTINUOUS = False
 DEFAULT_BOVIE_SLEEP_DURATION = 60
-DEFAULT_DISCORD_WEBHOOK_URL = ""
 
 
-def task(params: SearchParameters, writers: list[JobWriter] | None = None):
-    if writers is None:
-        writers = [TerminalWriter()]
-
+async def task(params: SearchParameters, publisher: JobPublisher):
     ids = search_id(params)
     logger.debug(f"Found {len(ids)} offers")
 
@@ -42,21 +45,26 @@ def task(params: SearchParameters, writers: list[JobWriter] | None = None):
         return
 
     logger.debug(f"Ids: {ids}")
+    seen_ids: set[int] = set()
+
     for id in ids:
-        if JobOffer.exists(id):
+        if id in seen_ids:
             continue
 
+        seen_ids.add(id)
         j = get_from_id(id)
         if not j:
             logger.warning(f"Failed to fetch offer ID {id}")
             continue
 
-        for writer in writers:
-            logger.debug(f"Writing offer ID {id} using {writer.__class__.__name__}")
-            writer.write_one(j)
-
-        if not JobOffer.create(id):
-            logger.debug(f"Offer ID {id} was already recorded")
+        logger.debug(f"Publishing offer ID {id}")
+        await publisher.publish_one(j)
+        logger.info(
+            "Queued offer: "
+            f"{getattr(j, 'missionTitle', id)} in "
+            f"{getattr(j, 'countryName', 'unknown country')} at "
+            f"{getattr(j, 'organizationName', 'unknown organization')}"
+        )
 
 
 @click.command()
@@ -69,11 +77,25 @@ def task(params: SearchParameters, writers: list[JobWriter] | None = None):
     envvar="BOVIE_DEBUG",
 )
 @click.option(
-    "--webhook-url",
-    default=DEFAULT_DISCORD_WEBHOOK_URL,
+    "--nats-url",
+    default=DEFAULT_NATS_URL,
     type=click.STRING,
-    help="Discord webhook URL",
-    envvar="DISCORD_WEBHOOK_URL",
+    help="NATS server URL",
+    envvar="NATS_URL",
+)
+@click.option(
+    "--nats-stream",
+    default=DEFAULT_NATS_STREAM,
+    type=click.STRING,
+    help="NATS JetStream stream for discovered jobs",
+    envvar="NATS_STREAM",
+)
+@click.option(
+    "--nats-subject",
+    default=DEFAULT_NATS_JOB_SUBJECT,
+    type=click.STRING,
+    help="NATS subject for discovered jobs",
+    envvar="NATS_JOB_SUBJECT",
 )
 @click.option(
     "--limit",
@@ -109,7 +131,9 @@ def task(params: SearchParameters, writers: list[JobWriter] | None = None):
 @click.version_option(message="Bovie %(version)s")
 def cli(
     debug: bool,
-    webhook_url: str,
+    nats_url: str,
+    nats_stream: str,
+    nats_subject: str,
     limit: int,
     geozone: tuple[str],
     country: tuple[str],
@@ -139,20 +163,20 @@ def cli(
     logger.debug(f"countries: {country}")
     logger.debug(f"Config: {config}")
 
-    logger.debug(f"Webhook URL: {webhook_url}")
-
-    writers: list[JobWriter] = [
-        TerminalWriter(),
-    ]
-
-    if webhook_url:
-        writers.append(DiscordWriter(webhook_url=webhook_url))
-
-    logger.debug(f"Writers: {writers}")
+    publisher_config = NatsPublisherConfig(
+        url=nats_url,
+        stream=nats_stream,
+        subject=nats_subject,
+    )
+    logger.debug(f"NATS publisher config: {publisher_config}")
 
     logger.info("Starting ...")
     try:
-        task(params=params, writers=writers)
+        async def publish_task() -> None:
+            async with NatsJobPublisher(publisher_config) as publisher:
+                await task(params=params, publisher=publisher)
+
+        run(publish_task())
     except Exception as e:
         error = f"Error during task execution -> {str(e)}"
         logger.error(error)

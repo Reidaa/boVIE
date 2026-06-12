@@ -1,8 +1,8 @@
-# Bovie
+# boVIE
 
-A python script that helps you discover VIE/VIA (Volontariat International en Entreprise/Administration) opportunities from Business France.
+boVIE discovers VIE/VIA (Volontariat International en Entreprise/Administration) opportunities from Business France.
 
-The script automatically fetches new positions and posts them using a Discord webhook.
+The scraper is written in Python and publishes discovered offers to NATS JetStream. A TypeScript worker in `apps/worker` consumes those jobs later, deduplicates them in PostgreSQL, and can post notifications to Discord.
 
 ## Acknowledgments
 
@@ -11,53 +11,49 @@ The script automatically fetches new positions and posts them using a Discord we
 
 ## Features
 
-- Automatically fetches new VIE/VIA opportunities
-- Posts updates to Discord via webhook
-- File or in-memory storage options
-- Continuous mode
-  - Customizable polling interval (default: 60 seconds)
-- CLI interface for manual checks
-<!-- - Beautiful Discord embeds for each job posting -->
+- Fetches VIE/VIA opportunities from Business France
+- Publishes discovered offers to NATS JetStream
+- Processes queued offers in a TypeScript worker
+- Deduplicates processed offers with PostgreSQL
+- Optionally posts processed offers to Discord
 
 ## Prerequisites
 
 - Python 3.13 or higher
   - While it may work with earlier versions, it has only been tested with Python 3.13
+- Node.js 20 or higher
 - [uv](https://github.com/astral-sh/uv) package manager
-- [Discord webhook](https://support.discord.com/hc/fr/articles/228383668-Introduction-aux-Webhooks) URL
+- NATS with JetStream enabled
+- PostgreSQL
+- Optional [Discord webhook](https://support.discord.com/hc/fr/articles/228383668-Introduction-aux-Webhooks) URL
 
 ## Installation
 
-Install dependencies using [uv](https://github.com/astral-sh/uv):
+Install Python and TypeScript dependencies:
 
 ```sh
-uv install
+uv sync
+pnpm install
 ```
 
 ## Configuration
 
-Bovie can be configured through command-line arguments, environment variables, or a combination of both.
+boVIE can be configured through command-line arguments, environment variables, or a combination of both.
 
 ### Command Line Arguments
 
 ```sh
-Usage: bovie.py bot [OPTIONS]
+uv run python -m bovie.main --help
 
 Options:
-  --webhook-url TEXT              Discord webhook URL
-  --limit INTEGER                 Maximum number of offers to fetch (default: 25)
-  --storage-type [memory|file]    Storage backend to use: 'file' or 'memory' (default: file)
-  --continuous BOOLEAN            Run in continuous mode, checking for new offers periodically (default: False)
-  --sleep-duration INTEGER RANGE  Interval between checks in continuous mode, in seconds (default: 60)  [x>=1]
-  --help                          Show this message and exit.
-```
-
-```sh
-Usage: bovie.py pull [OPTIONS]
-
-Options:
-  --limit INTEGER  Maximum offers to fetch (default: 25)
-  --help           Show this message and exit.
+  --debug
+  --nats-url TEXT
+  --nats-stream TEXT
+  --nats-subject TEXT
+  --limit INTEGER
+  --geozone TEXT
+  --country TEXT
+  --specialization TEXT
 ```
 
 ### Environments variables
@@ -65,58 +61,46 @@ Options:
 1. Create a `.env` file in the project root directory
 2. Add the following environment variables:
 
-#### Bot
-
 ```sh
-# Required
-DISCORD_WEBHOOK_URL=your_webhook_url_here
-
-# Optional
-BOVIE_OFFER_MAX=50          # Max offers to fetch (default: 50)
-BOVIE_STORAGE_TYPE=file     # Storage type: file|memory (default: file)
-BOVIE_CONTINUOUS=false      # Run continuously (default: false)
-BOVIE_SLEEP_DURATION=60     # Sleep duration in seconds (default: 60 seconds)
-```
-
-#### Pull
-
-```sh
-# Optional
-BOVIE_OFFER_MAX=50          # Max offers to fetch (default: 50)
+DATABASE_URL=postgresql://postgres:password@localhost:5432/database
+NATS_URL=nats://localhost:4222
+NATS_STREAM=BOVIE_JOBS
+NATS_JOB_SUBJECT=jobs.discovered
+NATS_CONSUMER=bovie-worker
+DISCORD_WEBHOOK_URL=
+BOVIE_LIMIT=25
+BOVIE_REGION="north america,asia pacific,south america"
+BOVIE_SPECIALIZATION="information systems,scientific and industrial computing"
 ```
 
 ## Usage
 
-### Running the Discord Bot
-
-To start the Discord bot that automatically posts new opportunities:
-
-```bash
-uv run python bovie.py bot
-```
-
-or use the docker image
+Start local services:
 
 ```sh
-docker pull ghcr.io/reidaa/bovie:latest
+docker compose up -d
 ```
 
-### Manual Offer Check
+Run the TypeScript worker:
 
-To manually check and display the latest offers in your terminal:
+```sh
+pnpm run worker
+```
 
-```bash
-uv run python bovie.py pull --limit 5  # Adjust number as needed
+Run the Python scraper:
+
+```sh
+uv run python -m bovie.main --limit 5
+```
+
+The scraper publishes messages to JetStream. The worker acknowledges a message only after the offer has been inserted or recognized as a duplicate and optional notification work has completed.
+
+## Development
+
+```sh
+just check
 ```
 
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
-
-## Troubleshooting
-
-### Common Issues
-
-1. Storage issues
-    - Try --storage-type memory if file storage fails
-    - Check write permissions in project directory

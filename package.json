@@ -1,0 +1,10 @@
+{
+  "name": "bovie",
+  "version": "0.3.1",
+  "private": true,
+  "packageManager": "pnpm@11.5.1",
+  "scripts": {
+    "worker": "pnpm --filter @bovie/worker worker",
+    "typecheck": "pnpm --filter @bovie/worker typecheck"
+  }
+}

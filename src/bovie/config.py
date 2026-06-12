@@ -17,9 +17,9 @@ from .job.models.specialization import (
 
 class SearchConfig(BaseModel):
     limit: PositiveInt
-    regions: Iterable[str] = []
-    countries: Iterable[str] = []
-    specializations: Iterable[str] = []
+    regions: Iterable[str] = ()
+    countries: Iterable[str] = ()
+    specializations: Iterable[str] = ()
 
 
 class Config(BaseModel):
@@ -27,7 +27,10 @@ class Config(BaseModel):
 
 
 def parseSearch(
-    limit: int, regions: tuple[str], specializations: tuple[str], countries: tuple[str]
+    limit: int,
+    regions: Iterable[str],
+    specializations: Iterable[str],
+    countries: Iterable[str],
 ) -> SearchConfig:
     regionIds: set[str] = set()
     specializationsIds: set[str] = set()
@@ -73,7 +76,10 @@ def parseSearch(
 
 
 def configFromParams(
-    limit: int, regions: tuple[str], specializations: tuple[str], countries: tuple[str]
+    limit: int,
+    regions: Iterable[str],
+    specializations: Iterable[str],
+    countries: Iterable[str],
 ) -> Config:
     return Config(
         search=parseSearch(

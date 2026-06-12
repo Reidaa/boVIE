@@ -10,6 +10,7 @@ PACKAGE := "bovie"
 
 i:
 	uv sync
+	pnpm install
 
 upgrade:
 	uv lock --upgrade
@@ -27,6 +28,7 @@ lint-fix:
 typecheck:
 	# uv run mypy src
 	uv run ty check
+	pnpm run typecheck
 
 test:
 	uv run pytest
@@ -49,6 +51,9 @@ clean:
 
 run:
 	uv run python -m {{PACKAGE}}.main
+
+worker:
+	pnpm run worker
 
 run-help:
 	uv run python -m {{PACKAGE}}.main --help
