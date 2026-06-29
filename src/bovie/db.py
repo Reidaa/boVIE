@@ -22,7 +22,7 @@ class JobOffer:
             ids = [job.offer_id for job in results]
 
         return ids
-    
+
     @staticmethod
     def create(job_id: int):
         with Session(db) as session:

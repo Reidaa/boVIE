@@ -58,3 +58,6 @@ up:
 
 down:
 	docker compose down
+
+pre-commit:
+    uv run pre-commit run --all-files

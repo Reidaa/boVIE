@@ -37,7 +37,7 @@ def search_id(params: SearchParameters) -> list[int]:
         return []
 
     response_json = r.json()
-    
+
     for result in response_json["result"]:
         ids.append(Job.model_validate(result).id)
 

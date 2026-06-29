@@ -1444,7 +1444,7 @@ COUNTRIES_DATA_JSON = """
     "geographicZoneId": "4"
   }
 ]
-""".replace("//", "#")  # si tu laisses les commentaires ci-dessus, on les neutralise
+""".replace("//", "#")
 
 COUNTRIES: List[Country] = [Country(**item) for item in json.loads(COUNTRIES_DATA_JSON)]
 
