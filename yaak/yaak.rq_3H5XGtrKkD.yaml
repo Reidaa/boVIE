@@ -1,0 +1,38 @@
+type: http_request
+model: http_request
+id: rq_3H5XGtrKkD
+createdAt: 2026-07-07T00:25:50.109041
+updatedAt: 2026-07-07T00:26:26.581476
+workspaceId: wk_8og6wf4QXb
+folderId: null
+authentication: {}
+authenticationType: null
+body:
+  text: '[1, 2, 3, 4, 5, 6, 7, 8]'
+bodyType: application/json
+description: ''
+headers:
+- enabled: true
+  name: Content-Type
+  value: application/json
+  id: vzuauBCNf9
+method: POST
+name: ''
+sortPriority: -1783382601123.0
+url: https://civiweb-api-prd.azurewebsites.net/api/Offers/repository/geographic-zones/countries
+urlParameters: []
+settingSendCookies:
+  enabled: false
+  value: true
+settingStoreCookies:
+  enabled: false
+  value: true
+settingValidateCertificates:
+  enabled: false
+  value: true
+settingFollowRedirects:
+  enabled: false
+  value: true
+settingRequestTimeout:
+  enabled: false
+  value: 0

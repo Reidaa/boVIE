@@ -1,0 +1,17 @@
+type: workspace
+model: workspace
+id: wk_8og6wf4QXb
+createdAt: 2026-07-07T00:03:15.895700
+updatedAt: 2026-07-07T00:03:15.895701
+authentication: {}
+authenticationType: null
+description: ''
+headers: []
+name: bovie
+encryptionKeyChallenge: null
+settingValidateCertificates: true
+settingFollowRedirects: true
+settingRequestTimeout: 0
+settingDnsOverrides: []
+settingSendCookies: true
+settingStoreCookies: true

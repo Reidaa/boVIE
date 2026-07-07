@@ -1,0 +1,33 @@
+type: http_request
+model: http_request
+id: rq_eFjCtfmGra
+createdAt: 2026-07-07T00:25:38.903207
+updatedAt: 2026-07-07T00:25:41.119931
+workspaceId: wk_8og6wf4QXb
+folderId: null
+authentication: {}
+authenticationType: null
+body: {}
+bodyType: null
+description: ''
+headers: []
+method: GET
+name: ''
+sortPriority: -1783382601123.0
+url: https://civiweb-api-prd.azurewebsites.net/api/Offers/repository/geographic-zones
+urlParameters: []
+settingSendCookies:
+  enabled: false
+  value: true
+settingStoreCookies:
+  enabled: false
+  value: true
+settingValidateCertificates:
+  enabled: false
+  value: true
+settingFollowRedirects:
+  enabled: false
+  value: true
+settingRequestTimeout:
+  enabled: false
+  value: 0

@@ -1,0 +1,54 @@
+type: http_request
+model: http_request
+id: rq_eMSq2B3Max
+createdAt: 2026-07-07T00:03:21.125378
+updatedAt: 2026-07-07T00:04:30.442376
+workspaceId: wk_8og6wf4QXb
+folderId: null
+authentication: {}
+authenticationType: null
+body:
+  text: |-
+    {
+        "limit": 2,
+        "skip": 0,
+        "query": "",
+        "missionsTypesIds": [
+        ],
+        "activitySectorId": [],
+        "missionsDurations": [],
+        "gerographicZones": [],
+        "countriesIds": ["JP"],
+        "studiesLevelId": [],
+        "companiesSizes": [],
+        "specializationsIds": [],
+        "entreprisesIds": [
+        ]
+    }
+bodyType: application/json
+description: ''
+headers:
+- enabled: true
+  name: Content-Type
+  value: application/json
+  id: 4gcB8TghGr
+method: POST
+name: Search
+sortPriority: -1783382601123.0
+url: https://civiweb-api-prd.azurewebsites.net/api/Offers/search
+urlParameters: []
+settingSendCookies:
+  enabled: false
+  value: true
+settingStoreCookies:
+  enabled: false
+  value: true
+settingValidateCertificates:
+  enabled: false
+  value: true
+settingFollowRedirects:
+  enabled: false
+  value: true
+settingRequestTimeout:
+  enabled: false
+  value: 0
