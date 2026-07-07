@@ -68,7 +68,7 @@ class JobEmbed(Embed):
                 name=":globe_with_meridians: Business France",
                 value=f"[Voir offre](https://mon-vie-via.businessfrance.fr/offres/{job.id})",
             ),
-            EmbedField(name=":outbox_tray: Postulation", value=application_value),
+            EmbedField(name=":outbox_tray: Application", value=application_value),
             EmbedField(name=":label: Category(ies)", value=categories),
         ]
 

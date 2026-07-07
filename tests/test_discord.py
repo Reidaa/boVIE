@@ -43,7 +43,7 @@ def test_job_embed_displays_job_categories():
     } in embed["fields"]
     assert {
         "inline": True,
-        "name": ":outbox_tray: Postulation",
+        "name": ":outbox_tray: Application",
         "value": "Business France",
     } in embed["fields"]
 
@@ -72,6 +72,6 @@ def test_job_embed_displays_external_application_link():
 
     assert {
         "inline": True,
-        "name": ":outbox_tray: Postulation",
+        "name": ":outbox_tray: Application",
         "value": f"[Site externe]({application_url})",
     } in embed["fields"]
