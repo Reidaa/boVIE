@@ -10,6 +10,7 @@ class GeographicZone(BaseModel):
     id: str = Field(alias="geographicZoneId")
     name: str = Field(alias="geographicZoneLabelEn")
 
+
 """
 GET /api/Offers/repository/geographic-zones HTTP/1.1
 Host: civiweb-api-prd.azurewebsites.net

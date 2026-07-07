@@ -16,7 +16,8 @@ upgrade:
 	uv sync
 
 fmt:
-	uv run ruff check --fix src tests
+    uv run ruff format
+    uv run ruff check --fix --extend-select=I
 
 lint:
 	uv run ruff check src tests
@@ -25,7 +26,6 @@ lint-fix:
 	uv run ruff check --fix src tests
 
 typecheck:
-	# uv run mypy src
 	uv run ty check
 
 test:
