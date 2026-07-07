@@ -79,10 +79,6 @@ class Job(BaseModel):
 
         return self.contactURL
 
-    @property
-    def has_external_application(self) -> bool:
-        return self.external_application_url is not None
-
     @field_validator("*", mode="after")
     @classmethod
     def strip(cls, v):

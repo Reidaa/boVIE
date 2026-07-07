@@ -7,7 +7,6 @@ def test_job_detects_external_application_url():
     job = Job.model_construct(contactURL=url)
 
     assert job.external_application_url == url
-    assert job.has_external_application is True
 
 
 def test_job_ignores_internal_application_url():
@@ -16,11 +15,9 @@ def test_job_ignores_internal_application_url():
     )
 
     assert job.external_application_url is None
-    assert job.has_external_application is False
 
 
 def test_job_ignores_empty_application_url():
     job = Job.model_construct(contactURL="")
 
     assert job.external_application_url is None
-    assert job.has_external_application is False
