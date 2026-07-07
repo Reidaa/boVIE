@@ -6,7 +6,6 @@ from bovie.job.models.specialization import Specialization
 
 BUSINESS_FRANCE_HOSTS = {
     "businessfrance.fr",
-    "www.businessfrance.fr",
     "mon-vie-via.businessfrance.fr",
     "civiweb-api-prd.azurewebsites.net",
 }
@@ -71,10 +70,7 @@ class Job(BaseModel):
             return None
 
         hostname = parsed_url.hostname.removeprefix("www.")
-        business_france_hosts = {
-            host.removeprefix("www.") for host in BUSINESS_FRANCE_HOSTS
-        }
-        if hostname in business_france_hosts:
+        if hostname in BUSINESS_FRANCE_HOSTS:
             return None
 
         return self.contactURL

@@ -41,6 +41,11 @@ def test_job_embed_displays_job_categories():
         "name": ":label: Category(ies)",
         "value": "SYSTEMES ET LOGICIELS INFORMATIQUES, MARKETING - COMMUNICATION",
     } in embed["fields"]
+    assert {
+        "inline": True,
+        "name": ":outbox_tray: Postulation",
+        "value": "Business France",
+    } in embed["fields"]
 
 
 def test_job_embed_displays_external_application_link():

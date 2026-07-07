@@ -34,9 +34,10 @@ class JobEmbed(Embed):
         else:
             posted: str = "N/A"
 
+        external_application_url = job.external_application_url
         application_value = (
-            f"[Site externe]({job.external_application_url})"
-            if job.external_application_url
+            f"[Site externe]({external_application_url})"
+            if external_application_url
             else "Business France"
         )
 
