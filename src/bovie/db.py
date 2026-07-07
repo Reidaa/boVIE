@@ -10,8 +10,10 @@ class Job(SQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     offer_id: int
 
+
 db = create_engine(env.DATABASE_URL.encoded_string())
 SQLModel.metadata.create_all(db)
+
 
 class JobOffer:
     @staticmethod

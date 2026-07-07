@@ -26,7 +26,9 @@ class TerminalWriter(JobWriter):
         self.out = ""
 
     def write_one(self, job):
-        logger.info(f"New offer: {job.missionTitle} in {job.countryName} at {job.organizationName}")
+        logger.info(
+            f"New offer: {job.missionTitle} in {job.countryName} at {job.organizationName}"
+        )
 
     def write_many(self, jobs):
         for offer in jobs:
@@ -46,7 +48,7 @@ class DiscordWriter(JobWriter):
             "components": [],
             "actions": {},
             # "avatar_url": "https://www.myavatar.com",
-            "username": "boVIE"
+            "username": "boVIE",
         }
 
         self._send(payload)

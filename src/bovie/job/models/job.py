@@ -1,6 +1,15 @@
+from urllib.parse import urlparse
+
 from pydantic import BaseModel, Field, field_validator
 
 from bovie.job.models.specialization import Specialization
+
+BUSINESS_FRANCE_HOSTS = {
+    "businessfrance.fr",
+    "www.businessfrance.fr",
+    "mon-vie-via.businessfrance.fr",
+    "civiweb-api-prd.azurewebsites.net",
+}
 
 
 class Job(BaseModel):
@@ -49,7 +58,30 @@ class Job(BaseModel):
     startBroadcastDate: str
     viewCounter: int
     externalJobId: str | None
+    contactURL: str | None = None
     dateCandidature: str | None
+
+    @property
+    def external_application_url(self) -> str | None:
+        if not self.contactURL:
+            return None
+
+        parsed_url = urlparse(self.contactURL)
+        if parsed_url.scheme not in {"http", "https"} or not parsed_url.hostname:
+            return None
+
+        hostname = parsed_url.hostname.removeprefix("www.")
+        business_france_hosts = {
+            host.removeprefix("www.") for host in BUSINESS_FRANCE_HOSTS
+        }
+        if hostname in business_france_hosts:
+            return None
+
+        return self.contactURL
+
+    @property
+    def has_external_application(self) -> bool:
+        return self.external_application_url is not None
 
     @field_validator("*", mode="after")
     @classmethod

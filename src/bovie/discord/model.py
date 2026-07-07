@@ -34,22 +34,40 @@ class JobEmbed(Embed):
         else:
             posted: str = "N/A"
 
+        application_value = (
+            f"[Site externe]({job.external_application_url})"
+            if job.external_application_url
+            else "Business France"
+        )
+
         fields: List[EmbedField] = [
             EmbedField(name=":hot_springs: Entreprise", value=job.organizationName),
             EmbedField(name=":satellite_orbital: Posté le", value=posted),
             EmbedField(name=":calendar: Durée", value=f"{job.missionDuration} mois"),
-            EmbedField(name=":gear: Secteur", value=job.activitySectorN1 if job.activitySectorN1 else "N/A"),
+            EmbedField(
+                name=":gear: Secteur",
+                value=job.activitySectorN1 if job.activitySectorN1 else "N/A",
+            ),
             EmbedField(name=":world_map: Pays", value=job.countryName),
-            EmbedField(name=":cityscape: Ville", value=job.cityName if job.cityName else "N/A"),
+            EmbedField(
+                name=":cityscape: Ville", value=job.cityName if job.cityName else "N/A"
+            ),
             EmbedField(name=":money_with_wings: Salaire", value=f"{job.indemnite}e"),
             EmbedField(name=":person_running: Début", value=start),
             EmbedField(name=":checkered_flag: Fin", value=end),
-            EmbedField(name=":e_mail: Email", value=job.contactEmail if job.contactEmail else "N/A"),
-            EmbedField(name=":person_bald: Contact", value=job.contactName if job.contactName else "N/A"),
+            EmbedField(
+                name=":e_mail: Email",
+                value=job.contactEmail if job.contactEmail else "N/A",
+            ),
+            EmbedField(
+                name=":person_bald: Contact",
+                value=job.contactName if job.contactName else "N/A",
+            ),
             EmbedField(
                 name=":globe_with_meridians: Business France",
                 value=f"[Voir offre](https://mon-vie-via.businessfrance.fr/offres/{job.id})",
             ),
+            EmbedField(name=":outbox_tray: Postulation", value=application_value),
             EmbedField(name=":label: Category(ies)", value=categories),
         ]
 

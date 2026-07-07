@@ -41,3 +41,32 @@ def test_job_embed_displays_job_categories():
         "name": ":label: Category(ies)",
         "value": "SYSTEMES ET LOGICIELS INFORMATIQUES, MARKETING - COMMUNICATION",
     } in embed["fields"]
+
+
+def test_job_embed_displays_external_application_link():
+    application_url = "https://prose.com/careers?ashby_jid=d93116e8"
+    job = Job.model_construct(
+        id=123,
+        missionTitle="Software Engineer",
+        missionStartDate="2026-06-01T00:00:00",
+        missionEndDate="2027-06-01T00:00:00",
+        creationDate="2026-05-31T00:00:00",
+        missionDuration=12,
+        activitySectorN1="Tech",
+        organizationName="Example Corp",
+        countryName="Canada",
+        cityName="Montreal",
+        indemnite=2500,
+        contactEmail="jobs@example.com",
+        contactName="Jane Doe",
+        specializations=[],
+        contactURL=application_url,
+    )
+
+    embed = JobEmbed(job).to_dict()
+
+    assert {
+        "inline": True,
+        "name": ":outbox_tray: Postulation",
+        "value": f"[Site externe]({application_url})",
+    } in embed["fields"]

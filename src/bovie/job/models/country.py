@@ -11,6 +11,7 @@ class Country(BaseModel):
     name: str = Field(alias="countryNameEn")
     geographic_zone_id: str = Field(alias="geographicZoneId")
 
+
 """
 POST /api/Offers/repository/geographic-zones/countries HTTP/1.1
 Content-Length: 24
