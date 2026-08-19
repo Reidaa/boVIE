@@ -1,4 +1,6 @@
 [tools]
 python = "3.14"
 uv = "0.11"
-just = "latest"
+just = "1.57.0"
+npm = "12.0.2"
+node = "24.19.0"

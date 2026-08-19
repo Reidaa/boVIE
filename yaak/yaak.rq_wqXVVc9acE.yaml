@@ -9,7 +9,7 @@ authentication: {}
 authenticationType: null
 body: {}
 bodyType: null
-description: ''
+description: ""
 headers: []
 method: GET
 name: Find One

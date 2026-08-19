@@ -17,6 +17,7 @@ The script automatically fetches new positions and posts them using a Discord we
 - Continuous mode
   - Customizable polling interval (default: 60 seconds)
 - CLI interface for manual checks
+
 <!-- - Beautiful Discord embeds for each job posting -->
 
 ## Prerequisites
@@ -125,5 +126,5 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ### Common Issues
 
 1. Storage issues
-    - Try --storage-type memory if file storage fails
-    - Check write permissions in project directory
+   - Try --storage-type memory if file storage fails
+   - Check write permissions in project directory

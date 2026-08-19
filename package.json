@@ -1,0 +1,14 @@
+{
+  "private": true,
+  "scripts": {
+    "railway:pull": "railway config pull",
+    "railway:plan": "railway config plan",
+    "railway:apply": "railway config apply"
+  },
+  "dependencies": {
+    "oxfmt": "^0.64.0"
+  },
+  "devDependencies": {
+    "railway": "3.10.0"
+  }
+}
