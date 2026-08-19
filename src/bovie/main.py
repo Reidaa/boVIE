@@ -17,12 +17,10 @@ from .job.models.geozone import get_zone_names
 from .job.models.search import SearchParameters
 from .job.models.specialization import get_specialization_names
 from .job.writer import DiscordWriter, JobWriter, TerminalWriter
+from .logging import configure_logging
 from .t import Choice
 
 load_dotenv(override=True)
-
-logger.remove()
-
 
 DEFAULT_BOVIE_OFFER_MAX = 25
 DEFAULT_BOVIE_CONTINUOUS = False
@@ -111,10 +109,7 @@ def cli(
     country: tuple[str],
     specialization: tuple[str],
 ):
-    if debug:
-        logger.add(sys.stdout, level="DEBUG")
-    else:
-        logger.add(sys.stdout, level="INFO")
+    configure_logging(debug=debug, stdout=sys.stdout, stderr=sys.stderr)
 
     config = configFromParams(
         limit=limit,
