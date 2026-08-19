@@ -65,6 +65,13 @@ Options:
 1. Create a `.env` file in the project root directory
 2. Add the following environment variables:
 
+#### Civiweb API
+
+```sh
+# Optional fallback; Bovie refreshes the public key automatically after a 401
+BOVIE_API_KEY=your_civiweb_api_key_here
+```
+
 #### Bot
 
 ```sh
