@@ -197,3 +197,9 @@ pyrightconfig.json
 .ionide
 
 # End of https://www.toptal.com/developers/gitignore/api/python,visualstudiocode
+
+# Railway tooling and local CLI state
+node_modules/
+.railway/config.json
+.railway/*.local.json
+.railway/plan*.json

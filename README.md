@@ -191,12 +191,10 @@ Do not use `docker compose down -v` on an existing deployment.
 
 ## Deployment and validation
 
-`railway.json` installs only the Business France package and defines its cron schedule.
-For WTTJ, use `uv sync --frozen --no-dev --package bovie-wttj` as the build command.
-Use `source-migrate` before deployment and `wttf` as the start command.
-Deploy relays, intake, and delivery as separate services without cron schedules.
-The notification database uses `notification-migrate`. Broker setup alone receives
-NATS administrator credentials. Compose supplies the commands and credentials for local use.
+Railway staging is defined in `.railway/railway.ts`. It creates the services,
+private connections, persistent volumes, generated passwords, and collector schedules.
+Use the [Railway deployment guide](docs/railway.md) for the initial deployment and updates.
+Discord delivery starts with zero replicas until you configure a staging webhook.
 
 Docker builds use the repository root as context. Select the service directory name
 as the target, for example `docker build --target wttj -t bovie-wttj .`.

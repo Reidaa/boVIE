@@ -88,6 +88,18 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
+      - name: Set up Node for Railway configuration
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: .railway/package-lock.json
+
+      - name: Check Railway configuration
+        run: |
+          npm ci --prefix .railway
+          npm --prefix .railway run check
+
       - name: Sync dependencies
         run: uv sync --all-packages
 

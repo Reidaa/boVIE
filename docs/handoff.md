@@ -41,3 +41,8 @@ No legacy Postgres data is transferred or deleted. Retain that database if its o
 Production deployments still need separate credentials, TLS, backups, and a broker availability plan.
 The Compose passwords are local development examples.
 Use the [README](../README.md) for commands and the [WTTJ request contract](wttj-api.md) for observed API behavior.
+
+Railway staging uses `.railway/railway.ts` with explicit Dockerfiles for each service.
+The configuration refuses to target production. See [Railway deployment](railway.md).
+Migration commands accept `--wait-timeout` for initial database startup.
+Only connection attempts are retried. A failed schema migration stops deployment.
