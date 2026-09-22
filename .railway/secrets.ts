@@ -9,5 +9,6 @@ export function missingCredentials(owner: keyof typeof credentials, existing: Re
   return Object.fromEntries(credentials[owner]
     // Null can represent a sealed variable. Only absent or empty values need a password.
     .filter((key) => !Object.hasOwn(existing, key) || existing[key] === "")
-    .map((key) => [key, randomBytes(32).toString("hex")]));
+    // NATS parses digit-leading environment values as numbers.
+    .map((key) => [key, `bovie_${randomBytes(32).toString("hex")}`]));
 }

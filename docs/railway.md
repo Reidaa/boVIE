@@ -53,6 +53,8 @@ Use these npm scripts for the first deployment so credentials are initialized.
 Worker variables reference the appropriate owner password. Workers never receive the MySQL root password.
 The MySQL image creates the three databases and users only when its volume is empty.
 Account passwords must contain 32-128 letters, digits, underscores, or hyphens.
+Generated passwords start with `bovie_` so NATS reads them as strings.
+Retain an alphabetic prefix when rotating NATS passwords.
 To rotate a database password, update the MySQL account and its Railway variable together.
 Changing the variable alone does not change a user in an existing database.
 

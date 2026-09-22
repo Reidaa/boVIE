@@ -8,7 +8,7 @@ test("first deployment receives independent URL-safe random passwords", () => {
   assert.deepEqual(Object.keys(first), credentials.mysql);
   assert.equal(new Set(Object.values(first)).size, 4);
   for (const key of credentials.mysql) {
-    assert.match(first[key], /^[a-f0-9]{64}$/);
+    assert.match(first[key], /^bovie_[a-f0-9]{64}$/);
     assert.notEqual(first[key], second[key]);
   }
 });
