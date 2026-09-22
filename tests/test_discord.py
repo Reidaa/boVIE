@@ -1,4 +1,4 @@
-from bovie.discord.model import JobEmbed
+from bovie.display import display_fields
 from bovie.job.models.job import Job
 from bovie.job.models.specialization import Specialization
 
@@ -34,7 +34,7 @@ def test_job_embed_displays_job_categories():
         ],
     )
 
-    embed = JobEmbed(job).to_dict()
+    embed = {"fields": [field.model_dump() for field in display_fields(job)]}
 
     assert {
         "inline": True,
@@ -68,7 +68,7 @@ def test_job_embed_displays_external_application_link():
         contactURL=application_url,
     )
 
-    embed = JobEmbed(job).to_dict()
+    embed = {"fields": [field.model_dump() for field in display_fields(job)]}
 
     assert {
         "inline": True,

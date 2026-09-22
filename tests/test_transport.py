@@ -10,8 +10,8 @@ from tests.test_storage import event
 
 
 def test_relay_lost_ack_retries_same_event(source_db):
-    from bovie.collector import Outbox, record_page
-    from bovie.transport import relay_one
+    from outbox_relay.main import relay_one
+    from source_store import Outbox, record_page
 
     discovered = event()
     record_page(source_db, [discovered], "scan", 1)
@@ -37,8 +37,8 @@ def test_relay_lost_ack_retries_same_event(source_db):
 
 
 def test_receiver_commit_precedes_ack(notification_db):
-    from bovie.notifications import Delivery
-    from bovie.transport import receive_message
+    from notification_intake.main import receive_message
+    from notification_store import Delivery
 
     discovered = event()
 
@@ -61,7 +61,8 @@ def test_receiver_commit_precedes_ack(notification_db):
 
 
 def test_discord_outage_then_success(notification_db):
-    from bovie.notifications import Delivery, accept, deliver_one
+    from discord_delivery.delivery import deliver_one
+    from notification_store import Delivery, accept
 
     discovered = event()
     accept(notification_db, discovered)

@@ -9,33 +9,33 @@ DOCKERTAG := "latest"
 PACKAGE := "bovie"
 
 i:
-	uv sync
+	uv sync --all-packages
 
 upgrade:
 	uv lock --upgrade
-	uv sync
+	uv sync --all-packages
 
 fmt:
-    uv run ruff format
-    uv run ruff check --fix --extend-select=I
+    uv run --all-packages ruff format
+    uv run --all-packages ruff check --fix --extend-select=I
 
 lint:
-	uv run ruff check src tests
+	uv run --all-packages ruff check services packages tests scripts
 
 lint-fix:
-	uv run ruff check --fix src tests
+	uv run --all-packages ruff check --fix services packages tests scripts
 
 typecheck:
-	uv run ty check
+	uv run --all-packages ty check
 
 test:
-	uv run pytest
+	uv run --all-packages pytest
 
 cov:
-	uv run pytest --cov={{PACKAGE}} --cov-report=term-missing
+	uv run --all-packages pytest --cov={{PACKAGE}} --cov-report=term-missing
 
 cov-html:
-	uv run pytest --cov={{PACKAGE}} --cov-report=html
+	uv run --all-packages pytest --cov={{PACKAGE}} --cov-report=html
 	xdg-open htmlcov/index.html || open htmlcov/index.html || true
 
 check: lint typecheck test
@@ -48,19 +48,19 @@ clean:
 	rm -rf dist build
 
 run:
-	uv run python -m {{PACKAGE}}.main
+	uv run --all-packages python -m {{PACKAGE}}.main
 
 run-help:
-	uv run python -m {{PACKAGE}}.main --help
+	uv run --all-packages python -m {{PACKAGE}}.main --help
 
 up:
 	docker compose up -d --wait mysql nats
 
-migrate domain="source":
-	uv run bovie-migrate {{domain}}
+migrate owner="source":
+	uv run --all-packages {{owner}}-migrate
 
 build:
-	uv build
+	uv build --all-packages --out-dir dist/workspace
 
 workers:
 	docker compose --profile workers up --build -d relay-bf relay-wttj receiver delivery
@@ -69,4 +69,4 @@ down:
 	docker compose down
 
 pre-commit:
-    uv run pre-commit run --all-files
+    uv run --all-packages pre-commit run --all-files

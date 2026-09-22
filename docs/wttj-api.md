@@ -20,9 +20,19 @@ Details come from `GET /api/v3/organizations/{organization_slug}/jobs/{job_slug}
 The response wraps the detail under `job`; `wttj_reference` matches the search
 hit's `reference`. The detail has `offices`, not the legacy single `office` field.
 The collector validates this identity before storing anything and checks both
-search and detail contract type. Geography is filtered against all detail offices.
+search and detail contract type when a contract filter is present. Geography is filtered against all detail offices.
 
-`src/wttf/core/search.py` contains minimal projections of the verified v3
+`services/wttj/src/wttf/core/search.py` contains minimal projections of the verified v3
 responses. Existing v1 models in `types.py` and Yaak examples are preserved.
 `tests/test_wttj.py` uses synthetic, credential-free responses with the observed
 shape. No live requests are needed to run tests.
+
+An additional request on 2026-09-22 confirmed that `job_title=` accepts an empty
+value. The request returns published job search results without a VIE title filter.
+Omitting `job_title` returns 422 with `Missing field: job_title`, so the collector
+always sends that parameter. The default query is an empty string.
+
+The collector accepts every contract type by default. Repeated `--contract` values
+apply a local filter to search hits and job details. Unknown contract strings remain
+valid without a filter. The collector still rejects unpublished details.
+The public endpoint returns a bounded result set, so this does not enumerate all jobs.

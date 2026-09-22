@@ -15,15 +15,16 @@ def database_factory():
     databases = []
 
     def create(domain):
-        from bovie.db import make_engine
-        from bovie.migrate import upgrade
+        from job_database import make_engine
+        from notification_store.migrate import upgrade as upgrade_notification
+        from source_store.migrate import upgrade as upgrade_source
 
         name = f"bovie_test_{uuid4().hex}"
         with admin.connect() as conn:
             conn.execute(text(f"CREATE DATABASE `{name}` CHARACTER SET utf8mb4"))
         engine = make_engine(admin.url.set(database=name))
         databases.append((name, engine))
-        upgrade(engine, domain)
+        (upgrade_source if domain == "source" else upgrade_notification)(engine)
         return engine
 
     yield create

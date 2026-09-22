@@ -1,25 +1,41 @@
 # BoVIE
 
-Discover VIE opportunities from Business France and Welcome to the Jungle,
-then deliver them to Discord. Python 3.13+, SQLAlchemy 2, MySQL 8.4, and
-NATS JetStream are required. Dependencies are managed with `uv`.
+Discover jobs from Welcome to the Jungle and VIE/VIA opportunities from
+Business France, then deliver new offers to Discord. WTTJ accepts all contract
+types by default. Python 3.13+, SQLAlchemy 2, MySQL 8.4, and NATS JetStream are required.
 
-Each source owns its offers, scan checkpoints, and transactional outbox in a
-separate database. The notification service owns its inbox and pending
-deliveries. It receives complete events through NATS and never queries a source
-database. Sources can run independently, on different hosts if needed.
+This repository is a [uv workspace](https://docs.astral.sh/uv/concepts/projects/workspaces/).
+Each deployable service has its own package, dependencies, command, and Docker target.
+The root contains development tools and one shared lockfile. Services do not import
+other services. Tests enforce declared imports and install each service independently.
 
-| Process | Database | NATS access |
-| --- | --- | --- |
-| `bovie` / Business France relay | `business_france` | Publish `offers.business_france.v1` |
-| `wttf` / WTTJ relay | `wttj` | Publish `offers.wttj.v1` |
-| Notification receiver | `notifications` | Consume durable `OFFERS/notifications` |
-| Discord delivery | `notifications` | None |
+| Directory in `services/` | Command | Responsibility | Database | NATS access |
+| --- | --- | --- | --- | --- |
+| `business-france` | `bovie` | Collect Business France offers | `business_france` | None |
+| `wttj` | `wttf` | Collect WTTJ jobs | `wttj` | None |
+| `outbox-relay` | `outbox-relay --source SOURCE` | Publish committed events | One source | Publish its source subject |
+| `notification-intake` | `notification-intake` | Store incoming events and pending deliveries | `notifications` | Consume `OFFERS/notifications` |
+| `discord-delivery` | `discord-delivery` | Send pending deliveries to Discord | `notifications` | None |
+| `broker-setup` | `broker-setup` | Provision the stream and consumer | None | Administrator |
+
+Run one relay deployment per source. The relay performs the same operation for each
+source and receives only that source's credentials. Collectors run on schedules.
+The relay, intake, and delivery services run continuously. Broker setup runs once.
+
+The libraries in `packages/` contain event contracts, source storage, notification
+storage, database operations, broker connections, and process startup helpers.
+They have no dependency on a deployable service. Source and notification storage
+include separate migration commands and revision histories.
+
+Each source owns its offers, scan checkpoints, and outbox in a separate database.
+An outbox stores events until the relay receives a broker acknowledgment.
+Notification intake and Discord delivery share the notification database.
+They cannot access source databases. Sources can run on different hosts.
 
 ## Local setup
 
 ```sh
-uv sync
+uv sync --all-packages
 cp .env.example .env
 docker compose up -d --wait mysql nats
 docker compose --profile workers build
@@ -40,11 +56,11 @@ Schema changes are explicit Alembic migrations. Imports and collector startup do
 not connect or create tables. To migrate an externally hosted database:
 
 ```sh
-DATABASE_URL='mysql+pymysql://user:password@host/source_db' uv run bovie-migrate source
-DATABASE_URL='mysql+pymysql://user:password@host/notification_db' uv run bovie-migrate notification
+DATABASE_URL='mysql+pymysql://user:password@host/source_db' uv run --package bovie-source-store source-migrate
+DATABASE_URL='mysql+pymysql://user:password@host/notification_db' uv run --package bovie-notification-store notification-migrate
 ```
 
-Run `source` migrations separately for each source. Each database has its own
+Run `source-migrate` separately for each source. Each database has its own
 Alembic version history. Migrations are included in the wheel. Percent-encode
 reserved characters in URL passwords. Environment variables override `.env`;
 each deployed process should receive only its own database credentials.
@@ -54,8 +70,8 @@ each deployed process should receive only its own database credentials.
 The default `.env` selects the Business France database:
 
 ```sh
-uv run bovie --limit 25 --country canada --specialization 'information systems'
-DATABASE_URL='mysql+pymysql://wttj:local-wttj-only@127.0.0.1/wttj' uv run wttf --query VIE --limit 50 --max-pages 5 --country CA
+uv run --package bovie-business-france bovie --limit 25 --country canada --specialization 'information systems'
+DATABASE_URL='mysql+pymysql://wttj:local-wttj-only@127.0.0.1/wttj' uv run --package bovie-wttj wttf --query engineer --limit 50 --max-pages 5 --country CA
 ```
 
 Business France retains `--geozone`/`-g`, `--country`/`-c`,
@@ -63,13 +79,21 @@ Business France retains `--geozone`/`-g`, `--country`/`-c`,
 `BOVIE_REGION`, `BOVIE_COUNTRY`, `BOVIE_SPECIALIZATION`, `BOVIE_LIMIT`, and
 `BOVIE_DEBUG` also work. The limit bounds search results inspected per run.
 
-WTTJ accepts `WTTJ_QUERY`, `WTTJ_LIMIT`, and `WTTJ_MAX_PAGES`. `--country` is a
-repeatable ISO country-code filter. It searches the public v3 API, follows its
-one-based pages, fetches details, and accepts only published `vie` contracts.
-Title search can return other contract types, so `--limit` counts inspected
-results, including filtered ones. WTTJ's ranked search is not an exhaustive feed;
-choose the query and scan depth for your needs. See the [verified request
-contract](docs/wttj-api.md).
+WTTJ accepts `WTTJ_QUERY`, `WTTJ_CONTRACTS`, `WTTJ_LIMIT`, and `WTTJ_MAX_PAGES`.
+An empty query includes all titles. An empty contract filter accepts all contract types,
+including types that WTTJ adds later. Only published jobs produce events.
+Use repeated `--contract` options to select contract types. `WTTJ_CONTRACTS` accepts
+space-separated values. `--country` accepts repeated ISO country codes.
+
+```sh
+DATABASE_URL='mysql+pymysql://wttj:local-wttj-only@127.0.0.1/wttj' \
+  uv run --package bovie-wttj wttf --contract full_time --contract internship --country CA
+```
+
+The collector searches the public v3 API, follows its pages, and fetches job details.
+`--limit` counts inspected search results, including results excluded by filters.
+WTTJ public search is not a complete feed of every job. Query and page limits still
+bound each run, even without contract restrictions. See the [request contract](docs/wttj-api.md).
 
 Both collectors are one-shot commands. Schedule them independently with cron or
 your deployment scheduler. Support is limited to **one active collector per
@@ -102,15 +126,15 @@ For processes outside Compose, set `DATABASE_URL`, `NATS_URL`, `NATS_USER`, and
 `NATS_PASSWORD` for the relevant owner, then use:
 
 ```sh
-uv run bovie-worker relay --source business_france
-uv run bovie-worker relay --source wttj
-uv run bovie-worker receive
-uv run bovie-worker deliver
+uv run --package bovie-outbox-relay outbox-relay --source business_france
+uv run --package bovie-outbox-relay outbox-relay --source wttj
+uv run --package bovie-notification-intake notification-intake
+uv run --package bovie-discord-delivery discord-delivery
 ```
 
-`deliver` only needs notification database credentials and `DISCORD_WEBHOOK_URL`.
+`discord-delivery` only needs notification database credentials and `DISCORD_WEBHOOK_URL`.
 `--once` drains currently eligible work and exits; future retries still need another
-invocation. Without it, these commands poll continuously. `setup-nats` uses a
+invocation. Without it, these commands poll continuously. The `setup-nats` Compose job uses a
 separate administrator account and must run before relays or receivers.
 
 The old collector `--webhook-url` option is removed. Terminal output records a
@@ -167,18 +191,30 @@ Do not use `docker compose down -v` on an existing deployment.
 
 ## Deployment and validation
 
-`railway.json` defines the Business France cron job and its source migration.
-Deploy WTTJ as a separate cron service with the same build, `bovie-migrate source`,
-and `wttf` start command. Relays, receiver, and delivery are separate long-running
-services without cron schedules. The receiver/delivery use
-`bovie-migrate notification`; only the NATS provisioning job gets broker admin
-credentials. Compose demonstrates all process commands and ownership boundaries.
+`railway.json` installs only the Business France package and defines its cron schedule.
+For WTTJ, use `uv sync --frozen --no-dev --package bovie-wttj` as the build command.
+Use `source-migrate` before deployment and `wttf` as the start command.
+Deploy relays, intake, and delivery as separate services without cron schedules.
+The notification database uses `notification-migrate`. Broker setup alone receives
+NATS administrator credentials. Compose supplies the commands and credentials for local use.
+
+Docker builds use the repository root as context. Select the service directory name
+as the target, for example `docker build --target wttj -t bovie-wttj .`.
+Each final image contains only that service and its installed dependencies.
+The default Docker target remains Business France.
+
+The old `bovie-worker` and `bovie-migrate DOMAIN` commands are removed.
+Replace them with the commands above when updating an existing deployment.
+Existing MySQL tables, Alembic revision IDs, and version-1 events remain compatible.
+Remove `WTTJ_QUERY=VIE` from an existing environment to enable the broader default.
+Collection can create more notifications once non-VIE offers enter the scan window.
 
 ```sh
-uv run ruff check src tests
-uv run ty check
-uv run pytest
-uv build
+uv run --all-packages ruff check services packages tests scripts
+uv run --all-packages ty check
+uv run --all-packages pytest
+uv build --all-packages --out-dir dist/workspace
+uv run --all-packages python scripts/check_packages.py dist/workspace
 ```
 
 To include integration tests, point these **test-only** variables at disposable
@@ -187,7 +223,7 @@ the NATS test creates and deletes its test stream. Never point them at productio
 
 ```sh
 MYSQL_TEST_ADMIN_URL='mysql+pymysql://root:test-password@127.0.0.1:33077/mysql' \
-NATS_TEST_URL='nats://127.0.0.1:42277' uv run pytest
+NATS_TEST_URL='nats://127.0.0.1:42277' uv run --all-packages pytest
 ```
 
 Without these variables, integration tests report skips. CI supplies real

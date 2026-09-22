@@ -7,7 +7,7 @@ from tests.test_storage import event
 
 
 def test_duplicate_ingestion_creates_one_pending_delivery(notification_db):
-    from bovie.notifications import Delivery, Inbox, accept
+    from notification_store import Delivery, Inbox, accept
 
     discovered = event()
     assert accept(notification_db, discovered)
@@ -18,7 +18,7 @@ def test_duplicate_ingestion_creates_one_pending_delivery(notification_db):
 
 
 def test_reused_event_id_with_different_content_is_rejected(notification_db):
-    from bovie.notifications import accept
+    from notification_store import accept
 
     discovered = event()
     accept(notification_db, discovered)
@@ -29,8 +29,8 @@ def test_reused_event_id_with_different_content_is_rejected(notification_db):
 
 
 def test_lease_expiry_and_stale_completion(source_db):
-    from bovie.collector import Outbox, record_page
-    from bovie.queue import claim, finish
+    from job_database.queue import claim, finish
+    from source_store import Outbox, record_page
 
     record_page(source_db, [event()], "scan", 1)
     now = datetime.now(UTC) + timedelta(seconds=1)
@@ -47,8 +47,8 @@ def test_lease_expiry_and_stale_completion(source_db):
 
 
 def test_failed_delivery_remains_pending(notification_db):
-    from bovie.notifications import Delivery, accept
-    from bovie.queue import claim, finish, retry_later
+    from job_database.queue import claim, finish, retry_later
+    from notification_store import Delivery, accept
 
     accept(notification_db, event())
     now = datetime.now(UTC) + timedelta(seconds=1)

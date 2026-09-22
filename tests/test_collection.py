@@ -1,8 +1,7 @@
 import pytest
-from sqlalchemy import func, select
-
 from bovie.job.models.job import Job
 from bovie.job.models.search import SearchParameters
+from sqlalchemy import func, select
 
 
 def job(identity):
@@ -26,7 +25,7 @@ def job(identity):
 
 def test_interrupted_collection_replays_without_skipping(source_db, monkeypatch):
     from bovie import main
-    from bovie.collector import Offer, Outbox
+    from source_store import Offer, Outbox
 
     def search(params):
         return {0: [1, 2], 2: [3]}[params.skip]

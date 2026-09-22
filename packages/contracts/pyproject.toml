@@ -1,0 +1,15 @@
+[project]
+name = "bovie-contracts"
+version = "0.4.0"
+requires-python = ">=3.13"
+description = "BoVIE contracts"
+dependencies = [
+    "pydantic>=2.11.3"
+]
+
+[tool.uv.build-backend]
+module-name = "job_contracts"
+
+[build-system]
+requires = ["uv_build>=0.9.13,<0.10.0"]
+build-backend = "uv_build"

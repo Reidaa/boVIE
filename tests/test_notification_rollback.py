@@ -6,7 +6,7 @@ from tests.test_storage import event
 
 
 def test_failed_delivery_insert_rolls_back_inbox(notification_db):
-    from bovie.notifications import Delivery, Inbox, accept
+    from notification_store import Delivery, Inbox, accept
 
     def fail_delivery(conn, cursor, statement, parameters, context, executemany):
         if statement.startswith("INSERT INTO deliveries"):

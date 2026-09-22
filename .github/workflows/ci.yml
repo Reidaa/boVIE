@@ -33,7 +33,7 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Install dependencies
-        run: uv sync --all-extras
+        run: uv sync --all-packages
 
       - name: Install pip
         run: uv pip install pip
@@ -50,7 +50,7 @@ jobs:
             pre-commit-${{ runner.os }}-py${{ env.PYTHON_VERSION }}-
 
       - name: Run pre-commit
-        run: uv run pre-commit run --all-files --show-diff-on-failure
+        run: uv run --all-packages pre-commit run --all-files --show-diff-on-failure
 
   tests:
     name: Tests
@@ -89,7 +89,7 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Sync dependencies
-        run: uv sync --all-extras
+        run: uv sync --all-packages
 
       - name: Run tests
         run: |
@@ -97,11 +97,11 @@ jobs:
           docker create --name bovie-test-nats-auth -p 127.0.0.1:4223:4222 -e NATS_ADMIN_PASSWORD=local-nats-admin -e NATS_BF_PASSWORD=local-nats-bf -e NATS_WTTJ_PASSWORD=local-nats-wttj -e NATS_NOTIFICATIONS_PASSWORD=local-nats-notifications nats:2.11-alpine --config /tmp/nats.conf
           docker cp deploy/nats.conf bovie-test-nats-auth:/tmp/nats.conf
           docker start bovie-test-nats-auth
-          uv run pytest
+          uv run --all-packages pytest
 
       - name: Check code and built artifacts
         run: |
-          uv run ruff check src tests
-          uv run ty check
-          uv build
-          uv run --isolated --no-project --with dist/bovie-0.3.1-py3-none-any.whl python -c 'import bovie.main, wttf.main, bovie.migrate, bovie.transport'
+          uv run --all-packages ruff check services packages tests scripts
+          uv run --all-packages ty check
+          uv build --all-packages --out-dir dist/workspace
+          uv run --all-packages python scripts/check_packages.py dist/workspace

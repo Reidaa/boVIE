@@ -1,0 +1,21 @@
+[project]
+name = "bovie-source-store"
+version = "0.4.0"
+requires-python = ">=3.13"
+description = "BoVIE source-store"
+dependencies = [
+    "click>=8.1.8",
+    "sqlalchemy>=2.0,<2.1",
+    "bovie-contracts",
+    "bovie-database"
+]
+
+[project.scripts]
+source-migrate = "source_store.migrate:cli"
+
+[tool.uv.build-backend]
+module-name = "source_store"
+
+[build-system]
+requires = ["uv_build>=0.9.13,<0.10.0"]
+build-backend = "uv_build"

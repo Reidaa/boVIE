@@ -1,0 +1,25 @@
+[project]
+name = "bovie-outbox-relay"
+version = "0.4.0"
+requires-python = ">=3.13"
+description = "BoVIE outbox-relay"
+dependencies = [
+    "click>=8.1.8",
+    "loguru>=0.7.3",
+    "sqlalchemy>=2.0,<2.1",
+    "bovie-contracts",
+    "bovie-database",
+    "bovie-source-store",
+    "bovie-messaging",
+    "bovie-runtime"
+]
+
+[project.scripts]
+outbox-relay = "outbox_relay.main:main"
+
+[tool.uv.build-backend]
+module-name = "outbox_relay"
+
+[build-system]
+requires = ["uv_build>=0.9.13,<0.10.0"]
+build-backend = "uv_build"

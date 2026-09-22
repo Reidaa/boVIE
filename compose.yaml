@@ -1,6 +1,4 @@
 x-app: &app
-  build: .
-  image: bovie:local
   profiles: [workers]
 
 services:
@@ -38,7 +36,11 @@ services:
 
   migrate-bf:
     <<: *app
-    command: [bovie-migrate, source]
+    build:
+      context: .
+      target: business-france
+    image: bovie-business-france:local
+    command: [source-migrate]
     environment:
       DATABASE_URL: mysql+pymysql://business_france:local-bf-only@mysql/business_france
     depends_on:
@@ -46,7 +48,11 @@ services:
 
   migrate-wttj:
     <<: *app
-    command: [bovie-migrate, source]
+    build:
+      context: .
+      target: wttj
+    image: bovie-wttj:local
+    command: [source-migrate]
     environment:
       DATABASE_URL: mysql+pymysql://wttj:local-wttj-only@mysql/wttj
     depends_on:
@@ -54,7 +60,11 @@ services:
 
   migrate-notifications:
     <<: *app
-    command: [bovie-migrate, notification]
+    build:
+      context: .
+      target: notification-intake
+    image: bovie-notification-intake:local
+    command: [notification-migrate]
     environment:
       DATABASE_URL: mysql+pymysql://notifications:local-notifications-only@mysql/notifications
     depends_on:
@@ -62,7 +72,11 @@ services:
 
   setup-nats:
     <<: *app
-    command: [bovie-worker, setup-nats]
+    build:
+      context: .
+      target: broker-setup
+    image: bovie-broker-setup:local
+    command: [broker-setup]
     environment:
       NATS_URL: nats://nats:4222
       NATS_USER: admin
@@ -72,6 +86,10 @@ services:
 
   business-france:
     <<: *app
+    build:
+      context: .
+      target: business-france
+    image: bovie-business-france:local
     command: [bovie]
     environment:
       DATABASE_URL: mysql+pymysql://business_france:local-bf-only@mysql/business_france
@@ -84,10 +102,15 @@ services:
 
   wttj:
     <<: *app
+    build:
+      context: .
+      target: wttj
+    image: bovie-wttj:local
     command: [wttf]
     environment:
       DATABASE_URL: mysql+pymysql://wttj:local-wttj-only@mysql/wttj
-      WTTJ_QUERY: ${WTTJ_QUERY:-VIE}
+      WTTJ_QUERY: ${WTTJ_QUERY:-}
+      WTTJ_CONTRACTS: ${WTTJ_CONTRACTS:-}
       WTTJ_LIMIT: ${WTTJ_LIMIT:-50}
       WTTJ_MAX_PAGES: ${WTTJ_MAX_PAGES:-5}
     depends_on:
@@ -95,7 +118,11 @@ services:
 
   relay-bf:
     <<: *app
-    command: [bovie-worker, relay, --source, business_france]
+    build:
+      context: .
+      target: outbox-relay
+    image: bovie-outbox-relay:local
+    command: [outbox-relay, --source, business_france]
     restart: unless-stopped
     environment:
       DATABASE_URL: mysql+pymysql://business_france:local-bf-only@mysql/business_france
@@ -108,7 +135,11 @@ services:
 
   relay-wttj:
     <<: *app
-    command: [bovie-worker, relay, --source, wttj]
+    build:
+      context: .
+      target: outbox-relay
+    image: bovie-outbox-relay:local
+    command: [outbox-relay, --source, wttj]
     restart: unless-stopped
     environment:
       DATABASE_URL: mysql+pymysql://wttj:local-wttj-only@mysql/wttj
@@ -121,7 +152,11 @@ services:
 
   receiver:
     <<: *app
-    command: [bovie-worker, receive]
+    build:
+      context: .
+      target: notification-intake
+    image: bovie-notification-intake:local
+    command: [notification-intake]
     restart: unless-stopped
     environment:
       DATABASE_URL: mysql+pymysql://notifications:local-notifications-only@mysql/notifications
@@ -134,7 +169,11 @@ services:
 
   delivery:
     <<: *app
-    command: [bovie-worker, deliver]
+    build:
+      context: .
+      target: discord-delivery
+    image: bovie-discord-delivery:local
+    command: [discord-delivery]
     restart: unless-stopped
     environment:
       DATABASE_URL: mysql+pymysql://notifications:local-notifications-only@mysql/notifications

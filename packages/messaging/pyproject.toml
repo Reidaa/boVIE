@@ -1,0 +1,15 @@
+[project]
+name = "bovie-messaging"
+version = "0.4.0"
+requires-python = ">=3.13"
+description = "BoVIE messaging"
+dependencies = [
+    "nats-py>=2.10,<3"
+]
+
+[tool.uv.build-backend]
+module-name = "job_messaging"
+
+[build-system]
+requires = ["uv_build>=0.9.13,<0.10.0"]
+build-backend = "uv_build"

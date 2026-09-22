@@ -17,8 +17,11 @@ def test_both_sources_through_real_jetstream_and_captured_discord(
 ):
     from bovie import main
     from bovie.job.models.search import SearchParameters
-    from bovie.notifications import Delivery, deliver_one
-    from bovie.transport import receive_message, relay_one, setup
+    from broker_setup.main import setup
+    from discord_delivery.delivery import deliver_one
+    from notification_intake.main import receive_message
+    from notification_store import Delivery
+    from outbox_relay.main import relay_one
     from wttf.main import collect
 
     url = os.environ.get("NATS_TEST_URL")
@@ -62,8 +65,8 @@ def test_both_sources_through_real_jetstream_and_captured_discord(
             await relay_one(wttj, js, "wttj")
             sub = await js.pull_subscribe_bind(durable=consumer, stream=stream)
             messages = await sub.fetch(2, timeout=2)
-            from bovie.events import OfferDiscovered
-            from bovie.notifications import accept
+            from job_contracts import OfferDiscovered
+            from notification_store import accept
 
             # Commit the first message but lose its acknowledgment.
             accept(notification, OfferDiscovered.model_validate_json(messages[0].data))

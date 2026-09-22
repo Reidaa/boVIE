@@ -1,24 +1,29 @@
 [project]
-name = "bovie"
-version = "0.3.1"
-description = "Add your description here"
-readme = "README.md"
+name = "bovie-workspace"
+version = "0.4.0"
+description = "Job discovery and notification services"
 requires-python = ">=3.13"
-dependencies = [
-    "alembic>=1.16,<2",
-    "click>=8.1.8",
-    "httpx>=0.28.1",
-    "loguru>=0.7.3",
-    "nats-py>=2.10,<3",
-    "nextcord>=3.0.1",
-    "pydantic>=2.11.3",
-    "pymysql[rsa]>=1.1,<2",
-    "python-dateutil>=2.9.0.post0",
-    "python-dotenv>=1.0.1",
-    "sqlalchemy>=2.0,<2.1",
-    "tenacity>=9.1.2",
-    "typer>=0.26.8",
-]
+dependencies = []
+
+[tool.uv]
+package = false
+
+[tool.uv.workspace]
+members = ["services/*", "packages/*"]
+
+[tool.uv.sources]
+bovie-business-france = { workspace = true }
+bovie-wttj = { workspace = true }
+bovie-outbox-relay = { workspace = true }
+bovie-notification-intake = { workspace = true }
+bovie-discord-delivery = { workspace = true }
+bovie-broker-setup = { workspace = true }
+bovie-contracts = { workspace = true }
+bovie-database = { workspace = true }
+bovie-source-store = { workspace = true }
+bovie-notification-store = { workspace = true }
+bovie-messaging = { workspace = true }
+bovie-runtime = { workspace = true }
 
 [dependency-groups]
 dev = [
@@ -29,19 +34,5 @@ dev = [
     "types-python-dateutil>=2.9.0.20241206",
 ]
 
-
-[project.scripts]
-bovie = "bovie.main:cli"
-wttf = "wttf.main:main"
-bovie-migrate = "bovie.migrate:cli"
-bovie-worker = "bovie.transport:cli"
-
-[tool.uv.build-backend]
-module-name = ["bovie", "wttf"]
-
 [tool.ruff.lint]
 extend-select = ["I"]
-
-[build-system]
-requires = ["uv_build>=0.9.13,<0.10.0"]
-build-backend = "uv_build"

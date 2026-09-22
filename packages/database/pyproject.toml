@@ -1,0 +1,19 @@
+[project]
+name = "bovie-database"
+version = "0.4.0"
+requires-python = ">=3.13"
+description = "BoVIE database"
+dependencies = [
+    "alembic>=1.16,<2",
+    "sqlalchemy>=2.0,<2.1",
+    "pymysql[rsa]>=1.1,<2",
+    "pydantic>=2.11.3",
+    "python-dotenv>=1.0.1"
+]
+
+[tool.uv.build-backend]
+module-name = "job_database"
+
+[build-system]
+requires = ["uv_build>=0.9.13,<0.10.0"]
+build-backend = "uv_build"

@@ -4,10 +4,9 @@ import sys
 from datetime import UTC, datetime
 
 import pytest
+from job_database.env import Env
 from pydantic import HttpUrl, ValidationError
 from sqlalchemy import func, select
-
-from bovie.env import Env
 
 
 def test_mysql_configuration():
@@ -31,7 +30,7 @@ import sqlalchemy
 def forbidden(*args, **kwargs):
     raise AssertionError('Import attempted to create an engine')
 sqlalchemy.create_engine = forbidden
-import bovie.env, bovie.db, bovie.main
+import job_database.env, job_database, bovie.main
 """,
         ],
         env=environment,
@@ -40,7 +39,7 @@ import bovie.env, bovie.db, bovie.main
 
 
 def event(offer_id="ABC"):
-    from bovie.events import OfferDetails, OfferDiscovered
+    from job_contracts import OfferDetails, OfferDiscovered
 
     return OfferDiscovered(
         source="business_france",
@@ -57,7 +56,7 @@ def event(offer_id="ABC"):
 
 
 def test_discovery_identity_and_atomic_outbox(source_db):
-    from bovie.collector import Offer, Outbox, record_page
+    from source_store import Offer, Outbox, record_page
 
     record_page(source_db, [event()], "scan", 1)
     record_page(source_db, [event(), event("abc")], "scan", 2)
@@ -67,7 +66,7 @@ def test_discovery_identity_and_atomic_outbox(source_db):
 
 
 def test_failed_page_rolls_back_offers_events_and_checkpoint(source_db):
-    from bovie.collector import Checkpoint, Offer, Outbox, record_page
+    from source_store import Checkpoint, Offer, Outbox, record_page
 
     def broken_events():
         yield event()
@@ -81,9 +80,8 @@ def test_failed_page_rolls_back_offers_events_and_checkpoint(source_db):
 
 
 def test_utc_round_trip(source_db):
+    from source_store import Offer, record_page
     from sqlalchemy.orm import Session
-
-    from bovie.collector import Offer, record_page
 
     discovered = event()
     record_page(source_db, [discovered], "scan", 1)
@@ -96,7 +94,7 @@ def test_utc_round_trip(source_db):
 def test_concurrent_discovery_creates_one_event(source_db):
     from concurrent.futures import ThreadPoolExecutor
 
-    from bovie.collector import Outbox, record_page
+    from source_store import Outbox, record_page
 
     with ThreadPoolExecutor(max_workers=4) as workers:
         list(

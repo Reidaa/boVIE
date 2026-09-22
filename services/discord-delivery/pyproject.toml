@@ -1,0 +1,25 @@
+[project]
+name = "bovie-discord-delivery"
+version = "0.4.0"
+requires-python = ">=3.13"
+description = "BoVIE discord-delivery"
+dependencies = [
+    "click>=8.1.8",
+    "loguru>=0.7.3",
+    "httpx>=0.28.1",
+    "sqlalchemy>=2.0,<2.1",
+    "bovie-contracts",
+    "bovie-database",
+    "bovie-notification-store",
+    "bovie-runtime"
+]
+
+[project.scripts]
+discord-delivery = "discord_delivery.main:main"
+
+[tool.uv.build-backend]
+module-name = "discord_delivery"
+
+[build-system]
+requires = ["uv_build>=0.9.13,<0.10.0"]
+build-backend = "uv_build"

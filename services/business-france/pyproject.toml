@@ -1,0 +1,27 @@
+[project]
+name = "bovie-business-france"
+version = "0.4.0"
+requires-python = ">=3.13"
+description = "BoVIE business-france"
+dependencies = [
+    "click>=8.1.8",
+    "loguru>=0.7.3",
+    "httpx>=0.28.1",
+    "pydantic>=2.11.3",
+    "python-dateutil>=2.9.0.post0",
+    "sqlalchemy>=2.0,<2.1",
+    "bovie-contracts",
+    "bovie-database",
+    "bovie-source-store",
+    "bovie-runtime"
+]
+
+[project.scripts]
+bovie = "bovie.main:cli"
+
+[tool.uv.build-backend]
+module-name = "bovie"
+
+[build-system]
+requires = ["uv_build>=0.9.13,<0.10.0"]
+build-backend = "uv_build"

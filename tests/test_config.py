@@ -1,5 +1,4 @@
 import pytest
-
 from bovie.config import configFromParams
 
 

@@ -1,0 +1,26 @@
+[project]
+name = "bovie-wttj"
+version = "0.4.0"
+requires-python = ">=3.13"
+description = "BoVIE wttj"
+dependencies = [
+    "click>=8.1.8",
+    "loguru>=0.7.3",
+    "httpx>=0.28.1",
+    "pydantic>=2.11.3",
+    "sqlalchemy>=2.0,<2.1",
+    "bovie-contracts",
+    "bovie-database",
+    "bovie-source-store",
+    "bovie-runtime"
+]
+
+[project.scripts]
+wttf = "wttf.main:main"
+
+[tool.uv.build-backend]
+module-name = "wttf"
+
+[build-system]
+requires = ["uv_build>=0.9.13,<0.10.0"]
+build-backend = "uv_build"

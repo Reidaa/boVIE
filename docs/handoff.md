@@ -1,49 +1,43 @@
-# SQLAlchemy / MySQL / NATS handover
+# Service ownership
 
-Implemented on `feat/wttf`, based on `8d87458`. The initial working tree was clean.
-The original baseline passed 16 tests, Ruff, and ty.
+The project collects general job offers from WTTJ and VIE/VIA offers from Business France.
+The uv workspace separates six deployable services from six shared libraries.
+Each service declares its own dependencies and has a dedicated Docker target.
+The root project installs development tools only.
 
-The implementation follows the synchronous SQLAlchemy 2 / PyMySQL / Alembic
-approach from the handoff. Shared tables would compromise source independence;
-a broker adds operational work. The user explicitly selected NATS during
-implementation, so JetStream replaces the proposed HTTP ingestion transport.
-MySQL databases and credentials are separate per source and for notifications.
+| Library | Owns | Used by |
+| --- | --- | --- |
+| `job_contracts` | Version-1 discovery events | Collectors, relay, intake, delivery |
+| `source_store` | Offers, checkpoints, outbox, source migrations | Collectors and relay |
+| `notification_store` | Inbox, pending deliveries, atomic acceptance, notification migrations | Intake and delivery |
+| `job_database` | MySQL connections, UTC timestamps, queue leases, migration execution | Both storage libraries and database clients |
+| `job_messaging` | NATS connection configuration and stream names | Relay, intake, broker setup |
+| `job_runtime` | Entrypoint environment loading and failure logging | Deployable services |
 
-Key seams:
+A library cannot import a service. A service cannot import another service.
+`tests/test_architecture.py` checks these rules and declared workspace dependencies.
+`scripts/check_packages.py` installs each service from wheels into a separate environment.
+It checks entrypoints, packaged migrations, and the absence of unrelated service code.
 
-- `bovie.events`: validated version-1 discovery contract with complete rendering data.
-- `bovie.collector`: source-owned offers, checkpoints, and transactional outbox.
-- `bovie.notifications`: independently owned inbox and pending Discord deliveries.
-- `bovie.queue`: short MySQL claims, expiry, retry, and ownership-checked completion.
-- `bovie.transport`: JetStream provisioning, source relay, receiver, and delivery CLI.
-- `bovie.migrations`: separate packaged Alembic histories for source and notification schemas.
-- `wttf.core.search`: verified current WTTJ v3 projections; legacy models remain intact.
+The old shared worker command is removed. Each worker has one role.
+Collectors cannot send Discord messages. The Discord delivery package has no NATS client.
+Broker setup has no database dependency. The relay uses one source database per deployment.
+Intake and delivery share the notification database and never query source databases.
 
-Collection restarts replay from the beginning instead of trusting stale offsets.
-This avoids skipping an interrupted page due to a prematurely advanced local
-checkpoint, but no offset/ranked API guarantees an exhaustive snapshot. One active
-collector per source is the supported mode. Relays and delivery workers use leases
-and can share their own domain database. External Discord delivery remains at least
-once. Inbox/outbox history is retained indefinitely until an explicit retention
-policy is designed.
+The MySQL tables, Alembic revision IDs, event version, and NATS subjects are unchanged.
+Existing databases do not require a data transfer for this package split.
+Collection restarts replay from the beginning because search results can move between runs.
+One active collector per source remains the supported mode.
+Queue claims expire after 120 seconds. Discord delivery remains at least once.
+A crash after Discord accepts a message can produce a duplicate on retry.
 
-Validation uses real disposable MySQL and NATS plus mocked source/Discord HTTP.
-Final result: 41 tests passed on CPython 3.14.7, including the exact deployment
-NATS permission configuration. Ruff, ty, pre-commit (including workflow
-validation), and Compose configuration checks passed. Disposable test containers
-and their test-only data were removed after validation.
-The wheel is built from the source distribution and checked in an isolated
-environment for both entrypoints and packaged migrations. CI runs the real-service
-suite. All changed Actions references use full commits with resolved exact release
-comments.
+WTTJ defaults to an empty title query and no contract filter.
+The API requires the `job_title` parameter even when its value is empty.
+Only published job details enter storage. Optional contract filters apply to search and detail responses.
+The scan remains bounded by public search results, `--limit`, and `--max-pages`.
+Remove any existing `WTTJ_QUERY=VIE` setting to adopt the broader default.
 
-Before production deployment:
-
-- Decide whether legacy Postgres seen IDs need an explicit idempotent export/import.
-  No live data was migrated; an importer is not included. Retain the original DB.
-- Provision production secrets, database grants, TLS, and NATS availability/backups.
-  The Compose passwords and one-node JetStream setup are local development defaults.
-- Configure and schedule one collector per source and independent relay/receiver/
-  delivery services. Railway's checked-in cron configuration covers Business France.
-- Set WTTJ search terms and scan depth with awareness that public ranked search is
-  not a complete discovery feed. The verified contract is in `wttj-api.md`.
+No legacy Postgres data is transferred or deleted. Retain that database if its offer history is required.
+Production deployments still need separate credentials, TLS, backups, and a broker availability plan.
+The Compose passwords are local development examples.
+Use the [README](../README.md) for commands and the [WTTJ request contract](wttj-api.md) for observed API behavior.
