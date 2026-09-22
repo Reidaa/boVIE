@@ -63,6 +63,7 @@ Retain an alphabetic prefix when rotating NATS passwords.
 
 The collectors run `source-migrate --wait-timeout 180` before deployment.
 Notification intake runs `notification-migrate --wait-timeout 180`.
+The Business France collector reads the current public API key from the official offers page before calling its search API.
 These commands wait for database connectivity before applying migrations.
 Migration failures stop the deployment and are not retried as connection failures.
 Workers retry while their database or broker is starting.
