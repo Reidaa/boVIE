@@ -1,12 +1,13 @@
 import {
-  defineRailway, empty, github, project, service, volume,
-  type ServiceConfigInput, type VariableConfig,
+  defineRailway, github, preserve, project, service, volume,
+  type ServiceConfigInput,
 } from "railway/iac";
 
 export const deliveryEnabled: boolean = false;
 
 const region = "europe-west4-drams3a";
-const secret = (): VariableConfig => ({ generator: "secret", preserveExisting: true });
+const bootstrap: Record<string, Record<string, string>> = JSON.parse(process.env.BOVIE_RAILWAY_BOOTSTRAP_SECRETS ?? "{}");
+const secret = (owner: string, key: string) => bootstrap[owner]?.[key] ?? preserve();
 const databaseUrl = (owner: string, password: string) =>
   `mysql+pymysql://${owner}:\${{mysql.${password}}}@\${{mysql.RAILWAY_PRIVATE_DOMAIN}}:3306/${owner}`;
 
@@ -16,8 +17,8 @@ export default defineRailway((ctx) => {
   }
   const source = github("Reidaa/boVIE", { branch: "feat/wttf", rootDirectory: "/" });
   const persistent = {
-    region, numReplicas: 1, restartPolicyType: "ON_FAILURE" as const,
-    restartPolicyMaxRetries: 100, sleepApplication: false,
+    multiRegionConfig: { [region]: { numReplicas: 1 } },
+    restartPolicyMaxRetries: 100,
   };
   const app = (name: string, packageName: string, config: ServiceConfigInput) => service(name, {
     source,
@@ -27,7 +28,9 @@ export default defineRailway((ctx) => {
       watchPatterns: [`services/${packageName}/**`, "packages/**", "pyproject.toml", "uv.lock", ".railway/**"],
     },
     ...config,
-    deploy: { ...persistent, ...config.deploy },
+    deploy: { ...persistent, ...config.deploy,
+      restartPolicyMaxRetries: config.deploy?.restartPolicyType === "NEVER" ? undefined : 100,
+    },
   });
 
   const mysqlData = volume("mysql-data", { region, sizeMB: 1024 });
@@ -38,10 +41,10 @@ export default defineRailway((ctx) => {
     deploy: { ...persistent, requiredMountPath: "/var/lib/mysql" },
     volumeMounts: { "/var/lib/mysql": mysqlData },
     env: {
-      MYSQL_ROOT_PASSWORD: secret(),
-      BF_DATABASE_PASSWORD: secret(),
-      WTTJ_DATABASE_PASSWORD: secret(),
-      NOTIFICATION_DATABASE_PASSWORD: secret(),
+      MYSQL_ROOT_PASSWORD: secret("mysql", "MYSQL_ROOT_PASSWORD"),
+      BF_DATABASE_PASSWORD: secret("mysql", "BF_DATABASE_PASSWORD"),
+      WTTJ_DATABASE_PASSWORD: secret("mysql", "WTTJ_DATABASE_PASSWORD"),
+      NOTIFICATION_DATABASE_PASSWORD: secret("mysql", "NOTIFICATION_DATABASE_PASSWORD"),
     },
   });
   const nats = service("nats", {
@@ -50,8 +53,8 @@ export default defineRailway((ctx) => {
     deploy: { ...persistent, requiredMountPath: "/data" },
     volumeMounts: { "/data": natsData },
     env: {
-      NATS_ADMIN_PASSWORD: secret(), NATS_BF_PASSWORD: secret(),
-      NATS_WTTJ_PASSWORD: secret(), NATS_NOTIFICATIONS_PASSWORD: secret(),
+      NATS_ADMIN_PASSWORD: secret("nats", "NATS_ADMIN_PASSWORD"), NATS_BF_PASSWORD: secret("nats", "NATS_BF_PASSWORD"),
+      NATS_WTTJ_PASSWORD: secret("nats", "NATS_WTTJ_PASSWORD"), NATS_NOTIFICATIONS_PASSWORD: secret("nats", "NATS_NOTIFICATIONS_PASSWORD"),
     },
   });
   const broker = (user: string, password: string) => ({
@@ -89,8 +92,8 @@ export default defineRailway((ctx) => {
   });
   const delivery = app("discord-delivery", "discord-delivery", {
     start: "discord-delivery",
-    source: deliveryEnabled ? source : empty(),
-    env: { ...notificationDatabase, DISCORD_WEBHOOK_URL: { preserveExisting: true, defaultValue: "", isOptional: true } },
+    source: deliveryEnabled ? source : undefined,
+    env: { ...notificationDatabase, ...(deliveryEnabled ? { DISCORD_WEBHOOK_URL: preserve() } : {}) },
   });
   return project(ctx.projectName ?? "boVIE", {
     resources: [mysqlData, natsData, mysql, nats, businessFrance, wttj, setup, relayBf, relayWttj, intake, delivery],

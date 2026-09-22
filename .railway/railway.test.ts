@@ -18,17 +18,17 @@ test("configuration cannot accidentally replace production", async () => {
 test("every service has an explicit build, command, and private deployment", () => {
   assert.equal(services.length, 9);
   for (const service of services) {
-    if (service.source?.type !== "empty") assert.equal(service.source?.rootDirectory, "/");
+    if (service.source) assert.equal(service.source?.rootDirectory, "/");
     assert.equal(service.build?.builder, "DOCKERFILE");
     assert.ok(existsSync(root + service.build!.dockerfilePath));
-    assert.equal(service.deploy?.sleepApplication, false);
+    assert.equal(service.deploy?.multiRegionConfig?.["europe-west4-drams3a"]?.numReplicas, 1);
     assert.equal(service.networking?.serviceDomains, undefined);
     assert.equal(service.networking?.tcpProxies, undefined);
   }
   for (const name of ["business-france", "wttj"]) {
     const service = byName.get(name)!;
     assert.equal(service.deploy?.restartPolicyType, "NEVER");
-    assert.equal(service.deploy?.numReplicas, 1);
+    assert.equal(service.deploy?.restartPolicyMaxRetries, undefined);
     assert.ok(service.deploy?.cronSchedule);
     assert.deepEqual(service.deploy?.preDeployCommand, ["source-migrate --wait-timeout 180"]);
     assert.deepEqual(Object.keys(service.variables!).filter((key) => key.startsWith("NATS_")), []);
@@ -46,7 +46,7 @@ test("secrets stay with their owner and staging delivery starts stopped", () => 
   }
   assert.equal(byName.get("broker-setup")!.variables!.DATABASE_URL, undefined);
   const delivery = byName.get("discord-delivery")!;
-  assert.equal(delivery.source?.type, deliveryEnabled ? "github" : "empty");
+  assert.equal(delivery.source?.type, deliveryEnabled ? "github" : undefined);
   if (!deliveryEnabled) assert.equal(delivery.source?.repo, undefined);
   assert.equal(byName.get("discord-delivery")!.variables!.NATS_PASSWORD, undefined);
 });

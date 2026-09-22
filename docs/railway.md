@@ -46,7 +46,10 @@ NATS stores JetStream data on `nats-data`, mounted at `/data`.
 Both services require their volume mount before starting.
 All services run in `europe-west4-drams3a`.
 
-Railway generates database and NATS passwords and retains existing values on later applies.
+The plan and apply scripts generate missing database and NATS passwords with Node.js cryptographic randomness.
+They pass new values to the configuration through the local process environment.
+Existing values, including sealed variables, are preserved on later applies.
+Use these npm scripts for the first deployment so credentials are initialized.
 Worker variables reference the appropriate owner password. Workers never receive the MySQL root password.
 The MySQL image creates the three databases and users only when its volume is empty.
 Account passwords must contain 32-128 letters, digits, underscores, or hyphens.
