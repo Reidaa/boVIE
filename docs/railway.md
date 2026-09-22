@@ -19,6 +19,9 @@ npm --prefix .railway run plan
 npm --prefix .railway run apply
 ```
 
+`check` runs Oxfmt, Oxlint, TypeScript, and the Railway configuration tests.
+Run `npm --prefix .railway run format` to format the TypeScript files.
+
 For a new project, first create the project and an empty staging environment in Railway.
 The plan must target `staging`. A new environment gets three Railway MySQL databases,
 eight application or broker services, and one NATS volume.

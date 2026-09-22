@@ -14,11 +14,23 @@ test("first broker deployment receives independent URL-safe random passwords", (
 });
 
 test("repeat deployments retain existing and sealed credentials", () => {
-  assert.deepEqual(missingCredentials("nats", {
-    NATS_ADMIN_PASSWORD: "existing", NATS_BF_PASSWORD: null,
-    NATS_WTTJ_PASSWORD: "existing", NATS_NOTIFICATIONS_PASSWORD: "existing",
-  }), {});
-  assert.deepEqual(Object.keys(missingCredentials("nats", {
-    NATS_ADMIN_PASSWORD: "existing", NATS_BF_PASSWORD: "", NATS_WTTJ_PASSWORD: null,
-  })), ["NATS_BF_PASSWORD", "NATS_NOTIFICATIONS_PASSWORD"]);
+  assert.deepEqual(
+    missingCredentials("nats", {
+      NATS_ADMIN_PASSWORD: "existing",
+      NATS_BF_PASSWORD: null,
+      NATS_WTTJ_PASSWORD: "existing",
+      NATS_NOTIFICATIONS_PASSWORD: "existing",
+    }),
+    {},
+  );
+  assert.deepEqual(
+    Object.keys(
+      missingCredentials("nats", {
+        NATS_ADMIN_PASSWORD: "existing",
+        NATS_BF_PASSWORD: "",
+        NATS_WTTJ_PASSWORD: null,
+      }),
+    ),
+    ["NATS_BF_PASSWORD", "NATS_NOTIFICATIONS_PASSWORD"],
+  );
 });

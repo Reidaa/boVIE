@@ -1,35 +1,54 @@
 import {
-  defineRailway, github, mysql, preserve, project, service, volume,
+  defineRailway,
+  github,
+  mysql,
+  preserve,
+  project,
+  service,
+  volume,
   type ServiceConfigInput,
 } from "railway/iac";
 
 export const deliveryEnabled: boolean = false;
 
 const region = "europe-west4-drams3a";
-const bootstrap: Record<string, Record<string, string>> = JSON.parse(process.env.BOVIE_RAILWAY_BOOTSTRAP_SECRETS ?? "{}");
+const bootstrap: Record<string, Record<string, string>> = JSON.parse(
+  process.env.BOVIE_RAILWAY_BOOTSTRAP_SECRETS ?? "{}",
+);
 const secret = (owner: string, key: string) => bootstrap[owner]?.[key] ?? preserve();
 
 export default defineRailway((ctx) => {
   if (ctx.environment !== "staging") {
-    throw new Error("This deployment targets staging. Review the existing production resources before promoting it.");
+    throw new Error(
+      "This deployment targets staging. Review the existing production resources before promoting it.",
+    );
   }
   const source = github("Reidaa/boVIE", { branch: "feat/wttf", rootDirectory: "/" });
   const persistent = {
     multiRegionConfig: { [region]: { numReplicas: 1 } },
     restartPolicyMaxRetries: 100,
   };
-  const app = (name: string, packageName: string, config: ServiceConfigInput) => service(name, {
-    source,
-    build: {
-      builder: "DOCKERFILE",
-      dockerfilePath: `services/${packageName}/Dockerfile`,
-      watchPatterns: [`services/${packageName}/**`, "packages/**", "pyproject.toml", "uv.lock", ".railway/**"],
-    },
-    ...config,
-    deploy: { ...persistent, ...config.deploy,
-      restartPolicyMaxRetries: config.deploy?.restartPolicyType === "NEVER" ? undefined : 100,
-    },
-  });
+  const app = (name: string, packageName: string, config: ServiceConfigInput) =>
+    service(name, {
+      source,
+      build: {
+        builder: "DOCKERFILE",
+        dockerfilePath: `services/${packageName}/Dockerfile`,
+        watchPatterns: [
+          `services/${packageName}/**`,
+          "packages/**",
+          "pyproject.toml",
+          "uv.lock",
+          ".railway/**",
+        ],
+      },
+      ...config,
+      deploy: {
+        ...persistent,
+        ...config.deploy,
+        restartPolicyMaxRetries: config.deploy?.restartPolicyType === "NEVER" ? undefined : 100,
+      },
+    });
 
   const businessFranceDb = mysql("mysql-business-france", { region });
   const wttjDb = mysql("mysql-wttj", { region });
@@ -37,12 +56,18 @@ export default defineRailway((ctx) => {
   const natsData = volume("nats-data", { region, sizeMB: 2048 });
   const nats = service("nats", {
     source,
-    build: { builder: "DOCKERFILE", dockerfilePath: "deploy/railway/nats/Dockerfile", watchPatterns: ["deploy/railway/nats/**", "deploy/nats.conf"] },
+    build: {
+      builder: "DOCKERFILE",
+      dockerfilePath: "deploy/railway/nats/Dockerfile",
+      watchPatterns: ["deploy/railway/nats/**", "deploy/nats.conf"],
+    },
     deploy: { ...persistent, requiredMountPath: "/data" },
     volumeMounts: { "/data": natsData },
     env: {
-      NATS_ADMIN_PASSWORD: secret("nats", "NATS_ADMIN_PASSWORD"), NATS_BF_PASSWORD: secret("nats", "NATS_BF_PASSWORD"),
-      NATS_WTTJ_PASSWORD: secret("nats", "NATS_WTTJ_PASSWORD"), NATS_NOTIFICATIONS_PASSWORD: secret("nats", "NATS_NOTIFICATIONS_PASSWORD"),
+      NATS_ADMIN_PASSWORD: secret("nats", "NATS_ADMIN_PASSWORD"),
+      NATS_BF_PASSWORD: secret("nats", "NATS_BF_PASSWORD"),
+      NATS_WTTJ_PASSWORD: secret("nats", "NATS_WTTJ_PASSWORD"),
+      NATS_NOTIFICATIONS_PASSWORD: secret("nats", "NATS_NOTIFICATIONS_PASSWORD"),
     },
   });
   const broker = (user: string, password: string) => ({
@@ -54,17 +79,26 @@ export default defineRailway((ctx) => {
   const wttjDatabase = { DATABASE_URL: wttjDb.env.MYSQL_URL };
   const notificationDatabase = { DATABASE_URL: notificationsDb.env.MYSQL_URL };
   const businessFrance = app("business-france", "business-france", {
-    start: "bovie", preDeploy: "source-migrate --wait-timeout 180",
+    start: "bovie",
+    preDeploy: "source-migrate --wait-timeout 180",
     deploy: { cronSchedule: "12 */2 * * *", restartPolicyType: "NEVER" },
     env: { ...bfDatabase, BOVIE_LIMIT: "25" },
   });
   const wttj = app("wttj", "wttj", {
-    start: "wttf", preDeploy: "source-migrate --wait-timeout 180",
+    start: "wttf",
+    preDeploy: "source-migrate --wait-timeout 180",
     deploy: { cronSchedule: "22 */2 * * *", restartPolicyType: "NEVER" },
-    env: { ...wttjDatabase, WTTJ_QUERY: "", WTTJ_CONTRACTS: "", WTTJ_LIMIT: "50", WTTJ_MAX_PAGES: "5" },
+    env: {
+      ...wttjDatabase,
+      WTTJ_QUERY: "",
+      WTTJ_CONTRACTS: "",
+      WTTJ_LIMIT: "50",
+      WTTJ_MAX_PAGES: "5",
+    },
   });
   const setup = app("broker-setup", "broker-setup", {
-    start: "broker-setup", env: broker("admin", "NATS_ADMIN_PASSWORD"),
+    start: "broker-setup",
+    env: broker("admin", "NATS_ADMIN_PASSWORD"),
   });
   const relayBf = app("relay-bf", "outbox-relay", {
     start: "outbox-relay --source business_france",
@@ -75,15 +109,32 @@ export default defineRailway((ctx) => {
     env: { ...wttjDatabase, ...broker("wttj", "NATS_WTTJ_PASSWORD") },
   });
   const intake = app("notification-intake", "notification-intake", {
-    start: "notification-intake", preDeploy: "notification-migrate --wait-timeout 180",
+    start: "notification-intake",
+    preDeploy: "notification-migrate --wait-timeout 180",
     env: { ...notificationDatabase, ...broker("notifications", "NATS_NOTIFICATIONS_PASSWORD") },
   });
   const delivery = app("discord-delivery", "discord-delivery", {
     start: "discord-delivery",
     source: deliveryEnabled ? source : undefined,
-    env: { ...notificationDatabase, DISCORD_WEBHOOK_URL: secret("discord-delivery", "DISCORD_WEBHOOK_URL") },
+    env: {
+      ...notificationDatabase,
+      DISCORD_WEBHOOK_URL: secret("discord-delivery", "DISCORD_WEBHOOK_URL"),
+    },
   });
   return project(ctx.projectName ?? "boVIE", {
-    resources: [businessFranceDb, wttjDb, notificationsDb, natsData, nats, businessFrance, wttj, setup, relayBf, relayWttj, intake, delivery],
+    resources: [
+      businessFranceDb,
+      wttjDb,
+      notificationsDb,
+      natsData,
+      nats,
+      businessFrance,
+      wttj,
+      setup,
+      relayBf,
+      relayWttj,
+      intake,
+      delivery,
+    ],
   });
 });
