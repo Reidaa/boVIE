@@ -18,6 +18,11 @@ for (const owner of Object.keys(credentials) as (keyof typeof credentials)[]) {
     ? read(["variable", "list", "--service", owner, "--json"]) : {};
   bootstrap[owner] = missingCredentials(owner, existing);
 }
+const deliveryVariables = services.some((service) => service.name === "discord-delivery")
+  ? read(["variable", "list", "--service", "discord-delivery", "--json"]) : {};
+if (!Object.hasOwn(deliveryVariables, "DISCORD_WEBHOOK_URL")) {
+  bootstrap["discord-delivery"] = { DISCORD_WEBHOOK_URL: "" };
+}
 const result = spawnSync(cli, ["config", action, ...process.argv.slice(3)], {
   stdio: "inherit",
   env: { ...process.env, _: cli, BOVIE_RAILWAY_BOOTSTRAP_SECRETS: JSON.stringify(bootstrap) },

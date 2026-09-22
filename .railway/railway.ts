@@ -93,7 +93,7 @@ export default defineRailway((ctx) => {
   const delivery = app("discord-delivery", "discord-delivery", {
     start: "discord-delivery",
     source: deliveryEnabled ? source : undefined,
-    env: { ...notificationDatabase, ...(deliveryEnabled ? { DISCORD_WEBHOOK_URL: preserve() } : {}) },
+    env: { ...notificationDatabase, DISCORD_WEBHOOK_URL: secret("discord-delivery", "DISCORD_WEBHOOK_URL") },
   });
   return project(ctx.projectName ?? "boVIE", {
     resources: [mysqlData, natsData, mysql, nats, businessFrance, wttj, setup, relayBf, relayWttj, intake, delivery],
