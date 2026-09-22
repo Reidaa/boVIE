@@ -1,0 +1,33 @@
+type: http_request
+model: http_request
+id: rq_b4VtbiNe22
+createdAt: 2026-07-09T00:56:10.136664
+updatedAt: 2026-07-09T00:56:17.700616
+workspaceId: wk_8og6wf4QXb
+folderId: fl_gnRsKs3nsB
+authentication: {}
+authenticationType: null
+body: {}
+bodyType: null
+description: ''
+headers: []
+method: GET
+name: ''
+sortPriority: -1783382601123.0
+url: https://api.welcometothejungle.com/api/v1/organizations/sekoia/jobs/back-end-engineer
+urlParameters: []
+settingSendCookies:
+  enabled: false
+  value: true
+settingStoreCookies:
+  enabled: false
+  value: true
+settingValidateCertificates:
+  enabled: false
+  value: true
+settingFollowRedirects:
+  enabled: false
+  value: true
+settingRequestTimeout:
+  enabled: false
+  value: 0
