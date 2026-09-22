@@ -54,7 +54,16 @@ run-help:
 	uv run python -m {{PACKAGE}}.main --help
 
 up:
-	docker compose up -d
+	docker compose up -d --wait mysql nats
+
+migrate domain="source":
+	uv run bovie-migrate {{domain}}
+
+build:
+	uv build
+
+workers:
+	docker compose --profile workers up --build -d relay-bf relay-wttj receiver delivery
 
 down:
 	docker compose down

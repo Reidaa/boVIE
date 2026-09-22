@@ -18,7 +18,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout repository
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: Install uv
         uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
@@ -42,7 +42,7 @@ jobs:
         run: echo "$(pwd)/.venv/bin" >> $GITHUB_PATH
 
       - name: Cache pre-commit
-        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
         with:
           path: ${{ env.PRE_COMMIT_HOME }}
           key: pre-commit-${{ runner.os }}-py${{ env.PYTHON_VERSION }}-${{ hashFiles('.pre-commit-config.yaml') }}
@@ -57,6 +57,20 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: bovie-test-only
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 --silent"
+          --health-interval=5s --health-timeout=5s --health-retries=30
+    env:
+      MYSQL_TEST_ADMIN_URL: mysql+pymysql://root:bovie-test-only@127.0.0.1:3306/mysql
+      NATS_TEST_URL: nats://127.0.0.1:4222
+      NATS_AUTH_TEST_URL: nats://127.0.0.1:4223
 
     steps:
       - name: Checkout repository
@@ -78,4 +92,16 @@ jobs:
         run: uv sync --all-extras
 
       - name: Run tests
-        run: uv run pytest
+        run: |
+          docker run -d --name bovie-test-nats -p 127.0.0.1:4222:4222 nats:2.11-alpine --jetstream
+          docker create --name bovie-test-nats-auth -p 127.0.0.1:4223:4222 -e NATS_ADMIN_PASSWORD=local-nats-admin -e NATS_BF_PASSWORD=local-nats-bf -e NATS_WTTJ_PASSWORD=local-nats-wttj -e NATS_NOTIFICATIONS_PASSWORD=local-nats-notifications nats:2.11-alpine --config /tmp/nats.conf
+          docker cp deploy/nats.conf bovie-test-nats-auth:/tmp/nats.conf
+          docker start bovie-test-nats-auth
+          uv run pytest
+
+      - name: Check code and built artifacts
+        run: |
+          uv run ruff check src tests
+          uv run ty check
+          uv build
+          uv run --isolated --no-project --with dist/bovie-0.3.1-py3-none-any.whl python -c 'import bovie.main, wttf.main, bovie.migrate, bovie.transport'

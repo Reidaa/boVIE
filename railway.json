@@ -4,6 +4,7 @@
         "builder": "RAILPACK",
         "watchPatterns": [
             "src/bovie/**",
+            "src/wttf/**",
             "uv.lock",
             "pyproject.toml",
             ".python-version"
@@ -11,7 +12,8 @@
         "buildCommand": "uv sync --frozen --no-dev"
     },
     "deploy": {
-        "startCommand": "python3 -m bovie.main",
+        "startCommand": "uv run --no-sync bovie",
+        "preDeployCommand": "uv run --no-sync bovie-migrate source",
         "restartPolicyType": "ON_FAILURE",
         "restartPolicyMaxRetries": 5,
         "cronSchedule": "12 */2 * * *",

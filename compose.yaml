@@ -1,25 +1,149 @@
+x-app: &app
+  build: .
+  image: bovie:local
+  profiles: [workers]
+
 services:
-    postgres:
-        image: 'postgres:17-alpine'
-        ports:
-            - '5432:5432'
-        environment:
-            POSTGRES_USER: postgres
-            POSTGRES_PASSWORD: password
-            POSTGRES_DB: database
-        # volumes:
-        #     - 'postgres:/var/lib/postgresql/data'
-        healthcheck:
-            test:
-                - CMD
-                - pg_isready
-                - '-U'
-                - 'postgres'
-            retries: 3
-            timeout: 5s
+  mysql:
+    image: mysql:8.4
+    ports: ["127.0.0.1:3306:3306"]
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-local-root-only}
+    volumes:
+      - mysql:/var/lib/mysql
+      - ./deploy/mysql-init.sql:/docker-entrypoint-initdb.d/01-domains.sql:ro
+    healthcheck:
+      test: [CMD-SHELL, 'MYSQL_PWD="$$MYSQL_ROOT_PASSWORD" mysql -h 127.0.0.1 -u root -e "SELECT 1"']
+      interval: 5s
+      timeout: 5s
+      retries: 30
 
+  nats:
+    image: nats:2.11-alpine
+    command: ["--config", "/etc/nats/nats.conf"]
+    ports: ["127.0.0.1:4222:4222"]
+    environment:
+      NATS_ADMIN_PASSWORD: ${NATS_ADMIN_PASSWORD:-local-nats-admin}
+      NATS_BF_PASSWORD: ${NATS_BF_PASSWORD:-local-nats-bf}
+      NATS_WTTJ_PASSWORD: ${NATS_WTTJ_PASSWORD:-local-nats-wttj}
+      NATS_NOTIFICATIONS_PASSWORD: ${NATS_NOTIFICATIONS_PASSWORD:-local-nats-notifications}
+    volumes:
+      - nats:/data/jetstream
+      - ./deploy/nats.conf:/etc/nats/nats.conf:ro
+    healthcheck:
+      test: [CMD, wget, -q, -O, /dev/null, "http://127.0.0.1:8222/healthz?js-enabled-only=true"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
 
+  migrate-bf:
+    <<: *app
+    command: [bovie-migrate, source]
+    environment:
+      DATABASE_URL: mysql+pymysql://business_france:local-bf-only@mysql/business_france
+    depends_on:
+      mysql: {condition: service_healthy}
+
+  migrate-wttj:
+    <<: *app
+    command: [bovie-migrate, source]
+    environment:
+      DATABASE_URL: mysql+pymysql://wttj:local-wttj-only@mysql/wttj
+    depends_on:
+      mysql: {condition: service_healthy}
+
+  migrate-notifications:
+    <<: *app
+    command: [bovie-migrate, notification]
+    environment:
+      DATABASE_URL: mysql+pymysql://notifications:local-notifications-only@mysql/notifications
+    depends_on:
+      mysql: {condition: service_healthy}
+
+  setup-nats:
+    <<: *app
+    command: [bovie-worker, setup-nats]
+    environment:
+      NATS_URL: nats://nats:4222
+      NATS_USER: admin
+      NATS_PASSWORD: ${NATS_ADMIN_PASSWORD:-local-nats-admin}
+    depends_on:
+      nats: {condition: service_healthy}
+
+  business-france:
+    <<: *app
+    command: [bovie]
+    environment:
+      DATABASE_URL: mysql+pymysql://business_france:local-bf-only@mysql/business_france
+      BOVIE_LIMIT: ${BOVIE_LIMIT:-25}
+      BOVIE_REGION: ${BOVIE_REGION:-}
+      BOVIE_COUNTRY: ${BOVIE_COUNTRY:-}
+      BOVIE_SPECIALIZATION: ${BOVIE_SPECIALIZATION:-}
+    depends_on:
+      migrate-bf: {condition: service_completed_successfully}
+
+  wttj:
+    <<: *app
+    command: [wttf]
+    environment:
+      DATABASE_URL: mysql+pymysql://wttj:local-wttj-only@mysql/wttj
+      WTTJ_QUERY: ${WTTJ_QUERY:-VIE}
+      WTTJ_LIMIT: ${WTTJ_LIMIT:-50}
+      WTTJ_MAX_PAGES: ${WTTJ_MAX_PAGES:-5}
+    depends_on:
+      migrate-wttj: {condition: service_completed_successfully}
+
+  relay-bf:
+    <<: *app
+    command: [bovie-worker, relay, --source, business_france]
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: mysql+pymysql://business_france:local-bf-only@mysql/business_france
+      NATS_URL: nats://nats:4222
+      NATS_USER: business_france
+      NATS_PASSWORD: ${NATS_BF_PASSWORD:-local-nats-bf}
+    depends_on:
+      migrate-bf: {condition: service_completed_successfully}
+      setup-nats: {condition: service_completed_successfully}
+
+  relay-wttj:
+    <<: *app
+    command: [bovie-worker, relay, --source, wttj]
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: mysql+pymysql://wttj:local-wttj-only@mysql/wttj
+      NATS_URL: nats://nats:4222
+      NATS_USER: wttj
+      NATS_PASSWORD: ${NATS_WTTJ_PASSWORD:-local-nats-wttj}
+    depends_on:
+      migrate-wttj: {condition: service_completed_successfully}
+      setup-nats: {condition: service_completed_successfully}
+
+  receiver:
+    <<: *app
+    command: [bovie-worker, receive]
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: mysql+pymysql://notifications:local-notifications-only@mysql/notifications
+      NATS_URL: nats://nats:4222
+      NATS_USER: notifications
+      NATS_PASSWORD: ${NATS_NOTIFICATIONS_PASSWORD:-local-nats-notifications}
+    depends_on:
+      migrate-notifications: {condition: service_completed_successfully}
+      setup-nats: {condition: service_completed_successfully}
+
+  delivery:
+    <<: *app
+    command: [bovie-worker, deliver]
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: mysql+pymysql://notifications:local-notifications-only@mysql/notifications
+      DISCORD_WEBHOOK_URL: ${DISCORD_WEBHOOK_URL:-}
+    depends_on:
+      migrate-notifications: {condition: service_completed_successfully}
 
 volumes:
-    postgres:
-        driver: local
+  mysql:
+  nats:
+  # Retain the legacy volume declaration; never delete it as part of cutover.
+  postgres:

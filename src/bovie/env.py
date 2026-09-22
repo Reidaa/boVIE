@@ -1,13 +1,43 @@
+"""Configuration is loaded only by process entrypoints."""
+
 import os
 
+import click
 from dotenv import load_dotenv
-from pydantic import BaseModel, PostgresDsn
-
-load_dotenv(override=True, interpolate=True)
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+from sqlalchemy.engine import URL, make_url
 
 
 class Env(BaseModel):
-    DATABASE_URL: PostgresDsn
+    model_config = ConfigDict(hide_input_in_errors=True)
+    DATABASE_URL: str = Field(repr=False)
+
+    @field_validator("DATABASE_URL")
+    @classmethod
+    def validate_mysql(cls, value: str) -> str:
+        try:
+            url = make_url(value)
+        except Exception:
+            raise ValueError("DATABASE_URL must be a MySQL SQLAlchemy URL") from None
+        if url.drivername != "mysql+pymysql" or not all(
+            (url.host, url.username, url.database)
+        ):
+            raise ValueError("Use mysql+pymysql://user:password@host/database")
+        return value
+
+    @property
+    def database_url(self) -> URL:
+        return make_url(self.DATABASE_URL)
 
 
-env = Env(DATABASE_URL=PostgresDsn(os.getenv("DATABASE_URL", "")))
+def load_env() -> Env:
+    load_dotenv(".env", override=False)
+    return Env(DATABASE_URL=os.environ.get("DATABASE_URL", ""))
+
+
+class EnvironmentCommand(click.Command):
+    """Load the working directory's .env before Click resolves envvar options."""
+
+    def parse_args(self, ctx, args):
+        load_dotenv(".env", override=False)
+        return super().parse_args(ctx, args)

@@ -3,59 +3,80 @@
 Bovie - A tool to discover VIE/VIA opportunities from Business France
 """
 
+import hashlib
+import json
 import sys
 
 import click
-from dotenv import load_dotenv
 from loguru import logger
+from pydantic import HttpUrl
+from sqlalchemy.engine import Engine
 
+from .collector import record_page, seen
 from .config import configFromParams
-from .db import JobOffer
+from .db import make_engine
+from .discord.model import JobEmbed
+from .env import EnvironmentCommand, load_env
+from .events import DisplayField, OfferDetails, OfferDiscovered
 from .job import get_from_id, search_id
 from .job.models.country import get_country_names
 from .job.models.geozone import get_zone_names
+from .job.models.job import Job
 from .job.models.search import SearchParameters
 from .job.models.specialization import get_specialization_names
-from .job.writer import DiscordWriter, JobWriter, TerminalWriter
 from .t import Choice
 
-load_dotenv(override=True)
-
-logger.remove()
-
-
 DEFAULT_BOVIE_OFFER_MAX = 25
-DEFAULT_BOVIE_CONTINUOUS = False
-DEFAULT_BOVIE_SLEEP_DURATION = 60
-DEFAULT_DISCORD_WEBHOOK_URL = ""
 
 
-def task(params: SearchParameters, writers: list[JobWriter] | None = None):
-    if writers is None:
-        writers = [TerminalWriter()]
-
-    ids = search_id(params)
-    logger.debug(f"Found {len(ids)} offers")
-
-    if not ids:
-        logger.info("No offers found")
-        return
-
-    logger.debug(f"Ids: {ids}")
-    for id in ids:
-        if id in JobOffer.all():
-            continue
-        j = get_from_id(id)
-        if not j:
-            logger.warning(f"Failed to fetch offer ID {id}")
-            continue
-        for writer in writers:
-            logger.debug(f"Writing offer ID {id} using {writer.__class__.__name__}")
-            writer.write_one(j)
-            JobOffer.create(id)
+def normalize(job: Job) -> OfferDiscovered:
+    return OfferDiscovered(
+        source="business_france",
+        source_offer_id=str(job.id),
+        offer=OfferDetails(
+            title=job.missionTitle[:256],
+            organization=job.organizationName,
+            country=job.countryName,
+            city=job.cityName or job.cityAffectation,
+            url=HttpUrl(f"https://mon-vie-via.businessfrance.fr/offres/{job.id}"),
+            fields=[
+                DisplayField.model_validate(field)
+                for field in JobEmbed(job).to_dict()["fields"]
+            ],
+        ),
+    )
 
 
-@click.command()
+def task(params: SearchParameters, engine: Engine, *, page_size: int = 25):
+    scan = hashlib.sha256(
+        json.dumps(params.model_dump(), sort_keys=True).encode()
+    ).hexdigest()
+    offset = 0
+    # Replaying from zero is intentional: offset-based results can move between runs.
+    while offset < params.limit:
+        size = min(page_size, params.limit - offset)
+        ids = search_id(params.model_copy(update={"skip": offset, "limit": size}))
+        events = []
+        for identity in ids:
+            if seen(engine, str(identity)):
+                continue
+            job = get_from_id(identity)
+            if job is None:
+                raise RuntimeError(f"Unable to fetch offer {identity}")
+            events.append(normalize(job))
+        offset += len(ids)
+        for event in record_page(engine, events, scan, offset):
+            logger.info(
+                "New offer: {} in {} at {}",
+                event.offer.title,
+                event.offer.country,
+                event.offer.organization,
+            )
+        if len(ids) < size:
+            break
+
+
+@click.command(cls=EnvironmentCommand)
 @click.option(
     "--debug",
     default=False,
@@ -65,16 +86,9 @@ def task(params: SearchParameters, writers: list[JobWriter] | None = None):
     envvar="BOVIE_DEBUG",
 )
 @click.option(
-    "--webhook-url",
-    default=DEFAULT_DISCORD_WEBHOOK_URL,
-    type=click.STRING,
-    help="Discord webhook URL",
-    envvar="DISCORD_WEBHOOK_URL",
-)
-@click.option(
     "--limit",
     default=DEFAULT_BOVIE_OFFER_MAX,
-    type=click.INT,
+    type=click.IntRange(min=1),
     show_default=DEFAULT_BOVIE_OFFER_MAX,
     envvar="BOVIE_LIMIT",
 )
@@ -105,16 +119,13 @@ def task(params: SearchParameters, writers: list[JobWriter] | None = None):
 @click.version_option(message="Bovie %(version)s")
 def cli(
     debug: bool,
-    webhook_url: str,
     limit: int,
     geozone: tuple[str],
     country: tuple[str],
     specialization: tuple[str],
 ):
-    if debug:
-        logger.add(sys.stdout, level="DEBUG")
-    else:
-        logger.add(sys.stdout, level="INFO")
+    logger.remove()
+    logger.add(sys.stdout, level="DEBUG" if debug else "INFO", diagnose=False)
 
     config = configFromParams(
         limit=limit,
@@ -135,24 +146,15 @@ def cli(
     logger.debug(f"countries: {country}")
     logger.debug(f"Config: {config}")
 
-    logger.debug(f"Webhook URL: {webhook_url}")
-
-    writers: list[JobWriter] = [
-        TerminalWriter(),
-    ]
-
-    if webhook_url:
-        writers.append(DiscordWriter(webhook_url=webhook_url))
-
-    logger.debug(f"Writers: {writers}")
-
     logger.info("Starting ...")
+    engine = make_engine(load_env().database_url)
     try:
-        task(params=params, writers=writers)
+        task(params=params, engine=engine)
     except Exception as e:
-        error = f"Error during task execution -> {str(e)}"
-        logger.error(error)
-        raise click.ClickException(error) from e
+        logger.exception("Business France collection failed")
+        raise click.ClickException("Business France collection failed") from e
+    finally:
+        engine.dispose()
     logger.info("Done ...")
 
 

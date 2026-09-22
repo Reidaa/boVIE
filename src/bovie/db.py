@@ -1,42 +1,42 @@
-import uuid
+"""Connection and UTC storage mechanics; no global engine or schema creation."""
 
-from sqlmodel import Field, Session, SQLModel, create_engine, select
+from datetime import UTC, datetime
 
-from bovie.env import env
-
-
-class Job(SQLModel, table=True):
-    __tablename__ = "bovie_job"
-    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    offer_id: int
+from sqlalchemy import DateTime, create_engine
+from sqlalchemy.dialects.mysql import DATETIME
+from sqlalchemy.engine import URL, Engine
+from sqlalchemy.types import TypeDecorator
 
 
-db = create_engine(env.DATABASE_URL.encoded_string())
-SQLModel.metadata.create_all(db)
+class UTCDateTime(TypeDecorator[datetime]):
+    """MySQL DATETIME(6) stores UTC without a zone; Python receives aware UTC."""
+
+    impl = DateTime
+    cache_ok = True
+
+    def load_dialect_impl(self, dialect):
+        return dialect.type_descriptor(DATETIME(fsp=6))
+
+    def process_bind_param(self, value, dialect):
+        if value is None:
+            return None
+        if value.tzinfo is None:
+            raise ValueError("Timestamps must be timezone aware")
+        return value.astimezone(UTC).replace(tzinfo=None)
+
+    def process_result_value(self, value, dialect):
+        return value.replace(tzinfo=UTC) if value is not None else None
 
 
-class JobOffer:
-    @staticmethod
-    def all():
-        with Session(db) as session:
-            stmt = select(Job)
-            results = session.exec(stmt)
-            ids = [job.offer_id for job in results]
-
-        return ids
-
-    @staticmethod
-    def create(job_id: int):
-        with Session(db) as session:
-            j = Job(offer_id=job_id)
-            session.add(j)
-
-            session.commit()
-
-    @staticmethod
-    def create_many(ids: list[int]):
-        with Session(db) as session:
-            for job_id in ids:
-                session.add(Job(offer_id=job_id))
-
-            session.commit()
+def make_engine(url: URL) -> Engine:
+    return create_engine(
+        url,
+        pool_pre_ping=True,
+        pool_recycle=1800,
+        connect_args={
+            "charset": "utf8mb4",
+            "connect_timeout": 10,
+            "read_timeout": 30,
+            "write_timeout": 30,
+        },
+    )

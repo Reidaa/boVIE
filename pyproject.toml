@@ -5,15 +5,17 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "alembic>=1.16,<2",
     "click>=8.1.8",
     "httpx>=0.28.1",
     "loguru>=0.7.3",
+    "nats-py>=2.10,<3",
     "nextcord>=3.0.1",
-    "psycopg2-binary>=2.9.10",
     "pydantic>=2.11.3",
+    "pymysql[rsa]>=1.1,<2",
     "python-dateutil>=2.9.0.post0",
     "python-dotenv>=1.0.1",
-    "sqlmodel>=0.0.24",
+    "sqlalchemy>=2.0,<2.1",
     "tenacity>=9.1.2",
     "typer>=0.26.8",
 ]
@@ -31,6 +33,11 @@ dev = [
 [project.scripts]
 bovie = "bovie.main:cli"
 wttf = "wttf.main:main"
+bovie-migrate = "bovie.migrate:cli"
+bovie-worker = "bovie.transport:cli"
+
+[tool.uv.build-backend]
+module-name = ["bovie", "wttf"]
 
 [tool.ruff.lint]
 extend-select = ["I"]
