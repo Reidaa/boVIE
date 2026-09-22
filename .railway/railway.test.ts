@@ -3,7 +3,7 @@ import { test } from "node:test";
 import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { createRailwayContext, project, type ServiceNode } from "railway/iac";
-import configuration from "./railway.ts";
+import configuration, { deliveryEnabled } from "./railway.ts";
 
 const spec = await configuration(createRailwayContext({ environment: "staging", projectName: "boVIE" }), project);
 const resources = spec.resources!.flat();
@@ -18,7 +18,7 @@ test("configuration cannot accidentally replace production", async () => {
 test("every service has an explicit build, command, and private deployment", () => {
   assert.equal(services.length, 9);
   for (const service of services) {
-    assert.equal(service.source?.rootDirectory, "/");
+    if (service.source?.type !== "empty") assert.equal(service.source?.rootDirectory, "/");
     assert.equal(service.build?.builder, "DOCKERFILE");
     assert.ok(existsSync(root + service.build!.dockerfilePath));
     assert.equal(service.deploy?.sleepApplication, false);
@@ -45,7 +45,9 @@ test("secrets stay with their owner and staging delivery starts stopped", () => 
     }
   }
   assert.equal(byName.get("broker-setup")!.variables!.DATABASE_URL, undefined);
-  assert.equal(byName.get("discord-delivery")!.deploy?.numReplicas, 0);
+  const delivery = byName.get("discord-delivery")!;
+  assert.equal(delivery.source?.type, deliveryEnabled ? "github" : "empty");
+  if (!deliveryEnabled) assert.equal(delivery.source?.repo, undefined);
   assert.equal(byName.get("discord-delivery")!.variables!.NATS_PASSWORD, undefined);
 });
 

@@ -1,7 +1,9 @@
 import {
-  defineRailway, github, project, service, volume,
+  defineRailway, empty, github, project, service, volume,
   type ServiceConfigInput, type VariableConfig,
 } from "railway/iac";
+
+export const deliveryEnabled: boolean = false;
 
 const region = "europe-west4-drams3a";
 const secret = (): VariableConfig => ({ generator: "secret", preserveExisting: true });
@@ -87,7 +89,7 @@ export default defineRailway((ctx) => {
   });
   const delivery = app("discord-delivery", "discord-delivery", {
     start: "discord-delivery",
-    deploy: { numReplicas: 0 },
+    source: deliveryEnabled ? source : empty(),
     env: { ...notificationDatabase, DISCORD_WEBHOOK_URL: { preserveExisting: true, defaultValue: "", isOptional: true } },
   });
   return project(ctx.projectName ?? "boVIE", {

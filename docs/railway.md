@@ -62,13 +62,15 @@ Broker setup exits successfully after provisioning and runs again when redeploye
 
 ## Enable staging Discord delivery
 
+Discord delivery starts as an empty service without a source connection.
+Railway requires at least one replica, so zero replicas cannot stop a service.
 Collection and intake can run while Discord delivery is stopped.
 Pending notifications stay in the notification database until delivery starts.
 Create a webhook for a staging Discord channel and set `DISCORD_WEBHOOK_URL`
 on the `discord-delivery` service in Railway. Keep the value out of this repository.
 
-Change that service's `numReplicas` from `0` to `1` in `.railway/railway.ts`.
-Update the corresponding stopped-delivery assertion in `.railway/railway.test.ts`.
+Change `deliveryEnabled` from `false` to `true` in `.railway/railway.ts`.
+The apply connects the service to GitHub and starts its first deployment.
 Run the checks, plan, and apply commands again.
 Starting delivery sends all pending staging discoveries, including older queued offers.
 
