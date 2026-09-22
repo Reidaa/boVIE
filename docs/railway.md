@@ -20,8 +20,9 @@ npm --prefix .railway run apply
 ```
 
 For a new project, first create the project and an empty staging environment in Railway.
-The plan must target `staging`. It creates nine services and two volumes on the first run.
-It must not delete existing services or data. `apply` displays the plan before confirmation.
+The plan must target `staging`. A new environment gets three Railway MySQL databases,
+eight application or broker services, and one NATS volume.
+`apply` displays the plan before confirmation.
 The deployment uses private networking and creates no public domains or database proxies.
 Do not use this configuration to replace an existing production environment.
 
@@ -29,7 +30,9 @@ Do not use this configuration to replace an existing production environment.
 
 | Service | Role | Start command |
 | --- | --- | --- |
-| `mysql` | Three databases and restricted accounts | MySQL image default |
+| `mysql-business-france` | Business France data | Railway MySQL |
+| `mysql-wttj` | WTTJ data | Railway MySQL |
+| `mysql-notifications` | Inbox and pending deliveries | Railway MySQL |
 | `nats` | Persistent JetStream broker | NATS with the repository configuration |
 | `business-france` | Scheduled collection at minute 12, every two hours UTC | `bovie` |
 | `wttj` | Scheduled collection at minute 22, every two hours UTC | `wttf` |
@@ -39,24 +42,21 @@ Do not use this configuration to replace an existing production environment.
 | `notification-intake` | Store events and pending deliveries | `notification-intake` |
 | `discord-delivery` | Send pending deliveries, initially stopped | `discord-delivery` |
 
-Every service uses the repository root as its build context and has an explicit Dockerfile path.
+Every application or broker service uses the repository root as its build context and has an explicit Dockerfile path.
 Each application image installs only its workspace package and dependencies.
-MySQL stores data on `mysql-data`, mounted at `/var/lib/mysql`.
+Railway creates and mounts storage for each MySQL database.
 NATS stores JetStream data on `nats-data`, mounted at `/data`.
-Both services require their volume mount before starting.
+NATS requires its volume mount before starting.
 All services run in `europe-west4-drams3a`.
 
-The plan and apply scripts generate missing database and NATS passwords with Node.js cryptographic randomness.
+The plan and apply scripts generate missing NATS passwords with Node.js cryptographic randomness.
 They pass new values to the configuration through the local process environment.
 Existing values, including sealed variables, are preserved on later applies.
-Use these npm scripts for the first deployment so credentials are initialized.
-Worker variables reference the appropriate owner password. Workers never receive the MySQL root password.
-The MySQL image creates the three databases and users only when its volume is empty.
-Account passwords must contain 32-128 letters, digits, underscores, or hyphens.
+Use these npm scripts for the first deployment so NATS credentials are initialized.
+Railway provisions MySQL connection variables. Each worker references only its database's `MYSQL_URL`.
+The database library accepts Railway's `mysql://` URL and uses PyMySQL.
 Generated passwords start with `bovie_` so NATS reads them as strings.
 Retain an alphabetic prefix when rotating NATS passwords.
-To rotate a database password, update the MySQL account and its Railway variable together.
-Changing the variable alone does not change a user in an existing database.
 
 The collectors run `source-migrate --wait-timeout 180` before deployment.
 Notification intake runs `notification-migrate --wait-timeout 180`.

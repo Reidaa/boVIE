@@ -191,8 +191,8 @@ Do not use `docker compose down -v` on an existing deployment.
 
 ## Deployment and validation
 
-Railway staging is defined in `.railway/railway.ts`. It creates the services,
-private connections, persistent volumes, generated passwords, and collector schedules.
+Railway staging is defined in `.railway/railway.ts`. It creates three Railway MySQL
+databases, the focused services, private connections, NATS storage, and collector schedules.
 Use the [Railway deployment guide](docs/railway.md) for the initial deployment and updates.
 Discord delivery starts without a source connection until you configure a staging webhook.
 

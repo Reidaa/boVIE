@@ -1,5 +1,5 @@
 import {
-  defineRailway, github, preserve, project, service, volume,
+  defineRailway, github, mysql, preserve, project, service, volume,
   type ServiceConfigInput,
 } from "railway/iac";
 
@@ -8,8 +8,6 @@ export const deliveryEnabled: boolean = false;
 const region = "europe-west4-drams3a";
 const bootstrap: Record<string, Record<string, string>> = JSON.parse(process.env.BOVIE_RAILWAY_BOOTSTRAP_SECRETS ?? "{}");
 const secret = (owner: string, key: string) => bootstrap[owner]?.[key] ?? preserve();
-const databaseUrl = (owner: string, password: string) =>
-  `mysql+pymysql://${owner}:\${{mysql.${password}}}@\${{mysql.RAILWAY_PRIVATE_DOMAIN}}:3306/${owner}`;
 
 export default defineRailway((ctx) => {
   if (ctx.environment !== "staging") {
@@ -33,20 +31,10 @@ export default defineRailway((ctx) => {
     },
   });
 
-  const mysqlData = volume("mysql-data", { region, sizeMB: 1024 });
+  const businessFranceDb = mysql("mysql-business-france", { region });
+  const wttjDb = mysql("mysql-wttj", { region });
+  const notificationsDb = mysql("mysql-notifications", { region });
   const natsData = volume("nats-data", { region, sizeMB: 2048 });
-  const mysql = service("mysql", {
-    source,
-    build: { builder: "DOCKERFILE", dockerfilePath: "deploy/railway/mysql/Dockerfile", watchPatterns: ["deploy/railway/mysql/**"] },
-    deploy: { ...persistent, requiredMountPath: "/var/lib/mysql" },
-    volumeMounts: { "/var/lib/mysql": mysqlData },
-    env: {
-      MYSQL_ROOT_PASSWORD: secret("mysql", "MYSQL_ROOT_PASSWORD"),
-      BF_DATABASE_PASSWORD: secret("mysql", "BF_DATABASE_PASSWORD"),
-      WTTJ_DATABASE_PASSWORD: secret("mysql", "WTTJ_DATABASE_PASSWORD"),
-      NOTIFICATION_DATABASE_PASSWORD: secret("mysql", "NOTIFICATION_DATABASE_PASSWORD"),
-    },
-  });
   const nats = service("nats", {
     source,
     build: { builder: "DOCKERFILE", dockerfilePath: "deploy/railway/nats/Dockerfile", watchPatterns: ["deploy/railway/nats/**", "deploy/nats.conf"] },
@@ -62,9 +50,9 @@ export default defineRailway((ctx) => {
     NATS_USER: user,
     NATS_PASSWORD: `\${{nats.${password}}}`,
   });
-  const bfDatabase = { DATABASE_URL: databaseUrl("business_france", "BF_DATABASE_PASSWORD") };
-  const wttjDatabase = { DATABASE_URL: databaseUrl("wttj", "WTTJ_DATABASE_PASSWORD") };
-  const notificationDatabase = { DATABASE_URL: databaseUrl("notifications", "NOTIFICATION_DATABASE_PASSWORD") };
+  const bfDatabase = { DATABASE_URL: businessFranceDb.env.MYSQL_URL };
+  const wttjDatabase = { DATABASE_URL: wttjDb.env.MYSQL_URL };
+  const notificationDatabase = { DATABASE_URL: notificationsDb.env.MYSQL_URL };
   const businessFrance = app("business-france", "business-france", {
     start: "bovie", preDeploy: "source-migrate --wait-timeout 180",
     deploy: { cronSchedule: "12 */2 * * *", restartPolicyType: "NEVER" },
@@ -96,6 +84,6 @@ export default defineRailway((ctx) => {
     env: { ...notificationDatabase, DISCORD_WEBHOOK_URL: secret("discord-delivery", "DISCORD_WEBHOOK_URL") },
   });
   return project(ctx.projectName ?? "boVIE", {
-    resources: [mysqlData, natsData, mysql, nats, businessFrance, wttj, setup, relayBf, relayWttj, intake, delivery],
+    resources: [businessFranceDb, wttjDb, notificationsDb, natsData, nats, businessFrance, wttj, setup, relayBf, relayWttj, intake, delivery],
   });
 });

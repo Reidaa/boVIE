@@ -18,11 +18,11 @@ class Env(BaseModel):
             url = make_url(value)
         except Exception:
             raise ValueError("DATABASE_URL must be a MySQL SQLAlchemy URL") from None
-        if url.drivername != "mysql+pymysql" or not all(
+        if url.drivername not in {"mysql", "mysql+pymysql"} or not all(
             (url.host, url.username, url.database)
         ):
-            raise ValueError("Use mysql+pymysql://user:password@host/database")
-        return value
+            raise ValueError("Use mysql://user:password@host/database")
+        return url.set(drivername="mysql+pymysql").render_as_string(hide_password=False)
 
     @property
     def database_url(self) -> URL:

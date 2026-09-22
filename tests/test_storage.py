@@ -13,7 +13,10 @@ def test_mysql_configuration():
     settings = Env(DATABASE_URL="mysql+pymysql://worker:secret@localhost/source")
     assert settings.database_url.drivername == "mysql+pymysql"
     assert "secret" not in repr(settings)
-    for url in ("postgresql://u:p@host/db", "sqlite://", "mysql://u:p@host/db"):
+    railway = Env(DATABASE_URL="mysql://worker:p%40ss@localhost/source")
+    assert railway.database_url.drivername == "mysql+pymysql"
+    assert railway.database_url.password == "p@ss"
+    for url in ("postgresql://u:p@host/db", "sqlite://", "mysql://u:p@host"):
         with pytest.raises(ValidationError):
             Env(DATABASE_URL=url)
 
