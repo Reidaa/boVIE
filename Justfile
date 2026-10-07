@@ -1,7 +1,5 @@
 SHELL := "/bin/sh"
 
-TARGET := "bovie"
-
 REPOSITORY := "reidaa"
 DOCKERFILE := "Dockerfile"
 DOCKERTAG := "latest"
