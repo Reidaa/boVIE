@@ -1,0 +1,16 @@
+[project]
+name = "bovie-nats-client"
+version = "0.4.0"
+requires-python = ">=3.13"
+description = "BoVIE nats-client"
+dependencies = [
+    "nats-py>=2.10,<3",
+    "bovie-offer-events"
+]
+
+[tool.uv.build-backend]
+module-name = "nats_client"
+
+[build-system]
+requires = ["uv_build>=0.9.13,<0.10.0"]
+build-backend = "uv_build"

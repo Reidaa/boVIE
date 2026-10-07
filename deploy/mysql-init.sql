@@ -1,10 +1,10 @@
 -- Disposable/local development accounts. Provision independent secrets in production.
-CREATE DATABASE business_france CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_bin;
-CREATE DATABASE wttj CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_bin;
-CREATE DATABASE notifications CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_bin;
-CREATE USER 'business_france'@'%' IDENTIFIED BY 'local-bf-only';
-CREATE USER 'wttj'@'%' IDENTIFIED BY 'local-wttj-only';
-CREATE USER 'notifications'@'%' IDENTIFIED BY 'local-notifications-only';
-GRANT ALL PRIVILEGES ON business_france.* TO 'business_france'@'%';
-GRANT ALL PRIVILEGES ON wttj.* TO 'wttj'@'%';
-GRANT ALL PRIVILEGES ON notifications.* TO 'notifications'@'%';
+CREATE DATABASE collector_business_france CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_bin;
+CREATE DATABASE collector_wttj CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_bin;
+CREATE DATABASE discord CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_bin;
+CREATE USER 'collector_business_france'@'%' IDENTIFIED BY 'local-collector-business-france-only';
+CREATE USER 'collector_wttj'@'%' IDENTIFIED BY 'local-collector-wttj-only';
+CREATE USER 'discord'@'%' IDENTIFIED BY 'local-discord-only';
+GRANT ALL PRIVILEGES ON collector_business_france.* TO 'collector_business_france'@'%';
+GRANT ALL PRIVILEGES ON collector_wttj.* TO 'collector_wttj'@'%';
+GRANT ALL PRIVILEGES ON discord.* TO 'discord'@'%';

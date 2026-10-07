@@ -6,57 +6,76 @@ from sqlalchemy import func, select
 from tests.test_storage import event
 
 
-def test_duplicate_ingestion_creates_one_pending_delivery(notification_db):
-    from notification_store import Delivery, Inbox, accept
+def test_duplicate_ingestion_creates_one_pending_delivery(discord_db):
+    from discord_store import Delivery, Inbox, accept
 
     discovered = event()
-    assert accept(notification_db, discovered)
-    assert not accept(notification_db, discovered)
-    with notification_db.connect() as conn:
+    assert accept(discord_db, discovered)
+    assert not accept(discord_db, discovered)
+    with discord_db.connect() as conn:
         assert conn.scalar(select(func.count()).select_from(Inbox)) == 1
         assert conn.scalar(select(func.count()).select_from(Delivery)) == 1
 
 
-def test_reused_event_id_with_different_content_is_rejected(notification_db):
-    from notification_store import accept
+def test_reused_event_id_for_another_offer_is_rejected(discord_db):
+    from discord_store import accept
 
     discovered = event()
-    accept(notification_db, discovered)
-    with pytest.raises(ValueError, match="payload"):
-        accept(
-            notification_db, discovered.model_copy(update={"source_offer_id": "other"})
-        )
+    accept(discord_db, discovered)
+    with pytest.raises(ValueError, match="different offer"):
+        accept(discord_db, discovered.model_copy(update={"source_offer_id": "other"}))
 
 
-def test_lease_expiry_and_stale_completion(source_db):
-    from job_database.queue import claim, finish
-    from source_store import Outbox, record_page
+def test_republished_event_is_accepted_once(discord_db):
+    from discord_store import Delivery, Inbox, accept
 
-    record_page(source_db, [event()], "scan", 1)
+    assert accept(discord_db, event())
+    later = datetime.now(UTC) + timedelta(hours=2)
+    assert not accept(discord_db, event(observed_at=later))
+    with discord_db.connect() as conn:
+        assert conn.scalar(select(func.count()).select_from(Inbox)) == 1
+        assert conn.scalar(select(func.count()).select_from(Delivery)) == 1
+
+
+def test_only_discoveries_create_deliveries(discord_db):
+    from discord_store import Delivery, Inbox, accept
+
+    assert not accept(discord_db, event(type="updated"))
+    assert not accept(discord_db, event(type="closed"))
+    with discord_db.connect() as conn:
+        assert conn.scalar(select(func.count()).select_from(Inbox)) == 2
+        assert conn.scalar(select(func.count()).select_from(Delivery)) == 0
+
+
+def test_lease_expiry_and_stale_completion(discord_db):
+    from discord_store import Delivery, accept
+    from mysql_common.queue import claim, finish
+
+    accept(discord_db, event())
     now = datetime.now(UTC) + timedelta(seconds=1)
-    first = claim(source_db, Outbox, now=now, lease_seconds=10)
+    first = claim(discord_db, Delivery, now=now, lease_seconds=10)
     assert first is not None
-    assert claim(source_db, Outbox, now=now) is None
+    assert claim(discord_db, Delivery, now=now) is None
     later = now + timedelta(seconds=11)
-    second = claim(source_db, Outbox, now=later)
+    second = claim(discord_db, Delivery, now=later)
     assert second is not None
     assert first.token != second.token
-    assert not finish(source_db, Outbox, first, now=later)
-    assert finish(source_db, Outbox, second, now=later)
-    assert claim(source_db, Outbox, now=later) is None
+    assert not finish(discord_db, Delivery, first, now=later)
+    assert finish(discord_db, Delivery, second, now=later)
+    assert claim(discord_db, Delivery, now=later) is None
 
 
-def test_failed_delivery_remains_pending(notification_db):
-    from job_database.queue import claim, finish, retry_later
-    from notification_store import Delivery, accept
+def test_failed_delivery_remains_pending(discord_db):
+    from discord_store import Delivery, accept
+    from mysql_common.queue import claim, finish, retry_later
 
-    accept(notification_db, event())
+    accept(discord_db, event())
     now = datetime.now(UTC) + timedelta(seconds=1)
-    first = claim(notification_db, Delivery, now=now)
+    first = claim(discord_db, Delivery, now=now)
     assert first is not None
-    assert retry_later(notification_db, Delivery, first, now=now)
-    assert claim(notification_db, Delivery, now=now) is None
-    second = claim(notification_db, Delivery, now=now + timedelta(seconds=61))
+    assert retry_later(discord_db, Delivery, first, now=now)
+    assert claim(discord_db, Delivery, now=now) is None
+    second = claim(discord_db, Delivery, now=now + timedelta(seconds=61))
     assert second is not None
     assert second.attempts == 2
-    assert finish(notification_db, Delivery, second, now=now + timedelta(seconds=61))
+    assert finish(discord_db, Delivery, second, now=now + timedelta(seconds=61))

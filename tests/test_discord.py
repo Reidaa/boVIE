@@ -1,6 +1,6 @@
-from bovie.display import display_fields
-from bovie.job.models.job import Job
-from bovie.job.models.specialization import Specialization
+from collector_business_france.display import display_fields
+from collector_business_france.job.models.job import Job
+from collector_business_france.job.models.specialization import Specialization
 
 
 def test_job_embed_displays_job_categories():

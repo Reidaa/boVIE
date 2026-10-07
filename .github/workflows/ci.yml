@@ -88,32 +88,32 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Set up Node for Railway configuration
+      - name: Set up Node
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: "22"
+          node-version: "24"
           cache: npm
-          cache-dependency-path: .railway/package-lock.json
+          cache-dependency-path: package-lock.json
 
-      - name: Check Railway configuration
+      - name: Cache Turborepo
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
+        with:
+          path: .turbo/cache
+          key: turbo-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            turbo-${{ runner.os }}-
+
+      - name: Install dependencies
         run: |
-          npm ci --prefix .railway
-          npm --prefix .railway run check
+          npm ci
+          uv sync --all-packages
 
-      - name: Sync dependencies
-        run: uv sync --all-packages
-
-      - name: Run tests
+      - name: Start test brokers
         run: |
           docker run -d --name bovie-test-nats -p 127.0.0.1:4222:4222 nats:2.11-alpine --jetstream
-          docker create --name bovie-test-nats-auth -p 127.0.0.1:4223:4222 -e NATS_ADMIN_PASSWORD=local-nats-admin -e NATS_BF_PASSWORD=local-nats-bf -e NATS_WTTJ_PASSWORD=local-nats-wttj -e NATS_NOTIFICATIONS_PASSWORD=local-nats-notifications nats:2.11-alpine --config /tmp/nats.conf
+          docker create --name bovie-test-nats-auth -p 127.0.0.1:4223:4222 -e NATS_SETUP_PASSWORD=local-nats-setup -e NATS_COLLECTOR_BUSINESS_FRANCE_PASSWORD=local-nats-collector-business-france -e NATS_COLLECTOR_WTTJ_PASSWORD=local-nats-collector-wttj -e NATS_DISCORD_INTAKE_PASSWORD=local-nats-discord-intake nats:2.11-alpine --config /tmp/nats.conf
           docker cp deploy/nats.conf bovie-test-nats-auth:/tmp/nats.conf
           docker start bovie-test-nats-auth
-          uv run --all-packages pytest
 
-      - name: Check code and built artifacts
-        run: |
-          uv run --all-packages ruff check services packages tests scripts
-          uv run --all-packages ty check
-          uv build --all-packages --out-dir dist/workspace
-          uv run --all-packages python scripts/check_packages.py dist/workspace
+      - name: Lint, typecheck, test, and verify built artifacts
+        run: npx turbo run lint format:check check test verify:packages

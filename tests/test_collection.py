@@ -1,6 +1,6 @@
 import pytest
-from bovie.job.models.job import Job
-from bovie.job.models.search import SearchParameters
+from collector_business_france.job.models.job import Job
+from collector_business_france.job.models.search import SearchParameters
 from sqlalchemy import func, select
 
 
@@ -23,9 +23,9 @@ def job(identity):
     )
 
 
-def test_interrupted_collection_replays_without_skipping(source_db, monkeypatch):
-    from bovie import main
-    from source_store import Offer, Outbox
+def test_interrupted_collection_replays_without_skipping(collector_db, monkeypatch):
+    from collector_business_france import main
+    from collector_store import Offer
 
     def search(params):
         return {0: [1, 2], 2: [3]}[params.skip]
@@ -37,19 +37,50 @@ def test_interrupted_collection_replays_without_skipping(source_db, monkeypatch)
             raise RuntimeError("upstream failure")
         return job(identity)
 
+    published = []
     monkeypatch.setattr(main, "get_from_id", interrupted)
     with pytest.raises(RuntimeError):
-        main.task(SearchParameters(limit=3), source_db, page_size=2)
+        main.task(
+            SearchParameters(limit=3), collector_db, published.append, page_size=2
+        )
+    assert [event.source_offer_id for event in published] == ["1", "2"]
     monkeypatch.setattr(main, "get_from_id", job)
-    main.task(SearchParameters(limit=3), source_db, page_size=2)
-    main.task(SearchParameters(limit=3), source_db, page_size=2)
-    with source_db.connect() as conn:
+    main.task(SearchParameters(limit=3), collector_db, published.append, page_size=2)
+    main.task(SearchParameters(limit=3), collector_db, published.append, page_size=2)
+    assert [event.source_offer_id for event in published] == ["1", "2", "3"]
+    with collector_db.connect() as conn:
         assert conn.scalar(select(func.count()).select_from(Offer)) == 3
-        assert conn.scalar(select(func.count()).select_from(Outbox)) == 3
 
 
-def test_business_france_preserves_notification_fields():
-    from bovie.main import normalize
+def test_failed_publish_leaves_page_unrecorded(collector_db, monkeypatch):
+    from collector_business_france import main
+    from collector_store import Checkpoint, Offer
+
+    monkeypatch.setattr(main, "search_id", lambda params: [1, 2])
+    monkeypatch.setattr(main, "get_from_id", job)
+    published = []
+
+    def lose_second_ack(event):
+        published.append(event)
+        if len(published) == 2:
+            raise TimeoutError("Lost publish acknowledgment")
+
+    with pytest.raises(TimeoutError):
+        main.task(SearchParameters(limit=2), collector_db, lose_second_ack)
+    with collector_db.connect() as conn:
+        assert conn.scalar(select(func.count()).select_from(Offer)) == 0
+        assert conn.scalar(select(func.count()).select_from(Checkpoint)) == 0
+    main.task(SearchParameters(limit=2), collector_db, published.append)
+    # The retry republishes both offers under the same event IDs.
+    assert [event.event_id for event in published[2:]] == [
+        event.event_id for event in published[:2]
+    ]
+    with collector_db.connect() as conn:
+        assert conn.scalar(select(func.count()).select_from(Offer)) == 2
+
+
+def test_business_france_preserves_display_fields():
+    from collector_business_france.main import normalize
 
     event = normalize(job(1))
     assert event.source_offer_id == "1"

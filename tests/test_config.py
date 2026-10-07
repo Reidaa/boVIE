@@ -1,5 +1,5 @@
 import pytest
-from bovie.config import configFromParams
+from collector_business_france.config import configFromParams
 
 
 def test_config_from_params():

@@ -9,8 +9,8 @@ from tests.test_storage import event
 
 
 def test_deployment_nats_permissions_and_durable_acknowledgments(monkeypatch):
-    from broker_setup.main import setup
-    from job_messaging import connect
+    from nats_client import connect
+    from nats_setup.main import setup
 
     url = os.environ.get("NATS_AUTH_TEST_URL")
     if not url:
@@ -20,17 +20,21 @@ def test_deployment_nats_permissions_and_durable_acknowledgments(monkeypatch):
 
     async def flow():
         monkeypatch.setenv("NATS_URL", url)
-        monkeypatch.setenv("NATS_USER", "admin")
-        monkeypatch.setenv("NATS_PASSWORD", "local-nats-admin")
+        monkeypatch.setenv("NATS_USER", "nats-setup")
+        monkeypatch.setenv("NATS_PASSWORD", "local-nats-setup")
         admin = await connect()
         connections = []
         try:
             await setup(admin.jetstream())
-            for source, password in (
-                ("business_france", "local-nats-bf"),
-                ("wttj", "local-nats-wttj"),
+            for source, user, password in (
+                (
+                    "business_france",
+                    "collector-business-france",
+                    "local-nats-collector-business-france",
+                ),
+                ("wttj", "collector-wttj", "local-nats-collector-wttj"),
             ):
-                monkeypatch.setenv("NATS_USER", source)
+                monkeypatch.setenv("NATS_USER", user)
                 monkeypatch.setenv("NATS_PASSWORD", password)
                 nc = await connect()
                 connections.append(nc)
@@ -38,12 +42,12 @@ def test_deployment_nats_permissions_and_durable_acknowledgments(monkeypatch):
                 await nc.jetstream().publish(
                     f"offers.{source}.v1", discovered.model_dump_json().encode()
                 )
-            monkeypatch.setenv("NATS_USER", "notifications")
-            monkeypatch.setenv("NATS_PASSWORD", "local-nats-notifications")
+            monkeypatch.setenv("NATS_USER", "discord-intake")
+            monkeypatch.setenv("NATS_PASSWORD", "local-nats-discord-intake")
             receiver = await connect()
             connections.append(receiver)
             sub = await receiver.jetstream().pull_subscribe_bind(
-                durable="notifications", stream="OFFERS"
+                durable="discord-intake", stream="OFFERS"
             )
             for message in await sub.fetch(2, timeout=2):
                 await message.ack_sync(timeout=2)
@@ -53,11 +57,14 @@ def test_deployment_nats_permissions_and_durable_acknowledgments(monkeypatch):
                 await errors.put(error)
 
             denied = await nats.connect(
-                url, user="business_france", password="local-nats-bf", error_cb=on_error
+                url,
+                user="collector-business-france",
+                password="local-nats-collector-business-france",
+                error_cb=on_error,
             )
             connections.append(denied)
             await denied.publish("offers.wttj.v1", b"not permitted")
-            await denied.subscribe("_INBOX.notifications.>")
+            await denied.subscribe("_INBOX.discord-intake.>")
             await denied.flush()
             violations = [
                 await asyncio.wait_for(errors.get(), timeout=2) for _ in range(2)

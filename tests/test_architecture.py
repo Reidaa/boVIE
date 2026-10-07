@@ -10,7 +10,7 @@ ROOT = Path(__file__).parents[1]
 def test_workspace_imports_follow_declared_dependencies():
     projects = {}
     for manifest in [
-        *ROOT.glob("services/*/pyproject.toml"),
+        *ROOT.glob("apps/*/pyproject.toml"),
         *ROOT.glob("packages/*/pyproject.toml"),
     ]:
         config = tomllib.loads(manifest.read_text())
@@ -41,7 +41,7 @@ def test_workspace_imports_follow_declared_dependencies():
 
 
 def test_services_do_not_depend_on_other_services():
-    manifests = list(ROOT.glob("services/*/pyproject.toml"))
+    manifests = list(ROOT.glob("apps/*/pyproject.toml"))
     names = {tomllib.loads(path.read_text())["project"]["name"] for path in manifests}
     for path in [*manifests, *ROOT.glob("packages/*/pyproject.toml")]:
         project = tomllib.loads(path.read_text())["project"]

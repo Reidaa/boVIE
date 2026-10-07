@@ -6,3 +6,7 @@ yaak
 dist
 __pycache__
 .pytest_cache
+node_modules
+.turbo
+**/dist
+infra

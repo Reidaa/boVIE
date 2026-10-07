@@ -1,4 +1,4 @@
-"""Install each service's wheels alone and check its deployable interface."""
+"""Install each app's wheels alone and check its deployable interface."""
 
 import json
 import os
@@ -8,55 +8,62 @@ import tempfile
 from pathlib import Path
 
 SERVICES = {
-    "business-france": (
-        "bovie",
-        "bovie.main",
-        ["source-migrate"],
-        ["nats", "nextcord", "notification_store"],
+    "collector-business-france": (
+        "collector-business-france",
+        "collector_business_france.main",
+        ["collector-store-migrate"],
+        ["nextcord", "discord_store"],
     ),
-    "wttj": (
-        "wttf",
-        "wttf.main",
-        ["source-migrate"],
-        ["nats", "nextcord", "bovie", "notification_store"],
+    "collector-wttj": (
+        "collector-wttj",
+        "collector_wttj.main",
+        ["collector-store-migrate"],
+        ["nextcord", "collector_business_france", "discord_store"],
     ),
-    "outbox-relay": (
-        "outbox-relay",
-        "outbox_relay.main",
-        ["source-migrate"],
-        ["httpx", "nextcord", "notification_store"],
+    "discord-intake": (
+        "discord-intake",
+        "discord_intake.main",
+        ["discord-store-migrate"],
+        ["httpx", "nextcord", "collector_store"],
     ),
-    "notification-intake": (
-        "notification-intake",
-        "notification_intake.main",
-        ["notification-migrate"],
-        ["httpx", "nextcord", "source_store"],
+    "discord-sender": (
+        "discord-sender",
+        "discord_sender.main",
+        ["discord-store-migrate"],
+        ["nats", "nextcord", "collector_store"],
     ),
-    "discord-delivery": (
-        "discord-delivery",
-        "discord_delivery.main",
-        ["notification-migrate"],
-        ["nats", "nextcord", "source_store"],
-    ),
-    "broker-setup": (
-        "broker-setup",
-        "broker_setup.main",
+    "nats-setup": (
+        "nats-setup",
+        "nats_setup.main",
         [],
-        ["sqlalchemy", "httpx", "source_store", "notification_store"],
+        ["sqlalchemy", "httpx", "collector_store", "discord_store"],
     ),
 }
 
 
-def check(wheels: Path):
+def check(roots: list[Path]):
+    dists = sorted(path for root in roots for path in root.glob("*/dist"))
+    links = [argument for dist in dists for argument in ("--find-links", str(dist))]
+    # Workspace wheels keep one version across builds; never reuse a cached copy.
+    refresh = [
+        argument
+        for dist in dists
+        for wheel in dist.glob("*.whl")
+        for argument in ("--refresh-package", wheel.name.split("-")[0])
+    ]
     environment = os.environ.copy()
     for key in ("DATABASE_URL", "DISCORD_WEBHOOK_URL", "PYTHONPATH"):
         environment.pop(key, None)
     for service, (command, module, migrations, forbidden) in SERVICES.items():
-        wheel = list(
-            wheels.glob(f"bovie_{service.replace('-', '_')}-*-py3-none-any.whl")
-        )
+        wheel = [
+            path
+            for dist in dists
+            for path in dist.glob(
+                f"bovie_{service.replace('-', '_')}-*-py3-none-any.whl"
+            )
+        ]
         if len(wheel) != 1:
-            raise ValueError(f"Expected exactly one {service} wheel in {wheels}")
+            raise ValueError(f"Expected exactly one {service} wheel in {dists}")
         with tempfile.TemporaryDirectory(prefix=f"bovie-{service}-") as temporary:
             directory = Path(temporary)
             venv = directory / ".venv"
@@ -71,8 +78,8 @@ def check(wheels: Path):
                     "install",
                     "--python",
                     str(python),
-                    "--find-links",
-                    str(wheels),
+                    *links,
+                    *refresh,
                     str(wheel[0]),
                 ],
                 check=True,
@@ -90,9 +97,9 @@ for module in {blocked!r}:
 """
             for migration in migrations:
                 owner = (
-                    "source_store"
-                    if migration == "source-migrate"
-                    else "notification_store"
+                    "collector_store"
+                    if migration == "collector-store-migrate"
+                    else "discord_store"
                 )
                 probe += f"""
 from importlib.resources import files
@@ -113,7 +120,7 @@ importlib.import_module({(owner + ".migrate")!r})
                     env=environment,
                     stdout=subprocess.DEVNULL,
                 )
-            if service == "business-france":
+            if service == "collector-business-france":
                 subprocess.run(
                     [str(venv / "bin" / command), "--version"],
                     check=True,
@@ -133,4 +140,4 @@ importlib.import_module({(owner + ".migrate")!r})
 
 
 if __name__ == "__main__":
-    check(Path(sys.argv[1]).resolve())
+    check([Path(argument).resolve() for argument in sys.argv[1:]])
