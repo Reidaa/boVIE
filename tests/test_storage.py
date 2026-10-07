@@ -171,6 +171,7 @@ def test_migration_requires_an_empty_outbox(database_factory):
         )
     with pytest.raises(RuntimeError, match="1 unpublished events"):
         upgrade(engine)
+    # The refused attempt leaves the outbox in place and can simply be rerun.
     with engine.begin() as conn:
         conn.execute(text("UPDATE outbox SET completed_at = UTC_TIMESTAMP(6)"))
     upgrade(engine)
@@ -180,7 +181,36 @@ def test_migration_requires_an_empty_outbox(database_factory):
         assert not conn.scalar(
             text(
                 "SELECT COUNT(*) FROM information_schema.tables "
-                "WHERE table_schema = DATABASE() AND table_name = 'outbox'"
+                "WHERE table_schema = DATABASE() "
+                "AND table_name IN ('outbox', 'retired_outbox')"
+            )
+        )
+
+
+def test_migration_finishes_after_an_interruption(database_factory):
+    from pathlib import Path
+
+    import source_store
+    from job_database.migrate import upgrade_schema
+    from source_store.migrate import upgrade
+    from sqlalchemy import text
+
+    engine = database_factory("empty")
+    migrations = Path(source_store.__file__).parent / "migrations"
+    upgrade_schema(engine, migrations, revision="source_0001")
+    # A run that stopped after adding a column and renaming the outbox.
+    with engine.begin() as conn:
+        conn.execute(text("ALTER TABLE offers ADD COLUMN content_hash VARCHAR(64)"))
+        conn.execute(text("RENAME TABLE outbox TO retired_outbox"))
+    upgrade(engine)
+    with engine.connect() as conn:
+        assert conn.scalar(text("SELECT version_num FROM alembic_version")) == (
+            "source_0002"
+        )
+        assert not conn.scalar(
+            text(
+                "SELECT COUNT(*) FROM information_schema.tables "
+                "WHERE table_schema = DATABASE() AND table_name = 'retired_outbox'"
             )
         )
 

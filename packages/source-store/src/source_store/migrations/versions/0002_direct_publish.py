@@ -1,4 +1,8 @@
-"""Collectors publish directly: drop the outbox and track offer content and sightings."""
+"""Collectors publish directly: drop the outbox and track offer content and sightings.
+
+MySQL commits each DDL statement on its own, so every step can be rerun after a
+partial failure, and the destructive step comes last.
+"""
 
 import sqlalchemy as sa
 from alembic import op
@@ -9,20 +13,39 @@ down_revision = "source_0001"
 branch_labels = None
 depends_on = None
 
+RETIRED = "retired_outbox"
+
 
 def upgrade():
-    pending = op.get_bind().scalar(
-        sa.text("SELECT COUNT(*) FROM outbox WHERE completed_at IS NULL")
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+    columns = {column["name"] for column in inspector.get_columns("offers")}
+    if "content_hash" not in columns:
+        op.add_column("offers", sa.Column("content_hash", sa.String(64)))
+    if "last_seen_at" not in columns:
+        op.add_column("offers", sa.Column("last_seen_at", DATETIME(fsp=6)))
+    op.execute(
+        "UPDATE offers SET last_seen_at = observed_at WHERE last_seen_at IS NULL"
+    )
+
+    tables = set(inspector.get_table_names())
+    if "outbox" in tables:
+        # Rename before counting: a previous-release collector or relay that is
+        # still running now fails on the missing table and retries later, so no
+        # event can be written between the count and the drop.
+        op.rename_table("outbox", RETIRED)
+    elif RETIRED not in tables:
+        return
+    pending = bind.scalar(
+        sa.text(f"SELECT COUNT(*) FROM {RETIRED} WHERE completed_at IS NULL")
     )
     if pending:
+        op.rename_table(RETIRED, "outbox")
         raise RuntimeError(
             f"The outbox still holds {pending} unpublished events. Run the previous "
             "release's `outbox-relay --once` for this source, then migrate again."
         )
-    op.drop_table("outbox")
-    op.add_column("offers", sa.Column("content_hash", sa.String(64)))
-    op.add_column("offers", sa.Column("last_seen_at", DATETIME(fsp=6)))
-    op.execute("UPDATE offers SET last_seen_at = observed_at")
+    op.drop_table(RETIRED)
 
 
 def downgrade():

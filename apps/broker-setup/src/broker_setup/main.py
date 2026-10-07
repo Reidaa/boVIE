@@ -5,6 +5,7 @@ consumers can read it and a new consumer can replay the retained history.
 """
 
 import asyncio
+from dataclasses import replace
 
 import click
 from job_messaging import CONSUMER, STREAM, connect
@@ -20,6 +21,29 @@ from nats.js.api import (
 from nats.js.errors import NotFoundError
 
 RETENTION_DAYS = 90
+# Stream limits that NATS can change in place.
+LIMITS = ("max_age", "max_bytes", "max_msg_size", "duplicate_window")
+
+
+async def replace_work_queue(js, existing: StreamConfig, config: StreamConfig):
+    """Replace an empty work-queue stream; NATS cannot change retention in place.
+
+    The old stream is detached from the offer subjects before its messages are
+    counted. Publishes in that window fail and the collector retries on its next
+    run, so no acknowledged event can be deleted with the stream.
+    """
+    await js.update_stream(
+        config=replace(existing, subjects=[f"retired.{existing.name}"])
+    )
+    pending = (await js.stream_info(existing.name)).state.messages
+    if pending:
+        await js.update_stream(config=existing)
+        raise ValueError(
+            f"Stream {existing.name} is a work queue with {pending} messages. "
+            "Let notification intake drain it, then run setup again."
+        )
+    await js.delete_stream(existing.name)
+    await js.add_stream(config=config)
 
 
 async def setup(js, *, stream: str = STREAM, consumer: str = CONSUMER):
@@ -41,15 +65,7 @@ async def setup(js, *, stream: str = STREAM, consumer: str = CONSUMER):
         await js.add_stream(config=config)
     else:
         if existing.config.retention == RetentionPolicy.WORK_QUEUE:
-            # NATS cannot change a work-queue stream's retention in place. An empty
-            # work queue holds nothing, so replacing it loses no events.
-            if existing.state.messages:
-                raise ValueError(
-                    f"Stream {stream} is a work queue with {existing.state.messages} "
-                    "messages. Let notification intake drain it, then run setup again."
-                )
-            await js.delete_stream(stream)
-            await js.add_stream(config=config)
+            await replace_work_queue(js, existing.config, config)
         elif (
             existing.config.subjects != config.subjects
             or existing.config.storage != config.storage
@@ -59,6 +75,11 @@ async def setup(js, *, stream: str = STREAM, consumer: str = CONSUMER):
             raise ValueError(
                 "Existing stream settings differ; review them before deployment"
             )
+        elif any(
+            getattr(existing.config, limit) != getattr(config, limit)
+            for limit in LIMITS
+        ):
+            await js.update_stream(config=config)
     try:
         existing_consumer = await js.consumer_info(stream, consumer)
     except NotFoundError:

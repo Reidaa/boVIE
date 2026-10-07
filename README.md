@@ -240,6 +240,10 @@ service published them to a work-queue stream. To upgrade an existing deployment
 3. Deploy this release. `source-migrate` refuses to drop an outbox that still has
    unpublished events. `broker-setup` replaces the empty work-queue stream with a
    limits-retention stream and refuses if the old stream still holds messages.
+   Both checks first block new writes (by renaming the outbox, or detaching the
+   stream from the offer subjects), so a process still running from the previous
+   release fails and retries instead of losing an event. On a refusal, the outbox
+   or stream is restored; drain it and deploy again.
 4. Give each collector its source's `NATS_URL`, `NATS_USER`, and `NATS_PASSWORD`.
    The broker accounts and permissions are unchanged.
 

@@ -1,5 +1,6 @@
 import asyncio
 import os
+from dataclasses import replace
 from uuid import uuid4
 
 import httpx
@@ -147,12 +148,43 @@ def test_setup_replaces_only_an_empty_work_queue_stream():
             await js.publish("offers.wttj.v1", event().model_dump_json().encode())
             with pytest.raises(ValueError, match="1 messages"):
                 await setup(js, stream=stream)
+            # A refused replacement reattaches the old stream to the offer subjects.
+            info = await js.stream_info(stream)
+            assert info.config.subjects == ["offers.*.v1"]
+            assert info.config.retention == RetentionPolicy.WORK_QUEUE
+            assert info.state.messages == 1
             await js.purge_stream(stream)
             await setup(js, stream=stream)
             info = await js.stream_info(stream)
             assert info.config.retention == RetentionPolicy.LIMITS
             assert info.config.max_age == 90 * 24 * 60 * 60
             assert (await js.consumer_info(stream, "notifications")).config.durable_name
+        finally:
+            await js.delete_stream(stream)
+            await nc.close()
+
+    asyncio.run(flow())
+
+
+def test_setup_applies_changed_stream_limits():
+    from broker_setup.main import setup
+
+    url = nats_url()
+    stream = "TEST_" + uuid4().hex
+
+    async def flow():
+        nc = await nats.connect(url)
+        js = nc.jetstream()
+        try:
+            await setup(js, stream=stream)
+            info = await js.stream_info(stream)
+            await js.update_stream(
+                config=replace(info.config, max_age=24 * 60 * 60, max_bytes=1024)
+            )
+            await setup(js, stream=stream)
+            info = await js.stream_info(stream)
+            assert info.config.max_age == 90 * 24 * 60 * 60
+            assert info.config.max_bytes == 1024 * 1024 * 1024
         finally:
             await js.delete_stream(stream)
             await nc.close()
