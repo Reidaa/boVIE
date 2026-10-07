@@ -53,7 +53,7 @@ export default defineRailway((ctx) => {
   const businessFranceDb = mysql("mysql-collector-business-france", { region });
   const wttjDb = mysql("mysql-collector-wttj", { region });
   const discordDb = mysql("mysql-discord", { region });
-  const natsData = volume("nats-data", { region, sizeMB: 2048 });
+  const natsJetstream = volume("nats-jetstream", { region, sizeMB: 2048 });
   const nats = service("nats", {
     source,
     build: {
@@ -62,7 +62,7 @@ export default defineRailway((ctx) => {
       watchPatterns: ["deploy/railway/nats/**", "deploy/nats.conf"],
     },
     deploy: { ...persistent, requiredMountPath: "/data" },
-    volumeMounts: { "/data": natsData },
+    volumeMounts: { "/data": natsJetstream },
     env: {
       NATS_SETUP_PASSWORD: secret("nats", "NATS_SETUP_PASSWORD"),
       NATS_COLLECTOR_BUSINESS_FRANCE_PASSWORD: secret(
@@ -126,7 +126,7 @@ export default defineRailway((ctx) => {
       businessFranceDb,
       wttjDb,
       discordDb,
-      natsData,
+      natsJetstream,
       nats,
       businessFrance,
       wttj,

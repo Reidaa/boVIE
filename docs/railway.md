@@ -46,7 +46,7 @@ Do not use this configuration to replace an existing production environment.
 Every application or broker service uses the repository root as its build context and has an explicit Dockerfile path.
 Each application image installs only its workspace package and dependencies.
 Railway creates and mounts storage for each MySQL database.
-NATS stores JetStream data on `nats-data`, mounted at `/data`.
+NATS stores JetStream data on `nats-jetstream`, mounted at `/data`.
 NATS requires its volume mount before starting.
 All services run in `europe-west4-drams3a`.
 

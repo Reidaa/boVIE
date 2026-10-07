@@ -97,7 +97,7 @@ test("stateful services require persistent mounts", () => {
     });
   }
   assert.equal(byName.get("nats")!.deploy?.requiredMountPath, "/data");
-  assert.equal(byName.get("nats")!.volumeAttachments?.["nats-data"].mountPath, "/data");
+  assert.equal(byName.get("nats")!.volumeAttachments?.["nats-jetstream"].mountPath, "/data");
 });
 
 test("each application image installs only its workspace package", () => {
