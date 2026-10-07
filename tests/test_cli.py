@@ -18,13 +18,13 @@ class Publisher:
 
 
 def test_cli_loads_dotenv_before_resolving_options(tmp_path, monkeypatch):
-    from bovie import main
+    from collector_business_france import main
 
     monkeypatch.chdir(tmp_path)
     (tmp_path / ".env").write_text(
-        "BOVIE_LIMIT=7\nDATABASE_URL=mysql+pymysql://u:p@localhost/source\n"
+        "BUSINESS_FRANCE_LIMIT=7\nDATABASE_URL=mysql+pymysql://u:p@localhost/source\n"
     )
-    monkeypatch.delenv("BOVIE_LIMIT", raising=False)
+    monkeypatch.delenv("BUSINESS_FRANCE_LIMIT", raising=False)
     monkeypatch.delenv("DATABASE_URL", raising=False)
     observed = []
 
@@ -43,7 +43,7 @@ def test_cli_loads_dotenv_before_resolving_options(tmp_path, monkeypatch):
 
 
 def test_example_environment_is_accepted(monkeypatch):
-    from bovie import main
+    from collector_business_france import main
 
     values = dotenv_values(Path(__file__).parents[1] / ".env.example")
     for name, value in values.items():
@@ -67,7 +67,7 @@ def test_example_environment_is_accepted(monkeypatch):
 
 
 def test_wttj_cli_defaults_and_optional_contract_filters(tmp_path, monkeypatch):
-    from wttf import main
+    from collector_wttj import main
 
     monkeypatch.chdir(tmp_path)
     for name in ("WTTJ_QUERY", "WTTJ_CONTRACTS", "WTTJ_LIMIT", "WTTJ_MAX_PAGES"):

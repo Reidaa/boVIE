@@ -1,0 +1,21 @@
+[project]
+name = "bovie-nats-setup"
+version = "0.4.0"
+requires-python = ">=3.13"
+description = "BoVIE nats-setup"
+dependencies = [
+    "click>=8.1.8",
+    "nats-py>=2.10,<3",
+    "bovie-nats-client",
+    "bovie-cli-common"
+]
+
+[project.scripts]
+nats-setup = "nats_setup.main:main"
+
+[tool.uv.build-backend]
+module-name = "nats_setup"
+
+[build-system]
+requires = ["uv_build>=0.9.13,<0.10.0"]
+build-backend = "uv_build"

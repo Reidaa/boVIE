@@ -2,10 +2,10 @@ import { randomBytes } from "node:crypto";
 
 export const credentials = {
   nats: [
-    "NATS_ADMIN_PASSWORD",
-    "NATS_BF_PASSWORD",
-    "NATS_WTTJ_PASSWORD",
-    "NATS_NOTIFICATIONS_PASSWORD",
+    "NATS_SETUP_PASSWORD",
+    "NATS_COLLECTOR_BUSINESS_FRANCE_PASSWORD",
+    "NATS_COLLECTOR_WTTJ_PASSWORD",
+    "NATS_DISCORD_INTAKE_PASSWORD",
   ],
 };
 

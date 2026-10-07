@@ -8,35 +8,35 @@ import tempfile
 from pathlib import Path
 
 SERVICES = {
-    "business-france": (
-        "bovie",
-        "bovie.main",
-        ["source-migrate"],
-        ["nextcord", "notification_store"],
+    "collector-business-france": (
+        "collector-business-france",
+        "collector_business_france.main",
+        ["collector-store-migrate"],
+        ["nextcord", "discord_store"],
     ),
-    "wttj": (
-        "wttf",
-        "wttf.main",
-        ["source-migrate"],
-        ["nextcord", "bovie", "notification_store"],
+    "collector-wttj": (
+        "collector-wttj",
+        "collector_wttj.main",
+        ["collector-store-migrate"],
+        ["nextcord", "collector_business_france", "discord_store"],
     ),
-    "notification-intake": (
-        "notification-intake",
-        "notification_intake.main",
-        ["notification-migrate"],
-        ["httpx", "nextcord", "source_store"],
+    "discord-intake": (
+        "discord-intake",
+        "discord_intake.main",
+        ["discord-store-migrate"],
+        ["httpx", "nextcord", "collector_store"],
     ),
-    "discord-delivery": (
-        "discord-delivery",
-        "discord_delivery.main",
-        ["notification-migrate"],
-        ["nats", "nextcord", "source_store"],
+    "discord-sender": (
+        "discord-sender",
+        "discord_sender.main",
+        ["discord-store-migrate"],
+        ["nats", "nextcord", "collector_store"],
     ),
-    "broker-setup": (
-        "broker-setup",
-        "broker_setup.main",
+    "nats-setup": (
+        "nats-setup",
+        "nats_setup.main",
         [],
-        ["sqlalchemy", "httpx", "source_store", "notification_store"],
+        ["sqlalchemy", "httpx", "collector_store", "discord_store"],
     ),
 }
 
@@ -97,9 +97,9 @@ for module in {blocked!r}:
 """
             for migration in migrations:
                 owner = (
-                    "source_store"
-                    if migration == "source-migrate"
-                    else "notification_store"
+                    "collector_store"
+                    if migration == "collector-store-migrate"
+                    else "discord_store"
                 )
                 probe += f"""
 from importlib.resources import files
@@ -120,7 +120,7 @@ importlib.import_module({(owner + ".migrate")!r})
                     env=environment,
                     stdout=subprocess.DEVNULL,
                 )
-            if service == "business-france":
+            if service == "collector-business-france":
                 subprocess.run(
                     [str(venv / "bin" / command), "--version"],
                     check=True,

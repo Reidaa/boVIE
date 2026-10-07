@@ -111,7 +111,7 @@ jobs:
       - name: Start test brokers
         run: |
           docker run -d --name bovie-test-nats -p 127.0.0.1:4222:4222 nats:2.11-alpine --jetstream
-          docker create --name bovie-test-nats-auth -p 127.0.0.1:4223:4222 -e NATS_ADMIN_PASSWORD=local-nats-admin -e NATS_BF_PASSWORD=local-nats-bf -e NATS_WTTJ_PASSWORD=local-nats-wttj -e NATS_NOTIFICATIONS_PASSWORD=local-nats-notifications nats:2.11-alpine --config /tmp/nats.conf
+          docker create --name bovie-test-nats-auth -p 127.0.0.1:4223:4222 -e NATS_SETUP_PASSWORD=local-nats-setup -e NATS_COLLECTOR_BUSINESS_FRANCE_PASSWORD=local-nats-collector-business-france -e NATS_COLLECTOR_WTTJ_PASSWORD=local-nats-collector-wttj -e NATS_DISCORD_INTAKE_PASSWORD=local-nats-discord-intake nats:2.11-alpine --config /tmp/nats.conf
           docker cp deploy/nats.conf bovie-test-nats-auth:/tmp/nats.conf
           docker start bovie-test-nats-auth
 

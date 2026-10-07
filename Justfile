@@ -1,12 +1,10 @@
 SHELL := "/bin/sh"
 
-TARGET := "bovie"
-
 REPOSITORY := "reidaa"
 DOCKERFILE := "Dockerfile"
 DOCKERTAG := "latest"
 
-PACKAGE := "bovie"
+PACKAGE := "collector_business_france"
 
 TURBO := "npx turbo run"
 
@@ -54,8 +52,8 @@ run-help:
 up:
 	docker compose up -d --wait mysql nats
 
-migrate owner="source":
-	uv run --all-packages {{owner}}-migrate
+migrate store="collector-store":
+	uv run --all-packages {{store}}-migrate
 
 build:
 	{{TURBO}} build
@@ -64,7 +62,7 @@ verify-packages:
 	{{TURBO}} verify:packages
 
 workers:
-	docker compose --profile workers up --build -d receiver delivery
+	docker compose --profile workers up --build -d discord-intake discord-sender
 
 down:
 	docker compose down

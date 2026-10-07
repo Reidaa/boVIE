@@ -21,10 +21,10 @@ services:
     command: ["--config", "/etc/nats/nats.conf"]
     ports: ["127.0.0.1:4222:4222"]
     environment:
-      NATS_ADMIN_PASSWORD: ${NATS_ADMIN_PASSWORD:-local-nats-admin}
-      NATS_BF_PASSWORD: ${NATS_BF_PASSWORD:-local-nats-bf}
-      NATS_WTTJ_PASSWORD: ${NATS_WTTJ_PASSWORD:-local-nats-wttj}
-      NATS_NOTIFICATIONS_PASSWORD: ${NATS_NOTIFICATIONS_PASSWORD:-local-nats-notifications}
+      NATS_SETUP_PASSWORD: ${NATS_SETUP_PASSWORD:-local-nats-setup}
+      NATS_COLLECTOR_BUSINESS_FRANCE_PASSWORD: ${NATS_COLLECTOR_BUSINESS_FRANCE_PASSWORD:-local-nats-collector-business-france}
+      NATS_COLLECTOR_WTTJ_PASSWORD: ${NATS_COLLECTOR_WTTJ_PASSWORD:-local-nats-collector-wttj}
+      NATS_DISCORD_INTAKE_PASSWORD: ${NATS_DISCORD_INTAKE_PASSWORD:-local-nats-discord-intake}
     volumes:
       - nats:/data/jetstream
       - ./deploy/nats.conf:/etc/nats/nats.conf:ro
@@ -34,129 +34,127 @@ services:
       timeout: 5s
       retries: 20
 
-  migrate-bf:
+  migrate-collector-business-france:
     <<: *app
     build:
       context: .
-      target: business-france
-    image: bovie-business-france:local
-    command: [source-migrate]
+      target: collector-business-france
+    image: bovie-collector-business-france:local
+    command: [collector-store-migrate]
     environment:
-      DATABASE_URL: mysql+pymysql://business_france:local-bf-only@mysql/business_france
+      DATABASE_URL: mysql+pymysql://collector_business_france:local-collector-business-france-only@mysql/collector_business_france
     depends_on:
       mysql: {condition: service_healthy}
 
-  migrate-wttj:
+  migrate-collector-wttj:
     <<: *app
     build:
       context: .
-      target: wttj
-    image: bovie-wttj:local
-    command: [source-migrate]
+      target: collector-wttj
+    image: bovie-collector-wttj:local
+    command: [collector-store-migrate]
     environment:
-      DATABASE_URL: mysql+pymysql://wttj:local-wttj-only@mysql/wttj
+      DATABASE_URL: mysql+pymysql://collector_wttj:local-collector-wttj-only@mysql/collector_wttj
     depends_on:
       mysql: {condition: service_healthy}
 
-  migrate-notifications:
+  migrate-discord:
     <<: *app
     build:
       context: .
-      target: notification-intake
-    image: bovie-notification-intake:local
-    command: [notification-migrate]
+      target: discord-intake
+    image: bovie-discord-intake:local
+    command: [discord-store-migrate]
     environment:
-      DATABASE_URL: mysql+pymysql://notifications:local-notifications-only@mysql/notifications
+      DATABASE_URL: mysql+pymysql://discord:local-discord-only@mysql/discord
     depends_on:
       mysql: {condition: service_healthy}
 
-  setup-nats:
+  nats-setup:
     <<: *app
     build:
       context: .
-      target: broker-setup
-    image: bovie-broker-setup:local
-    command: [broker-setup]
+      target: nats-setup
+    image: bovie-nats-setup:local
+    command: [nats-setup]
     environment:
       NATS_URL: nats://nats:4222
-      NATS_USER: admin
-      NATS_PASSWORD: ${NATS_ADMIN_PASSWORD:-local-nats-admin}
+      NATS_USER: nats-setup
+      NATS_PASSWORD: ${NATS_SETUP_PASSWORD:-local-nats-setup}
     depends_on:
       nats: {condition: service_healthy}
 
-  business-france:
+  collector-business-france:
     <<: *app
     build:
       context: .
-      target: business-france
-    image: bovie-business-france:local
-    command: [bovie]
+      target: collector-business-france
+    image: bovie-collector-business-france:local
+    command: [collector-business-france]
     environment:
-      DATABASE_URL: mysql+pymysql://business_france:local-bf-only@mysql/business_france
-      BOVIE_LIMIT: ${BOVIE_LIMIT:-25}
-      BOVIE_REGION: ${BOVIE_REGION:-}
-      BOVIE_COUNTRY: ${BOVIE_COUNTRY:-}
-      BOVIE_SPECIALIZATION: ${BOVIE_SPECIALIZATION:-}
+      DATABASE_URL: mysql+pymysql://collector_business_france:local-collector-business-france-only@mysql/collector_business_france
+      BUSINESS_FRANCE_LIMIT: ${BUSINESS_FRANCE_LIMIT:-25}
+      BUSINESS_FRANCE_REGION: ${BUSINESS_FRANCE_REGION:-}
+      BUSINESS_FRANCE_COUNTRY: ${BUSINESS_FRANCE_COUNTRY:-}
+      BUSINESS_FRANCE_SPECIALIZATION: ${BUSINESS_FRANCE_SPECIALIZATION:-}
       NATS_URL: nats://nats:4222
-      NATS_USER: business_france
-      NATS_PASSWORD: ${NATS_BF_PASSWORD:-local-nats-bf}
+      NATS_USER: collector-business-france
+      NATS_PASSWORD: ${NATS_COLLECTOR_BUSINESS_FRANCE_PASSWORD:-local-nats-collector-business-france}
     depends_on:
-      migrate-bf: {condition: service_completed_successfully}
-      setup-nats: {condition: service_completed_successfully}
+      migrate-collector-business-france: {condition: service_completed_successfully}
+      nats-setup: {condition: service_completed_successfully}
 
-  wttj:
+  collector-wttj:
     <<: *app
     build:
       context: .
-      target: wttj
-    image: bovie-wttj:local
-    command: [wttf]
+      target: collector-wttj
+    image: bovie-collector-wttj:local
+    command: [collector-wttj]
     environment:
-      DATABASE_URL: mysql+pymysql://wttj:local-wttj-only@mysql/wttj
+      DATABASE_URL: mysql+pymysql://collector_wttj:local-collector-wttj-only@mysql/collector_wttj
       WTTJ_QUERY: ${WTTJ_QUERY:-}
       WTTJ_CONTRACTS: ${WTTJ_CONTRACTS:-}
       WTTJ_LIMIT: ${WTTJ_LIMIT:-50}
       WTTJ_MAX_PAGES: ${WTTJ_MAX_PAGES:-5}
       NATS_URL: nats://nats:4222
-      NATS_USER: wttj
-      NATS_PASSWORD: ${NATS_WTTJ_PASSWORD:-local-nats-wttj}
+      NATS_USER: collector-wttj
+      NATS_PASSWORD: ${NATS_COLLECTOR_WTTJ_PASSWORD:-local-nats-collector-wttj}
     depends_on:
-      migrate-wttj: {condition: service_completed_successfully}
-      setup-nats: {condition: service_completed_successfully}
+      migrate-collector-wttj: {condition: service_completed_successfully}
+      nats-setup: {condition: service_completed_successfully}
 
-  receiver:
+  discord-intake:
     <<: *app
     build:
       context: .
-      target: notification-intake
-    image: bovie-notification-intake:local
-    command: [notification-intake]
+      target: discord-intake
+    image: bovie-discord-intake:local
+    command: [discord-intake]
     restart: unless-stopped
     environment:
-      DATABASE_URL: mysql+pymysql://notifications:local-notifications-only@mysql/notifications
+      DATABASE_URL: mysql+pymysql://discord:local-discord-only@mysql/discord
       NATS_URL: nats://nats:4222
-      NATS_USER: notifications
-      NATS_PASSWORD: ${NATS_NOTIFICATIONS_PASSWORD:-local-nats-notifications}
+      NATS_USER: discord-intake
+      NATS_PASSWORD: ${NATS_DISCORD_INTAKE_PASSWORD:-local-nats-discord-intake}
     depends_on:
-      migrate-notifications: {condition: service_completed_successfully}
-      setup-nats: {condition: service_completed_successfully}
+      migrate-discord: {condition: service_completed_successfully}
+      nats-setup: {condition: service_completed_successfully}
 
-  delivery:
+  discord-sender:
     <<: *app
     build:
       context: .
-      target: discord-delivery
-    image: bovie-discord-delivery:local
-    command: [discord-delivery]
+      target: discord-sender
+    image: bovie-discord-sender:local
+    command: [discord-sender]
     restart: unless-stopped
     environment:
-      DATABASE_URL: mysql+pymysql://notifications:local-notifications-only@mysql/notifications
+      DATABASE_URL: mysql+pymysql://discord:local-discord-only@mysql/discord
       DISCORD_WEBHOOK_URL: ${DISCORD_WEBHOOK_URL:-}
     depends_on:
-      migrate-notifications: {condition: service_completed_successfully}
+      migrate-discord: {condition: service_completed_successfully}
 
 volumes:
   mysql:
   nats:
-  # Retain the legacy volume declaration; never delete it as part of cutover.
-  postgres:

@@ -33,15 +33,15 @@ Do not use this configuration to replace an existing production environment.
 
 | Service | Role | Start command |
 | --- | --- | --- |
-| `mysql-business-france` | Business France data | Railway MySQL |
-| `mysql-wttj` | WTTJ data | Railway MySQL |
-| `mysql-notifications` | Inbox and pending deliveries | Railway MySQL |
+| `mysql-collector-business-france` | Business France data | Railway MySQL |
+| `mysql-collector-wttj` | WTTJ data | Railway MySQL |
+| `mysql-discord` | Inbox and pending deliveries | Railway MySQL |
 | `nats` | Persistent JetStream broker | NATS with the repository configuration |
-| `business-france` | Collect and publish at minute 12, every two hours UTC | `bovie` |
-| `wttj` | Collect and publish at minute 22, every two hours UTC | `wttf` |
-| `broker-setup` | Provision the stream and consumer, then exit | `broker-setup` |
-| `notification-intake` | Store events and pending deliveries | `notification-intake` |
-| `discord-delivery` | Send pending deliveries, initially stopped | `discord-delivery` |
+| `collector-business-france` | Collect and publish at minute 12, every two hours UTC | `collector-business-france` |
+| `collector-wttj` | Collect and publish at minute 22, every two hours UTC | `collector-wttj` |
+| `nats-setup` | Create the stream and consumer, then exit | `nats-setup` |
+| `discord-intake` | Read offers and queue Discord messages | `discord-intake` |
+| `discord-sender` | Post queued messages to Discord, initially stopped | `discord-sender` |
 
 Every application or broker service uses the repository root as its build context and has an explicit Dockerfile path.
 Each application image installs only its workspace package and dependencies.
@@ -55,56 +55,48 @@ They pass new values to the configuration through the local process environment.
 Existing values, including sealed variables, are preserved on later applies.
 Use these npm scripts for the first deployment so NATS credentials are initialized.
 Railway provisions MySQL connection variables. Each worker references only its database's `MYSQL_URL`.
-Each collector references only its own source's NATS password.
+Each app references only its own NATS password.
 The database library accepts Railway's `mysql://` URL and uses PyMySQL.
 Generated passwords start with `bovie_` so NATS reads them as strings.
 Retain an alphabetic prefix when rotating NATS passwords.
 
-The collectors run `source-migrate --wait-timeout 180` before deployment.
-Notification intake runs `notification-migrate --wait-timeout 180`.
+The collectors run `collector-store-migrate --wait-timeout 180` before deployment.
+`discord-intake` runs `discord-store-migrate --wait-timeout 180`.
 The Business France collector reads the current public API key from the official offers page before calling its search API.
 These commands wait for database connectivity before applying migrations.
 Migration failures stop the deployment and are not retried as connection failures.
 Workers retry while their database or broker is starting.
-Broker setup exits successfully after provisioning and runs again when redeployed.
+`nats-setup` exits successfully after provisioning and runs again when redeployed.
 
 ## Enable staging Discord delivery
 
-Discord delivery starts as an empty service without a source connection.
+`discord-sender` starts as an empty service without a source connection.
 Railway requires at least one replica, so zero replicas cannot stop a service.
-Collection and intake can run while Discord delivery is stopped.
-Pending notifications stay in the notification database until delivery starts.
+Collection and `discord-intake` can run while `discord-sender` is stopped.
+Queued messages stay in the `discord` database until `discord-sender` starts.
 Create a webhook for a staging Discord channel and set `DISCORD_WEBHOOK_URL`
-on the `discord-delivery` service in Railway. Keep the value out of this repository.
+on the `discord-sender` service in Railway. Keep the value out of this repository.
 
 Change `deliveryEnabled` from `false` to `true` in `infra/railway/railway.ts`.
 The apply connects the service to GitHub and starts its first deployment.
 Run the checks, plan, and apply commands again.
 Starting delivery sends all pending staging discoveries, including older queued offers.
 
-## Remove the outbox relays
-
-Earlier versions of this configuration deployed `relay-bf` and `relay-wttj`.
-Before applying this version, follow the upgrade steps in the README so the
-outboxes and the work-queue stream are empty. If the plan does not remove the
-relay services, delete them in the Railway dashboard after the apply.
-
 ## Updates and checks
 
 Push changes to the configured branch to trigger Railway builds for affected services.
 Run `npm run railway:plan` after changing infrastructure configuration.
 Apply the reviewed plan to update the service configuration.
-The old root `railway.json` is removed because it only described Business France.
 
 ```sh
 npx railway status
-npx railway logs --service business-france --lines 50
-npx railway logs --service notification-intake --lines 50
+npx railway logs --service collector-business-france --lines 50
+npx railway logs --service discord-intake --lines 50
 npm run railway:plan
 ```
 
 Collectors and broker setup finish after successful runs. That exit is expected.
-The intake service must stay running. Delivery must remain stopped until its webhook is configured.
+`discord-intake` must stay running. `discord-sender` must remain stopped until its webhook is configured.
 A repeated plan after deployment must show no changes.
 
 The configuration follows Railway's [Infrastructure as Code guide](https://docs.railway.com/infrastructure-as-code)

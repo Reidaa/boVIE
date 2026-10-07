@@ -31,9 +31,9 @@ def detail(identity, contract="vie"):
     }
 
 
-def test_wttj_pagination_filtering_and_detail_normalization(source_db):
-    from source_store import Offer
-    from wttf.main import collect
+def test_wttj_pagination_filtering_and_detail_normalization(collector_db):
+    from collector_store import Offer
+    from collector_wttj.main import collect
 
     paths = []
     published = []
@@ -68,14 +68,14 @@ def test_wttj_pagination_filtering_and_detail_normalization(source_db):
     with httpx.Client(
         base_url="https://example.invalid", transport=httpx.MockTransport(handler)
     ) as client:
-        collect(source_db, client, published.append, limit=10, max_pages=5)
-        collect(source_db, client, published.append, limit=10, max_pages=5)
+        collect(collector_db, client, published.append, limit=10, max_pages=5)
+        collect(collector_db, client, published.append, limit=10, max_pages=5)
     assert [event.source_offer_id for event in published] == [
         "first",
         "full-time",
         "second",
     ]
-    with source_db.connect() as conn:
+    with collector_db.connect() as conn:
         assert conn.scalar(select(func.count()).select_from(Offer)) == 3
         assert (
             conn.scalar(
@@ -94,9 +94,9 @@ def test_wttj_pagination_filtering_and_detail_normalization(source_db):
     assert sum(path.endswith("/first") for path in paths) == 1
 
 
-def test_wttj_failed_detail_does_not_commit_page(source_db):
-    from source_store import Checkpoint, Offer
-    from wttf.main import collect
+def test_wttj_failed_detail_does_not_commit_page(collector_db):
+    from collector_store import Checkpoint, Offer
+    from collector_wttj.main import collect
 
     published = []
 
@@ -117,9 +117,9 @@ def test_wttj_failed_detail_does_not_commit_page(source_db):
         base_url="https://example.invalid", transport=httpx.MockTransport(handler)
     ) as client:
         with pytest.raises(httpx.HTTPStatusError):
-            collect(source_db, client, published.append)
+            collect(collector_db, client, published.append)
     assert published == []
-    with source_db.connect() as conn:
+    with collector_db.connect() as conn:
         assert conn.scalar(select(func.count()).select_from(Offer)) == 0
         assert conn.scalar(select(func.count()).select_from(Checkpoint)) == 0
 
@@ -138,7 +138,7 @@ def test_wttj_failed_detail_does_not_commit_page(source_db):
     ],
 )
 def test_all_contract_types_are_collected_by_default(monkeypatch, contract):
-    import wttf.main as worker
+    import collector_wttj.main as worker
 
     recorded = []
     monkeypatch.setattr(worker, "seen", lambda engine, identity: False)
@@ -172,7 +172,7 @@ def test_all_contract_types_are_collected_by_default(monkeypatch, contract):
 
 
 def test_optional_filters_and_publication_status(monkeypatch):
-    import wttf.main as worker
+    import collector_wttj.main as worker
 
     recorded = []
     fetched = []
@@ -227,7 +227,7 @@ def test_optional_filters_and_publication_status(monkeypatch):
 
 
 def test_unfiltered_collection_still_rejects_unpublished_jobs(monkeypatch):
-    import wttf.main as worker
+    import collector_wttj.main as worker
 
     recorded = []
     monkeypatch.setattr(worker, "seen", lambda engine, identity: False)
