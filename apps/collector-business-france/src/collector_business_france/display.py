@@ -1,7 +1,7 @@
 """Normalize Business France display fields for discovery events."""
 
 from dateutil.parser import isoparse
-from job_contracts import DisplayField
+from offer_events import DisplayField
 
 from collector_business_france.job.models.job import Job
 

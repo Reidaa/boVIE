@@ -11,32 +11,32 @@ SERVICES = {
     "collector-business-france": (
         "collector-business-france",
         "collector_business_france.main",
-        ["source-migrate"],
-        ["nextcord", "notification_store"],
+        ["collector-store-migrate"],
+        ["nextcord", "discord_store"],
     ),
     "collector-wttj": (
         "collector-wttj",
         "collector_wttj.main",
-        ["source-migrate"],
-        ["nextcord", "collector_business_france", "notification_store"],
+        ["collector-store-migrate"],
+        ["nextcord", "collector_business_france", "discord_store"],
     ),
     "discord-intake": (
         "discord-intake",
         "discord_intake.main",
-        ["notification-migrate"],
-        ["httpx", "nextcord", "source_store"],
+        ["discord-store-migrate"],
+        ["httpx", "nextcord", "collector_store"],
     ),
     "discord-sender": (
         "discord-sender",
         "discord_sender.main",
-        ["notification-migrate"],
-        ["nats", "nextcord", "source_store"],
+        ["discord-store-migrate"],
+        ["nats", "nextcord", "collector_store"],
     ),
     "nats-setup": (
         "nats-setup",
         "nats_setup.main",
         [],
-        ["sqlalchemy", "httpx", "source_store", "notification_store"],
+        ["sqlalchemy", "httpx", "collector_store", "discord_store"],
     ),
 }
 
@@ -97,9 +97,9 @@ for module in {blocked!r}:
 """
             for migration in migrations:
                 owner = (
-                    "source_store"
-                    if migration == "source-migrate"
-                    else "notification_store"
+                    "collector_store"
+                    if migration == "collector-store-migrate"
+                    else "discord_store"
                 )
                 probe += f"""
 from importlib.resources import files

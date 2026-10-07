@@ -6,8 +6,8 @@ description = "BoVIE nats-setup"
 dependencies = [
     "click>=8.1.8",
     "nats-py>=2.10,<3",
-    "bovie-messaging",
-    "bovie-runtime"
+    "bovie-nats-client",
+    "bovie-cli-common"
 ]
 
 [project.scripts]

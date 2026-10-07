@@ -1,4 +1,4 @@
-"""Provision the job stream and notification consumer.
+"""Provision the offer stream and the Discord intake consumer.
 
 The stream keeps messages after consumers acknowledge them, so several
 consumers can read it and a new consumer can replay the retained history.
@@ -7,8 +7,7 @@ consumers can read it and a new consumer can replay the retained history.
 import asyncio
 
 import click
-from job_messaging import CONSUMER, STREAM, connect
-from job_runtime import configure_logging
+from cli_common import configure_logging
 from nats.js.api import (
     AckPolicy,
     ConsumerConfig,
@@ -18,6 +17,7 @@ from nats.js.api import (
     StreamConfig,
 )
 from nats.js.errors import NotFoundError
+from nats_client import CONSUMER, STREAM, connect
 
 RETENTION_DAYS = 90
 # Stream limits that NATS can change in place.
@@ -70,7 +70,7 @@ async def setup(js, *, stream: str = STREAM, consumer: str = CONSUMER):
         )
     else:
         if existing_consumer.config.ack_policy != AckPolicy.EXPLICIT:
-            raise ValueError("Notification consumer must use explicit acknowledgment")
+            raise ValueError("Discord intake consumer must use explicit acknowledgment")
 
 
 @click.command()

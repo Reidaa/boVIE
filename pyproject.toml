@@ -1,7 +1,7 @@
 [project]
 name = "bovie-workspace"
 version = "0.4.0"
-description = "Job discovery and notification services"
+description = "Job offer collectors and Discord delivery"
 requires-python = ">=3.13"
 dependencies = []
 
@@ -20,12 +20,12 @@ bovie-collector-wttj = { workspace = true }
 bovie-discord-intake = { workspace = true }
 bovie-discord-sender = { workspace = true }
 bovie-nats-setup = { workspace = true }
-bovie-contracts = { workspace = true }
-bovie-database = { workspace = true }
-bovie-source-store = { workspace = true }
-bovie-notification-store = { workspace = true }
-bovie-messaging = { workspace = true }
-bovie-runtime = { workspace = true }
+bovie-offer-events = { workspace = true }
+bovie-mysql-common = { workspace = true }
+bovie-collector-store = { workspace = true }
+bovie-discord-store = { workspace = true }
+bovie-nats-client = { workspace = true }
+bovie-cli-common = { workspace = true }
 
 [dependency-groups]
 dev = [

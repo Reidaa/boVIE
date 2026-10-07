@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 import pytest
-from job_database.env import Env
+from mysql_common.env import Env
 from pydantic import HttpUrl, ValidationError
 from sqlalchemy import func, select
 
@@ -34,7 +34,7 @@ import sqlalchemy
 def forbidden(*args, **kwargs):
     raise AssertionError('Import attempted to create an engine')
 sqlalchemy.create_engine = forbidden
-import job_database.env, job_database, collector_business_france.main
+import mysql_common.env, mysql_common, collector_business_france.main
 """,
         ],
         env=environment,
@@ -43,7 +43,7 @@ import job_database.env, job_database, collector_business_france.main
 
 
 def event(offer_id="ABC", **changes):
-    from job_contracts import OfferDetails, OfferEvent
+    from offer_events import OfferDetails, OfferEvent
 
     fields: dict[str, Any] = {
         "type": "discovered",
@@ -79,15 +79,15 @@ def test_update_event_ids_follow_offer_content():
     assert event(type="updated", offer=changed).event_id != update.event_id
 
 
-def test_recorded_offers_keep_content_hash_and_sightings(source_db):
-    from source_store import Checkpoint, Offer, record_page, seen
+def test_recorded_offers_keep_content_hash_and_sightings(collector_db):
+    from collector_store import Checkpoint, Offer, record_page, seen
     from sqlalchemy.orm import Session
 
     discovered = event()
-    record_page(source_db, [discovered], [discovered.source_offer_id], "scan", 1)
-    record_page(source_db, [discovered, event("abc")], ["ABC", "abc"], "scan", 2)
-    assert seen(source_db, "ABC") and seen(source_db, "abc")
-    with Session(source_db) as session:
+    record_page(collector_db, [discovered], [discovered.source_offer_id], "scan", 1)
+    record_page(collector_db, [discovered, event("abc")], ["ABC", "abc"], "scan", 2)
+    assert seen(collector_db, "ABC") and seen(collector_db, "abc")
+    with Session(collector_db) as session:
         assert session.scalar(select(func.count()).select_from(Offer)) == 2
         offer = session.get(Offer, "ABC")
         assert offer is not None
@@ -98,41 +98,41 @@ def test_recorded_offers_keep_content_hash_and_sightings(source_db):
         first_sighting = offer.last_seen_at
         checkpoint = session.get(Checkpoint, "scan")
         assert checkpoint is not None and checkpoint.offset == 2
-    record_page(source_db, [], ["ABC", "unrecorded"], "scan", 3)
-    with Session(source_db) as session:
+    record_page(collector_db, [], ["ABC", "unrecorded"], "scan", 3)
+    with Session(collector_db) as session:
         offer = session.get(Offer, "ABC")
         assert offer is not None and offer.last_seen_at is not None
         assert offer.last_seen_at > first_sighting
         assert session.get(Offer, "unrecorded") is None
 
 
-def test_failed_page_rolls_back_offers_and_checkpoint(source_db):
-    from source_store import Checkpoint, Offer, record_page
+def test_failed_page_rolls_back_offers_and_checkpoint(collector_db):
+    from collector_store import Checkpoint, Offer, record_page
 
     def broken_events():
         yield event()
         raise RuntimeError("interrupted")
 
     with pytest.raises(RuntimeError, match="interrupted"):
-        record_page(source_db, broken_events(), [], "scan", 1)
-    with source_db.connect() as conn:
+        record_page(collector_db, broken_events(), [], "scan", 1)
+    with collector_db.connect() as conn:
         for table in (Offer, Checkpoint):
             assert conn.scalar(select(func.count()).select_from(table)) == 0
 
 
-def test_concurrent_recording_keeps_one_offer(source_db):
+def test_concurrent_recording_keeps_one_offer(collector_db):
     from concurrent.futures import ThreadPoolExecutor
 
-    from source_store import Offer, record_page
+    from collector_store import Offer, record_page
 
     with ThreadPoolExecutor(max_workers=4) as workers:
         list(
             workers.map(
-                lambda _: record_page(source_db, [event()], ["ABC"], "scan", 1),
+                lambda _: record_page(collector_db, [event()], ["ABC"], "scan", 1),
                 range(4),
             )
         )
-    with source_db.connect() as conn:
+    with collector_db.connect() as conn:
         assert conn.scalar(select(func.count()).select_from(Offer)) == 1
 
 
@@ -144,9 +144,9 @@ def test_domain_credentials_cannot_access_other_domains(database_factory, owner)
     from sqlalchemy.exc import DBAPIError
 
     domains = [
-        (database_factory("source"), "offers"),
-        (database_factory("source"), "offers"),
-        (database_factory("notification"), "inbox"),
+        (database_factory("collector"), "offers"),
+        (database_factory("collector"), "offers"),
+        (database_factory("discord"), "inbox"),
     ]
     first, own_table = domains[owner]
     user = "bovie_test_" + uuid4().hex[:20]

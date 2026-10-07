@@ -9,14 +9,14 @@ import sys
 from collections.abc import Callable
 
 import click
-from job_contracts import OfferDetails, OfferEvent
-from job_database import make_engine
-from job_database.env import load_env
-from job_messaging import Publisher
-from job_runtime import EnvironmentCommand
+from cli_common import EnvironmentCommand
+from collector_store import record_page, seen
 from loguru import logger
+from mysql_common import make_engine
+from mysql_common.env import load_env
+from nats_client import Publisher
+from offer_events import OfferDetails, OfferEvent
 from pydantic import HttpUrl
-from source_store import record_page, seen
 from sqlalchemy.engine import Engine
 
 from .config import configFromParams
@@ -29,7 +29,7 @@ from .job.models.search import SearchParameters
 from .job.models.specialization import get_specialization_names
 from .t import Choice
 
-DEFAULT_BOVIE_OFFER_MAX = 25
+DEFAULT_OFFER_LIMIT = 25
 
 
 def normalize(job: Job) -> OfferEvent:
@@ -94,20 +94,20 @@ def task(
     type=click.BOOL,
     is_flag=True,
     help="Enable debug logging",
-    envvar="BOVIE_DEBUG",
+    envvar="BUSINESS_FRANCE_DEBUG",
 )
 @click.option(
     "--limit",
-    default=DEFAULT_BOVIE_OFFER_MAX,
+    default=DEFAULT_OFFER_LIMIT,
     type=click.IntRange(min=1),
-    show_default=DEFAULT_BOVIE_OFFER_MAX,
-    envvar="BOVIE_LIMIT",
+    show_default=DEFAULT_OFFER_LIMIT,
+    envvar="BUSINESS_FRANCE_LIMIT",
 )
 @click.option(
     "--geozone",
     "-g",
     multiple=True,
-    envvar="BOVIE_REGION",
+    envvar="BUSINESS_FRANCE_REGION",
     type=Choice(get_zone_names(), case_sensitive=False),
     help="Regions to filter on",
 )
@@ -115,7 +115,7 @@ def task(
     "--country",
     "-c",
     multiple=True,
-    envvar="BOVIE_COUNTRY",
+    envvar="BUSINESS_FRANCE_COUNTRY",
     type=Choice(get_country_names(), case_sensitive=False),
     help="Countries to filter on",
 )
@@ -123,7 +123,7 @@ def task(
     "--specialization",
     "-s",
     multiple=True,
-    envvar="BOVIE_SPECIALIZATION",
+    envvar="BUSINESS_FRANCE_SPECIALIZATION",
     type=Choice(get_specialization_names(), case_sensitive=False),
     help="Specializations to filter on",
 )

@@ -18,32 +18,37 @@ npm workspace. Both share one task graph and cache.
 | `tests/` | Cross-package Python test suite | pytest |
 
 Each deployable service has its own package, dependencies, command, and Docker target.
-An app's directory, command, Docker target, and Compose and Railway service share one name.
+An app's directory, command, Docker target, Compose and Railway service, and NATS
+account share one name. Its database uses the same name with underscores.
 The root contains development tools and one lockfile per toolchain (`uv.lock`,
 `package-lock.json`). Services do not import other services. Tests enforce declared
 imports and install each service independently.
 
 | App in `apps/` | Responsibility | Database | NATS access |
 | --- | --- | --- | --- |
-| `collector-business-france` | Collect Business France VIE/VIA offers and publish the new ones | `business_france` | Publish `offers.business_france.v1` |
-| `collector-wttj` | Collect Welcome to the Jungle jobs and publish the new ones | `wttj` | Publish `offers.wttj.v1` |
-| `discord-intake` | Read offers from NATS and queue a Discord message for each new one | `notifications` | Consume `OFFERS/notifications` |
-| `discord-sender` | Post queued messages to the Discord webhook | `notifications` | None |
+| `collector-business-france` | Collect Business France VIE/VIA offers and publish the new ones | `collector_business_france` | Publish `offers.business_france.v1` |
+| `collector-wttj` | Collect Welcome to the Jungle jobs and publish the new ones | `collector_wttj` | Publish `offers.wttj.v1` |
+| `discord-intake` | Read offers from NATS and queue a Discord message for each new one | `discord` | Consume `OFFERS/discord-intake` |
+| `discord-sender` | Post queued messages to the Discord webhook | `discord` | None |
 | `nats-setup` | Create the `OFFERS` stream and its consumer | None | Administrator |
 
 Collectors run on schedules and publish new offers to NATS themselves. Each collector
-receives only its own database and broker credentials. Intake and delivery run
-continuously. Broker setup runs once.
+receives only its own database and broker credentials. `discord-intake` and
+`discord-sender` run continuously. `nats-setup` runs once.
 
-The libraries in `packages/` contain event contracts, source storage, notification
-storage, database operations, broker connections, and process startup helpers.
-They have no dependency on a deployable service. Source and notification storage
-include separate migration commands and revision histories.
+| Library in `packages/` | Contents |
+| --- | --- |
+| `offer-events` | The `OfferEvent` schema every app exchanges |
+| `collector-store` | Collector database schema, page recording, `collector-store-migrate` |
+| `discord-store` | Discord database schema (inbox and queued messages), `discord-store-migrate` |
+| `nats-client` | NATS connection, stream and consumer names, the collectors' publisher |
+| `mysql-common` | MySQL engine, UTC timestamps, queue leases, migration runner |
+| `cli-common` | `.env` loading and log setup for app entrypoints |
 
-Each source owns its offers and scan checkpoints in a separate database. The
-offers table is the collector's record of what it has already published.
-Notification intake and Discord delivery share the notification database.
-They cannot access source databases. Sources can run on different hosts.
+Libraries never depend on an app. Each collector owns its offers and scan
+checkpoints in its own database; the offers table records what it has already
+published. `discord-intake` and `discord-sender` share the `discord` database
+and cannot access collector databases. Collectors can run on different hosts.
 
 ## Local setup
 
@@ -55,9 +60,9 @@ npm ci
 cp .env.example .env
 docker compose up -d --wait mysql nats
 docker compose --profile workers build
-docker compose --profile workers run --rm migrate-bf
-docker compose --profile workers run --rm migrate-wttj
-docker compose --profile workers run --rm migrate-notifications
+docker compose --profile workers run --rm migrate-collector-business-france
+docker compose --profile workers run --rm migrate-collector-wttj
+docker compose --profile workers run --rm migrate-discord
 docker compose --profile workers run --rm nats-setup
 ```
 
@@ -72,11 +77,11 @@ Schema changes are explicit Alembic migrations. Imports and collector startup do
 not connect or create tables. To migrate an externally hosted database:
 
 ```sh
-DATABASE_URL='mysql+pymysql://user:password@host/source_db' uv run --package bovie-source-store source-migrate
-DATABASE_URL='mysql+pymysql://user:password@host/notification_db' uv run --package bovie-notification-store notification-migrate
+DATABASE_URL='mysql+pymysql://user:password@host/collector_db' uv run --package bovie-collector-store collector-store-migrate
+DATABASE_URL='mysql+pymysql://user:password@host/discord' uv run --package bovie-discord-store discord-store-migrate
 ```
 
-Run `source-migrate` separately for each source. Each database has its own
+Run `collector-store-migrate` separately for each collector database. Each database has its own
 Alembic version history. Migrations are included in the wheel. Percent-encode
 reserved characters in URL passwords. Environment variables override `.env`;
 each deployed process should receive only its own database credentials.
@@ -88,14 +93,14 @@ Collectors need a running NATS broker with the stream provisioned:
 
 ```sh
 uv run --package bovie-collector-business-france collector-business-france --limit 25 --country canada --specialization 'information systems'
-DATABASE_URL='mysql+pymysql://wttj:local-wttj-only@127.0.0.1/wttj' NATS_USER=wttj NATS_PASSWORD=local-nats-wttj \
+DATABASE_URL='mysql+pymysql://collector_wttj:local-collector-wttj-only@127.0.0.1/collector_wttj' NATS_USER=collector-wttj NATS_PASSWORD=local-nats-collector-wttj \
   uv run --package bovie-collector-wttj collector-wttj --query engineer --limit 50 --max-pages 5 --country CA
 ```
 
-Business France retains `--geozone`/`-g`, `--country`/`-c`,
+Business France accepts `--geozone`/`-g`, `--country`/`-c`,
 `--specialization`/`-s`, `--limit`, and `--debug`. Filters are repeatable;
-`BOVIE_REGION`, `BOVIE_COUNTRY`, `BOVIE_SPECIALIZATION`, `BOVIE_LIMIT`, and
-`BOVIE_DEBUG` also work. The limit bounds search results inspected per run.
+`BUSINESS_FRANCE_REGION`, `BUSINESS_FRANCE_COUNTRY`, `BUSINESS_FRANCE_SPECIALIZATION`, `BUSINESS_FRANCE_LIMIT`, and
+`BUSINESS_FRANCE_DEBUG` also work. The limit bounds search results inspected per run.
 
 WTTJ accepts `WTTJ_QUERY`, `WTTJ_CONTRACTS`, `WTTJ_LIMIT`, and `WTTJ_MAX_PAGES`.
 An empty query includes all titles. An empty contract filter accepts all contract types,
@@ -104,7 +109,7 @@ Use repeated `--contract` options to select contract types. `WTTJ_CONTRACTS` acc
 space-separated values. `--country` accepts repeated ISO country codes.
 
 ```sh
-DATABASE_URL='mysql+pymysql://wttj:local-wttj-only@127.0.0.1/wttj' NATS_USER=wttj NATS_PASSWORD=local-nats-wttj \
+DATABASE_URL='mysql+pymysql://collector_wttj:local-collector-wttj-only@127.0.0.1/collector_wttj' NATS_USER=collector-wttj NATS_PASSWORD=local-nats-collector-wttj \
   uv run --package bovie-collector-wttj collector-wttj --contract full_time --contract internship --country CA
 ```
 
@@ -129,7 +134,7 @@ the last time a scan returned it. Collectors do not yet publish updates or closu
 Checkpoints describe completed progress, not a stable upstream cursor. Offers
 that disappear or move outside the configured scan window cannot be guaranteed.
 
-## Notifications
+## Discord
 
 With `DISCORD_WEBHOOK_URL` set, start the independent background processes:
 
@@ -137,7 +142,7 @@ With `DISCORD_WEBHOOK_URL` set, start the independent background processes:
 docker compose --profile workers up -d discord-intake discord-sender
 ```
 
-This starts delivery to the configured real webhook. Collectors remain separate:
+This starts posting to the configured real webhook. Collectors remain separate:
 
 ```sh
 docker compose --profile workers run --rm collector-business-france
@@ -145,7 +150,7 @@ docker compose --profile workers run --rm collector-wttj
 ```
 
 Collectors outside Compose also need `NATS_URL`, `NATS_USER`, and `NATS_PASSWORD`
-for their source's broker account. For the background processes, set
+for their own broker account. For the background processes, set
 `DATABASE_URL` and the broker variables for the relevant owner, then use:
 
 ```sh
@@ -153,10 +158,10 @@ uv run --package bovie-discord-intake discord-intake
 uv run --package bovie-discord-sender discord-sender
 ```
 
-`discord-sender` only needs notification database credentials and `DISCORD_WEBHOOK_URL`.
+`discord-sender` only needs `discord` database credentials and `DISCORD_WEBHOOK_URL`.
 `--once` drains currently eligible work and exits; future retries still need another
 invocation. Without it, these commands poll continuously. The `nats-setup` Compose job uses a
-separate administrator account and must run before collectors or receivers.
+separate administrator account and must run before the collectors or `discord-intake`.
 
 ## Delivery and recovery
 
@@ -165,9 +170,9 @@ separate administrator account and must run before collectors or receivers.
   `observed_at`, and normalized display fields. Collectors only publish
   discoveries today, and only discoveries notify. Cross-board deduplication is not included.
 - `event_id` is derived from the source, offer ID, and type (plus the content hash
-  for updates). A republished event keeps its ID and `Nats-Msg-Id`. The notification
+  for updates). A republished event keeps its ID and `Nats-Msg-Id`. The Discord
   inbox drops it even after the broker's two-minute deduplication window.
-- Discord intake commits its inbox and pending delivery in one transaction, then
+- `discord-intake` commits its inbox and pending delivery in one transaction, then
   acknowledges NATS. Lost acknowledgments cause safe redelivery. Invalid events
   are logged without their payload and retried, so operators can investigate
   without silently discarding them.
@@ -187,7 +192,7 @@ separate administrator account and must run before collectors or receivers.
   next run retries. The single local NATS server is not highly available;
   production resilience needs a managed/replicated deployment and tested backups.
 
-Inspect `deliveries` in the notification database: `completed_at IS NULL` identifies pending work;
+Inspect `deliveries` in the `discord` database: `completed_at IS NULL` identifies pending work;
 `attempts`, `available_at`, and `lease_until` show retry progress. Fix the failing
 dependency and leave workers running. Do not manually mark messages delivered.
 Use JetStream consumer statistics to inspect pending/redelivered messages.

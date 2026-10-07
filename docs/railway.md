@@ -33,9 +33,9 @@ Do not use this configuration to replace an existing production environment.
 
 | Service | Role | Start command |
 | --- | --- | --- |
-| `mysql-business-france` | Business France data | Railway MySQL |
-| `mysql-wttj` | WTTJ data | Railway MySQL |
-| `mysql-notifications` | Inbox and pending deliveries | Railway MySQL |
+| `mysql-collector-business-france` | Business France data | Railway MySQL |
+| `mysql-collector-wttj` | WTTJ data | Railway MySQL |
+| `mysql-discord` | Inbox and pending deliveries | Railway MySQL |
 | `nats` | Persistent JetStream broker | NATS with the repository configuration |
 | `collector-business-france` | Collect and publish at minute 12, every two hours UTC | `collector-business-france` |
 | `collector-wttj` | Collect and publish at minute 22, every two hours UTC | `collector-wttj` |
@@ -55,13 +55,13 @@ They pass new values to the configuration through the local process environment.
 Existing values, including sealed variables, are preserved on later applies.
 Use these npm scripts for the first deployment so NATS credentials are initialized.
 Railway provisions MySQL connection variables. Each worker references only its database's `MYSQL_URL`.
-Each collector references only its own source's NATS password.
+Each app references only its own NATS password.
 The database library accepts Railway's `mysql://` URL and uses PyMySQL.
 Generated passwords start with `bovie_` so NATS reads them as strings.
 Retain an alphabetic prefix when rotating NATS passwords.
 
-The collectors run `source-migrate --wait-timeout 180` before deployment.
-`discord-intake` runs `notification-migrate --wait-timeout 180`.
+The collectors run `collector-store-migrate --wait-timeout 180` before deployment.
+`discord-intake` runs `discord-store-migrate --wait-timeout 180`.
 The Business France collector reads the current public API key from the official offers page before calling its search API.
 These commands wait for database connectivity before applying migrations.
 Migration failures stop the deployment and are not retried as connection failures.
@@ -73,7 +73,7 @@ Workers retry while their database or broker is starting.
 `discord-sender` starts as an empty service without a source connection.
 Railway requires at least one replica, so zero replicas cannot stop a service.
 Collection and `discord-intake` can run while `discord-sender` is stopped.
-Pending notifications stay in the notification database until delivery starts.
+Queued messages stay in the `discord` database until `discord-sender` starts.
 Create a webhook for a staging Discord channel and set `DISCORD_WEBHOOK_URL`
 on the `discord-sender` service in Railway. Keep the value out of this repository.
 

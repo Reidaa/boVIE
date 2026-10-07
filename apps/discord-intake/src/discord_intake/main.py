@@ -2,12 +2,12 @@ import asyncio
 
 import click
 import nats.errors
-from job_contracts import OfferEvent
-from job_database import make_engine
-from job_database.env import load_env
-from job_messaging import CONSUMER, STREAM, connect, subject
-from job_runtime import configure_logging, log_failure
-from notification_store import accept
+from cli_common import configure_logging, log_failure
+from discord_store import accept
+from mysql_common import make_engine
+from mysql_common.env import load_env
+from nats_client import CONSUMER, STREAM, connect, subject
+from offer_events import OfferEvent
 from sqlalchemy.engine import Engine
 
 
@@ -46,7 +46,7 @@ def main(once: bool):
                     try:
                         await receive_message(engine, message)
                     except Exception as error:
-                        log_failure(error, "Notification ingestion")
+                        log_failure(error, "Discord intake")
                         await message.nak(delay=30)
                         if once:
                             raise click.ClickException(

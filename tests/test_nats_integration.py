@@ -28,19 +28,19 @@ def test_both_sources_through_real_jetstream_and_captured_discord(
     from collector_wttj.main import collect
     from discord_intake.main import receive_message
     from discord_sender.delivery import deliver_one
-    from job_messaging import Publisher
+    from discord_store import Delivery
+    from nats_client import Publisher
     from nats_setup.main import setup
-    from notification_store import Delivery
 
     url = nats_url()
     monkeypatch.setenv("NATS_URL", url)
     monkeypatch.delenv("NATS_USER", raising=False)
     monkeypatch.delenv("NATS_PASSWORD", raising=False)
-    business_france = database_factory("source")
-    wttj = database_factory("source")
-    notification = database_factory("notification")
+    business_france = database_factory("collector")
+    wttj = database_factory("collector")
+    discord = database_factory("discord")
     stream = "TEST_" + uuid4().hex
-    consumer = "notifications"
+    consumer = "discord-intake"
 
     async def provision():
         nc = await nats.connect(url)
@@ -96,15 +96,15 @@ def test_both_sources_through_real_jetstream_and_captured_discord(
                 sub = await js.pull_subscribe_bind(durable=consumer, stream=stream)
                 messages = await sub.fetch(3, timeout=2)
                 assert len(messages) == 2
-                from job_contracts import OfferEvent
-                from notification_store import accept
+                from discord_store import accept
+                from offer_events import OfferEvent
 
                 # Commit the first message but lose its acknowledgment.
-                accept(notification, OfferEvent.model_validate_json(messages[0].data))
-                await receive_message(notification, messages[1])
+                accept(discord, OfferEvent.model_validate_json(messages[0].data))
+                await receive_message(discord, messages[1])
                 replay = (await sub.fetch(1, timeout=2))[0]
                 assert replay.data == messages[0].data
-                await receive_message(notification, replay)
+                await receive_message(discord, replay)
                 # Acknowledged messages stay in the stream for other consumers.
                 assert (await js.stream_info(stream)).state.messages == 2
             finally:
@@ -113,7 +113,7 @@ def test_both_sources_through_real_jetstream_and_captured_discord(
         asyncio.run(consume())
     finally:
         asyncio.run(delete())
-    with notification.connect() as conn:
+    with discord.connect() as conn:
         assert conn.scalar(select(func.count()).select_from(Delivery)) == 2
     sent = []
 
@@ -122,7 +122,7 @@ def test_both_sources_through_real_jetstream_and_captured_discord(
         return httpx.Response(204)
 
     with httpx.Client(transport=httpx.MockTransport(delivery_handler)) as client:
-        while deliver_one(notification, client, "https://discord.invalid/webhook"):
+        while deliver_one(discord, client, "https://discord.invalid/webhook"):
             pass
     assert len(sent) == 2
 

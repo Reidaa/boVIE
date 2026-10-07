@@ -10,11 +10,11 @@ dependencies = [
     "pydantic>=2.11.3",
     "python-dateutil>=2.9.0.post0",
     "sqlalchemy>=2.0,<2.1",
-    "bovie-contracts",
-    "bovie-database",
-    "bovie-source-store",
-    "bovie-messaging",
-    "bovie-runtime"
+    "bovie-offer-events",
+    "bovie-mysql-common",
+    "bovie-collector-store",
+    "bovie-nats-client",
+    "bovie-cli-common"
 ]
 
 [project.scripts]

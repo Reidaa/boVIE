@@ -1,7 +1,7 @@
 from unittest.mock import Mock
 
 import pytest
-from job_database import migrate
+from mysql_common import migrate
 from sqlalchemy.exc import OperationalError
 
 

@@ -1,9 +1,9 @@
-"""Render and send pending Discord notifications."""
+"""Render and send queued Discord messages."""
 
 import httpx
-from job_contracts import OfferEvent
-from job_database.queue import claim, finish, retry_later
-from notification_store import Delivery
+from discord_store import Delivery
+from mysql_common.queue import claim, finish, retry_later
+from offer_events import OfferEvent
 from sqlalchemy.engine import Engine
 
 

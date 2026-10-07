@@ -37,14 +37,20 @@ test("every service has an explicit build, command, and private deployment", () 
     assert.equal(service.networking?.tcpProxies, undefined);
   }
   for (const [name, user, password] of [
-    ["collector-business-france", "business_france", "NATS_BF_PASSWORD"],
-    ["collector-wttj", "wttj", "NATS_WTTJ_PASSWORD"],
+    [
+      "collector-business-france",
+      "collector-business-france",
+      "NATS_COLLECTOR_BUSINESS_FRANCE_PASSWORD",
+    ],
+    ["collector-wttj", "collector-wttj", "NATS_COLLECTOR_WTTJ_PASSWORD"],
   ]) {
     const service = byName.get(name)!;
     assert.equal(service.deploy?.restartPolicyType, "NEVER");
     assert.equal(service.deploy?.restartPolicyMaxRetries, undefined);
     assert.ok(service.deploy?.cronSchedule);
-    assert.deepEqual(service.deploy?.preDeployCommand, ["source-migrate --wait-timeout 180"]);
+    assert.deepEqual(service.deploy?.preDeployCommand, [
+      "collector-store-migrate --wait-timeout 180",
+    ]);
     // Collectors publish their own events, using only their source's broker account.
     assert.deepEqual(service.variables!.NATS_USER, { type: "literal", value: user });
     assert.deepEqual(service.variables!.NATS_PASSWORD, {
@@ -71,7 +77,7 @@ test("secrets stay with their owner and staging delivery starts stopped", () => 
 test("stateful services require persistent mounts", () => {
   assert.deepEqual(
     databases.map((database) => database.name),
-    ["mysql-business-france", "mysql-wttj", "mysql-notifications"],
+    ["mysql-collector-business-france", "mysql-collector-wttj", "mysql-discord"],
   );
   for (const database of databases) {
     assert.equal(database.engine, "mysql");
@@ -79,10 +85,10 @@ test("stateful services require persistent mounts", () => {
     assert.equal(database.deploy?.multiRegionConfig?.["europe-west4-drams3a"]?.numReplicas, 1);
   }
   for (const [service, database] of [
-    ["collector-business-france", "mysql-business-france"],
-    ["collector-wttj", "mysql-wttj"],
-    ["discord-intake", "mysql-notifications"],
-    ["discord-sender", "mysql-notifications"],
+    ["collector-business-france", "mysql-collector-business-france"],
+    ["collector-wttj", "mysql-collector-wttj"],
+    ["discord-intake", "mysql-discord"],
+    ["discord-sender", "mysql-discord"],
   ]) {
     assert.deepEqual(byName.get(service)!.variables!.DATABASE_URL, {
       type: "reference",

@@ -8,17 +8,17 @@ resolution-markers = [
 
 [manifest]
 members = [
+    "bovie-cli-common",
     "bovie-collector-business-france",
+    "bovie-collector-store",
     "bovie-collector-wttj",
-    "bovie-contracts",
-    "bovie-database",
     "bovie-discord-intake",
     "bovie-discord-sender",
-    "bovie-messaging",
+    "bovie-discord-store",
+    "bovie-mysql-common",
+    "bovie-nats-client",
     "bovie-nats-setup",
-    "bovie-notification-store",
-    "bovie-runtime",
-    "bovie-source-store",
+    "bovie-offer-events",
     "bovie-workspace",
 ]
 
@@ -58,15 +58,32 @@ wheels = [
 ]
 
 [[package]]
+name = "bovie-cli-common"
+version = "0.4.0"
+source = { editable = "packages/cli-common" }
+dependencies = [
+    { name = "click" },
+    { name = "loguru" },
+    { name = "python-dotenv" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "click", specifier = ">=8.1.8" },
+    { name = "loguru", specifier = ">=0.7.3" },
+    { name = "python-dotenv", specifier = ">=1.0.1" },
+]
+
+[[package]]
 name = "bovie-collector-business-france"
 version = "0.4.0"
 source = { editable = "apps/collector-business-france" }
 dependencies = [
-    { name = "bovie-contracts" },
-    { name = "bovie-database" },
-    { name = "bovie-messaging" },
-    { name = "bovie-runtime" },
-    { name = "bovie-source-store" },
+    { name = "bovie-cli-common" },
+    { name = "bovie-collector-store" },
+    { name = "bovie-mysql-common" },
+    { name = "bovie-nats-client" },
+    { name = "bovie-offer-events" },
     { name = "click" },
     { name = "httpx" },
     { name = "loguru" },
@@ -77,11 +94,11 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "bovie-contracts", editable = "packages/contracts" },
-    { name = "bovie-database", editable = "packages/database" },
-    { name = "bovie-messaging", editable = "packages/messaging" },
-    { name = "bovie-runtime", editable = "packages/runtime" },
-    { name = "bovie-source-store", editable = "packages/source-store" },
+    { name = "bovie-cli-common", editable = "packages/cli-common" },
+    { name = "bovie-collector-store", editable = "packages/collector-store" },
+    { name = "bovie-mysql-common", editable = "packages/mysql-common" },
+    { name = "bovie-nats-client", editable = "packages/nats-client" },
+    { name = "bovie-offer-events", editable = "packages/offer-events" },
     { name = "click", specifier = ">=8.1.8" },
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "loguru", specifier = ">=0.7.3" },
@@ -91,15 +108,34 @@ requires-dist = [
 ]
 
 [[package]]
+name = "bovie-collector-store"
+version = "0.4.0"
+source = { editable = "packages/collector-store" }
+dependencies = [
+    { name = "bovie-mysql-common" },
+    { name = "bovie-offer-events" },
+    { name = "click" },
+    { name = "sqlalchemy" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "bovie-mysql-common", editable = "packages/mysql-common" },
+    { name = "bovie-offer-events", editable = "packages/offer-events" },
+    { name = "click", specifier = ">=8.1.8" },
+    { name = "sqlalchemy", specifier = ">=2.0,<2.1" },
+]
+
+[[package]]
 name = "bovie-collector-wttj"
 version = "0.4.0"
 source = { editable = "apps/collector-wttj" }
 dependencies = [
-    { name = "bovie-contracts" },
-    { name = "bovie-database" },
-    { name = "bovie-messaging" },
-    { name = "bovie-runtime" },
-    { name = "bovie-source-store" },
+    { name = "bovie-cli-common" },
+    { name = "bovie-collector-store" },
+    { name = "bovie-mysql-common" },
+    { name = "bovie-nats-client" },
+    { name = "bovie-offer-events" },
     { name = "click" },
     { name = "httpx" },
     { name = "loguru" },
@@ -109,11 +145,11 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "bovie-contracts", editable = "packages/contracts" },
-    { name = "bovie-database", editable = "packages/database" },
-    { name = "bovie-messaging", editable = "packages/messaging" },
-    { name = "bovie-runtime", editable = "packages/runtime" },
-    { name = "bovie-source-store", editable = "packages/source-store" },
+    { name = "bovie-cli-common", editable = "packages/cli-common" },
+    { name = "bovie-collector-store", editable = "packages/collector-store" },
+    { name = "bovie-mysql-common", editable = "packages/mysql-common" },
+    { name = "bovie-nats-client", editable = "packages/nats-client" },
+    { name = "bovie-offer-events", editable = "packages/offer-events" },
     { name = "click", specifier = ">=8.1.8" },
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "loguru", specifier = ">=0.7.3" },
@@ -122,20 +158,84 @@ requires-dist = [
 ]
 
 [[package]]
-name = "bovie-contracts"
+name = "bovie-discord-intake"
 version = "0.4.0"
-source = { editable = "packages/contracts" }
+source = { editable = "apps/discord-intake" }
 dependencies = [
-    { name = "pydantic" },
+    { name = "bovie-cli-common" },
+    { name = "bovie-discord-store" },
+    { name = "bovie-mysql-common" },
+    { name = "bovie-nats-client" },
+    { name = "bovie-offer-events" },
+    { name = "click" },
+    { name = "loguru" },
+    { name = "nats-py" },
+    { name = "sqlalchemy" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "pydantic", specifier = ">=2.11.3" }]
+requires-dist = [
+    { name = "bovie-cli-common", editable = "packages/cli-common" },
+    { name = "bovie-discord-store", editable = "packages/discord-store" },
+    { name = "bovie-mysql-common", editable = "packages/mysql-common" },
+    { name = "bovie-nats-client", editable = "packages/nats-client" },
+    { name = "bovie-offer-events", editable = "packages/offer-events" },
+    { name = "click", specifier = ">=8.1.8" },
+    { name = "loguru", specifier = ">=0.7.3" },
+    { name = "nats-py", specifier = ">=2.10,<3" },
+    { name = "sqlalchemy", specifier = ">=2.0,<2.1" },
+]
 
 [[package]]
-name = "bovie-database"
+name = "bovie-discord-sender"
 version = "0.4.0"
-source = { editable = "packages/database" }
+source = { editable = "apps/discord-sender" }
+dependencies = [
+    { name = "bovie-cli-common" },
+    { name = "bovie-discord-store" },
+    { name = "bovie-mysql-common" },
+    { name = "bovie-offer-events" },
+    { name = "click" },
+    { name = "httpx" },
+    { name = "loguru" },
+    { name = "sqlalchemy" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "bovie-cli-common", editable = "packages/cli-common" },
+    { name = "bovie-discord-store", editable = "packages/discord-store" },
+    { name = "bovie-mysql-common", editable = "packages/mysql-common" },
+    { name = "bovie-offer-events", editable = "packages/offer-events" },
+    { name = "click", specifier = ">=8.1.8" },
+    { name = "httpx", specifier = ">=0.28.1" },
+    { name = "loguru", specifier = ">=0.7.3" },
+    { name = "sqlalchemy", specifier = ">=2.0,<2.1" },
+]
+
+[[package]]
+name = "bovie-discord-store"
+version = "0.4.0"
+source = { editable = "packages/discord-store" }
+dependencies = [
+    { name = "bovie-mysql-common" },
+    { name = "bovie-offer-events" },
+    { name = "click" },
+    { name = "sqlalchemy" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "bovie-mysql-common", editable = "packages/mysql-common" },
+    { name = "bovie-offer-events", editable = "packages/offer-events" },
+    { name = "click", specifier = ">=8.1.8" },
+    { name = "sqlalchemy", specifier = ">=2.0,<2.1" },
+]
+
+[[package]]
+name = "bovie-mysql-common"
+version = "0.4.0"
+source = { editable = "packages/mysql-common" }
 dependencies = [
     { name = "alembic" },
     { name = "pydantic" },
@@ -154,73 +254,17 @@ requires-dist = [
 ]
 
 [[package]]
-name = "bovie-discord-intake"
+name = "bovie-nats-client"
 version = "0.4.0"
-source = { editable = "apps/discord-intake" }
+source = { editable = "packages/nats-client" }
 dependencies = [
-    { name = "bovie-contracts" },
-    { name = "bovie-database" },
-    { name = "bovie-messaging" },
-    { name = "bovie-notification-store" },
-    { name = "bovie-runtime" },
-    { name = "click" },
-    { name = "loguru" },
-    { name = "nats-py" },
-    { name = "sqlalchemy" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "bovie-contracts", editable = "packages/contracts" },
-    { name = "bovie-database", editable = "packages/database" },
-    { name = "bovie-messaging", editable = "packages/messaging" },
-    { name = "bovie-notification-store", editable = "packages/notification-store" },
-    { name = "bovie-runtime", editable = "packages/runtime" },
-    { name = "click", specifier = ">=8.1.8" },
-    { name = "loguru", specifier = ">=0.7.3" },
-    { name = "nats-py", specifier = ">=2.10,<3" },
-    { name = "sqlalchemy", specifier = ">=2.0,<2.1" },
-]
-
-[[package]]
-name = "bovie-discord-sender"
-version = "0.4.0"
-source = { editable = "apps/discord-sender" }
-dependencies = [
-    { name = "bovie-contracts" },
-    { name = "bovie-database" },
-    { name = "bovie-notification-store" },
-    { name = "bovie-runtime" },
-    { name = "click" },
-    { name = "httpx" },
-    { name = "loguru" },
-    { name = "sqlalchemy" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "bovie-contracts", editable = "packages/contracts" },
-    { name = "bovie-database", editable = "packages/database" },
-    { name = "bovie-notification-store", editable = "packages/notification-store" },
-    { name = "bovie-runtime", editable = "packages/runtime" },
-    { name = "click", specifier = ">=8.1.8" },
-    { name = "httpx", specifier = ">=0.28.1" },
-    { name = "loguru", specifier = ">=0.7.3" },
-    { name = "sqlalchemy", specifier = ">=2.0,<2.1" },
-]
-
-[[package]]
-name = "bovie-messaging"
-version = "0.4.0"
-source = { editable = "packages/messaging" }
-dependencies = [
-    { name = "bovie-contracts" },
+    { name = "bovie-offer-events" },
     { name = "nats-py" },
 ]
 
 [package.metadata]
 requires-dist = [
-    { name = "bovie-contracts", editable = "packages/contracts" },
+    { name = "bovie-offer-events", editable = "packages/offer-events" },
     { name = "nats-py", specifier = ">=2.10,<3" },
 ]
 
@@ -229,74 +273,30 @@ name = "bovie-nats-setup"
 version = "0.4.0"
 source = { editable = "apps/nats-setup" }
 dependencies = [
-    { name = "bovie-messaging" },
-    { name = "bovie-runtime" },
+    { name = "bovie-cli-common" },
+    { name = "bovie-nats-client" },
     { name = "click" },
     { name = "nats-py" },
 ]
 
 [package.metadata]
 requires-dist = [
-    { name = "bovie-messaging", editable = "packages/messaging" },
-    { name = "bovie-runtime", editable = "packages/runtime" },
+    { name = "bovie-cli-common", editable = "packages/cli-common" },
+    { name = "bovie-nats-client", editable = "packages/nats-client" },
     { name = "click", specifier = ">=8.1.8" },
     { name = "nats-py", specifier = ">=2.10,<3" },
 ]
 
 [[package]]
-name = "bovie-notification-store"
+name = "bovie-offer-events"
 version = "0.4.0"
-source = { editable = "packages/notification-store" }
+source = { editable = "packages/offer-events" }
 dependencies = [
-    { name = "bovie-contracts" },
-    { name = "bovie-database" },
-    { name = "click" },
-    { name = "sqlalchemy" },
+    { name = "pydantic" },
 ]
 
 [package.metadata]
-requires-dist = [
-    { name = "bovie-contracts", editable = "packages/contracts" },
-    { name = "bovie-database", editable = "packages/database" },
-    { name = "click", specifier = ">=8.1.8" },
-    { name = "sqlalchemy", specifier = ">=2.0,<2.1" },
-]
-
-[[package]]
-name = "bovie-runtime"
-version = "0.4.0"
-source = { editable = "packages/runtime" }
-dependencies = [
-    { name = "click" },
-    { name = "loguru" },
-    { name = "python-dotenv" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "click", specifier = ">=8.1.8" },
-    { name = "loguru", specifier = ">=0.7.3" },
-    { name = "python-dotenv", specifier = ">=1.0.1" },
-]
-
-[[package]]
-name = "bovie-source-store"
-version = "0.4.0"
-source = { editable = "packages/source-store" }
-dependencies = [
-    { name = "bovie-contracts" },
-    { name = "bovie-database" },
-    { name = "click" },
-    { name = "sqlalchemy" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "bovie-contracts", editable = "packages/contracts" },
-    { name = "bovie-database", editable = "packages/database" },
-    { name = "click", specifier = ">=8.1.8" },
-    { name = "sqlalchemy", specifier = ">=2.0,<2.1" },
-]
+requires-dist = [{ name = "pydantic", specifier = ">=2.11.3" }]
 
 [[package]]
 name = "bovie-workspace"

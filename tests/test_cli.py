@@ -22,9 +22,9 @@ def test_cli_loads_dotenv_before_resolving_options(tmp_path, monkeypatch):
 
     monkeypatch.chdir(tmp_path)
     (tmp_path / ".env").write_text(
-        "BOVIE_LIMIT=7\nDATABASE_URL=mysql+pymysql://u:p@localhost/source\n"
+        "BUSINESS_FRANCE_LIMIT=7\nDATABASE_URL=mysql+pymysql://u:p@localhost/source\n"
     )
-    monkeypatch.delenv("BOVIE_LIMIT", raising=False)
+    monkeypatch.delenv("BUSINESS_FRANCE_LIMIT", raising=False)
     monkeypatch.delenv("DATABASE_URL", raising=False)
     observed = []
 

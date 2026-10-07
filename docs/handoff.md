@@ -7,12 +7,12 @@ The root project installs development tools only.
 
 | Library | Owns | Used by |
 | --- | --- | --- |
-| `job_contracts` | Version-1 offer events with stable event IDs | Collectors, `discord-intake`, `discord-sender` |
-| `source_store` | Published offers, content hashes, sightings, checkpoints, source migrations | Collectors |
-| `notification_store` | Inbox, pending deliveries, atomic acceptance, notification migrations | `discord-intake` and `discord-sender` |
-| `job_database` | MySQL connections, UTC timestamps, queue leases, migration execution | Both storage libraries and database clients |
-| `job_messaging` | NATS connection, stream names, and the collectors' synchronous publisher | Collectors, `discord-intake`, `nats-setup` |
-| `job_runtime` | Entrypoint environment loading and failure logging | Deployable services |
+| `offer_events` | Version-1 offer events with stable event IDs | Collectors, `discord-intake`, `discord-sender` |
+| `collector_store` | Published offers, content hashes, sightings, checkpoints, collector database migrations | Collectors |
+| `discord_store` | Inbox, queued messages, atomic acceptance, Discord database migrations | `discord-intake` and `discord-sender` |
+| `mysql_common` | MySQL connections, UTC timestamps, queue leases, migration execution | Both storage libraries and database clients |
+| `nats_client` | NATS connection, stream names, and the collectors' synchronous publisher | Collectors, `discord-intake`, `nats-setup` |
+| `cli_common` | Entrypoint environment loading and failure logging | Deployable services |
 
 A library cannot import a service. A service cannot import another service.
 `tests/test_architecture.py` checks these rules and declared workspace dependencies.
@@ -22,14 +22,14 @@ It checks entrypoints, packaged migrations, and the absence of unrelated service
 Each worker has one role.
 Collectors cannot send Discord messages. `discord-sender` has no NATS client.
 `nats-setup` has no database dependency. Each collector publishes only its own source's subject.
-Intake and delivery share the notification database and never query source databases.
+`discord-intake` and `discord-sender` share the `discord` database and never query collector databases.
 
 Collectors publish each page and wait for JetStream acknowledgments before recording it.
-A crash in between republishes the same event IDs; the notification inbox drops the duplicates.
+A crash in between republishes the same event IDs; the Discord inbox drops the duplicates.
 Collection restarts replay from the beginning because search results can move between runs.
-One active collector per source remains the supported mode.
+One active collector per source is the supported mode.
 The stream keeps acknowledged messages for 90 days, so new consumers can replay them.
-Delivery claims expire after 120 seconds. Discord delivery remains at least once.
+Delivery claims expire after 120 seconds. Discord delivery is at least once.
 A crash after Discord accepts a message can produce a duplicate on retry.
 
 WTTJ defaults to an empty title query and no contract filter.

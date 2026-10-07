@@ -50,9 +50,9 @@ export default defineRailway((ctx) => {
       },
     });
 
-  const businessFranceDb = mysql("mysql-business-france", { region });
-  const wttjDb = mysql("mysql-wttj", { region });
-  const notificationsDb = mysql("mysql-notifications", { region });
+  const businessFranceDb = mysql("mysql-collector-business-france", { region });
+  const wttjDb = mysql("mysql-collector-wttj", { region });
+  const discordDb = mysql("mysql-discord", { region });
   const natsData = volume("nats-data", { region, sizeMB: 2048 });
   const nats = service("nats", {
     source,
@@ -64,10 +64,13 @@ export default defineRailway((ctx) => {
     deploy: { ...persistent, requiredMountPath: "/data" },
     volumeMounts: { "/data": natsData },
     env: {
-      NATS_ADMIN_PASSWORD: secret("nats", "NATS_ADMIN_PASSWORD"),
-      NATS_BF_PASSWORD: secret("nats", "NATS_BF_PASSWORD"),
-      NATS_WTTJ_PASSWORD: secret("nats", "NATS_WTTJ_PASSWORD"),
-      NATS_NOTIFICATIONS_PASSWORD: secret("nats", "NATS_NOTIFICATIONS_PASSWORD"),
+      NATS_SETUP_PASSWORD: secret("nats", "NATS_SETUP_PASSWORD"),
+      NATS_COLLECTOR_BUSINESS_FRANCE_PASSWORD: secret(
+        "nats",
+        "NATS_COLLECTOR_BUSINESS_FRANCE_PASSWORD",
+      ),
+      NATS_COLLECTOR_WTTJ_PASSWORD: secret("nats", "NATS_COLLECTOR_WTTJ_PASSWORD"),
+      NATS_DISCORD_INTAKE_PASSWORD: secret("nats", "NATS_DISCORD_INTAKE_PASSWORD"),
     },
   });
   const broker = (user: string, password: string) => ({
@@ -75,22 +78,26 @@ export default defineRailway((ctx) => {
     NATS_USER: user,
     NATS_PASSWORD: `\${{nats.${password}}}`,
   });
-  const bfDatabase = { DATABASE_URL: businessFranceDb.env.MYSQL_URL };
+  const businessFranceDatabase = { DATABASE_URL: businessFranceDb.env.MYSQL_URL };
   const wttjDatabase = { DATABASE_URL: wttjDb.env.MYSQL_URL };
-  const notificationDatabase = { DATABASE_URL: notificationsDb.env.MYSQL_URL };
+  const discordDatabase = { DATABASE_URL: discordDb.env.MYSQL_URL };
   const businessFrance = app("collector-business-france", "collector-business-france", {
     start: "collector-business-france",
-    preDeploy: "source-migrate --wait-timeout 180",
+    preDeploy: "collector-store-migrate --wait-timeout 180",
     deploy: { cronSchedule: "12 */2 * * *", restartPolicyType: "NEVER" },
-    env: { ...bfDatabase, ...broker("business_france", "NATS_BF_PASSWORD"), BOVIE_LIMIT: "25" },
+    env: {
+      ...businessFranceDatabase,
+      ...broker("collector-business-france", "NATS_COLLECTOR_BUSINESS_FRANCE_PASSWORD"),
+      BUSINESS_FRANCE_LIMIT: "25",
+    },
   });
   const wttj = app("collector-wttj", "collector-wttj", {
     start: "collector-wttj",
-    preDeploy: "source-migrate --wait-timeout 180",
+    preDeploy: "collector-store-migrate --wait-timeout 180",
     deploy: { cronSchedule: "22 */2 * * *", restartPolicyType: "NEVER" },
     env: {
       ...wttjDatabase,
-      ...broker("wttj", "NATS_WTTJ_PASSWORD"),
+      ...broker("collector-wttj", "NATS_COLLECTOR_WTTJ_PASSWORD"),
       WTTJ_QUERY: "",
       WTTJ_CONTRACTS: "",
       WTTJ_LIMIT: "50",
@@ -99,18 +106,18 @@ export default defineRailway((ctx) => {
   });
   const setup = app("nats-setup", "nats-setup", {
     start: "nats-setup",
-    env: broker("admin", "NATS_ADMIN_PASSWORD"),
+    env: broker("nats-setup", "NATS_SETUP_PASSWORD"),
   });
   const intake = app("discord-intake", "discord-intake", {
     start: "discord-intake",
-    preDeploy: "notification-migrate --wait-timeout 180",
-    env: { ...notificationDatabase, ...broker("notifications", "NATS_NOTIFICATIONS_PASSWORD") },
+    preDeploy: "discord-store-migrate --wait-timeout 180",
+    env: { ...discordDatabase, ...broker("discord-intake", "NATS_DISCORD_INTAKE_PASSWORD") },
   });
   const delivery = app("discord-sender", "discord-sender", {
     start: "discord-sender",
     source: deliveryEnabled ? source : undefined,
     env: {
-      ...notificationDatabase,
+      ...discordDatabase,
       DISCORD_WEBHOOK_URL: secret("discord-sender", "DISCORD_WEBHOOK_URL"),
     },
   });
@@ -118,7 +125,7 @@ export default defineRailway((ctx) => {
     resources: [
       businessFranceDb,
       wttjDb,
-      notificationsDb,
+      discordDb,
       natsData,
       nats,
       businessFrance,

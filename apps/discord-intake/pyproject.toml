@@ -8,11 +8,11 @@ dependencies = [
     "loguru>=0.7.3",
     "sqlalchemy>=2.0,<2.1",
     "nats-py>=2.10,<3",
-    "bovie-contracts",
-    "bovie-database",
-    "bovie-notification-store",
-    "bovie-messaging",
-    "bovie-runtime"
+    "bovie-offer-events",
+    "bovie-mysql-common",
+    "bovie-discord-store",
+    "bovie-nats-client",
+    "bovie-cli-common"
 ]
 
 [project.scripts]

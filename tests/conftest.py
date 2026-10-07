@@ -15,16 +15,16 @@ def database_factory():
     databases = []
 
     def create(domain):
-        from job_database import make_engine
-        from notification_store.migrate import upgrade as upgrade_notification
-        from source_store.migrate import upgrade as upgrade_source
+        from collector_store.migrate import upgrade as upgrade_collector
+        from discord_store.migrate import upgrade as upgrade_discord
+        from mysql_common import make_engine
 
         name = f"bovie_test_{uuid4().hex}"
         with admin.connect() as conn:
             conn.execute(text(f"CREATE DATABASE `{name}` CHARACTER SET utf8mb4"))
         engine = make_engine(admin.url.set(database=name))
         databases.append((name, engine))
-        (upgrade_source if domain == "source" else upgrade_notification)(engine)
+        (upgrade_collector if domain == "collector" else upgrade_discord)(engine)
         return engine
 
     yield create
@@ -36,10 +36,10 @@ def database_factory():
 
 
 @pytest.fixture
-def source_db(database_factory):
-    return database_factory("source")
+def collector_db(database_factory):
+    return database_factory("collector")
 
 
 @pytest.fixture
-def notification_db(database_factory):
-    return database_factory("notification")
+def discord_db(database_factory):
+    return database_factory("discord")

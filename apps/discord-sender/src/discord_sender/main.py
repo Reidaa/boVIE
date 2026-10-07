@@ -3,9 +3,9 @@ import os
 
 import click
 import httpx
-from job_database import make_engine
-from job_database.env import load_env
-from job_runtime import configure_logging, log_failure
+from cli_common import configure_logging, log_failure
+from mysql_common import make_engine
+from mysql_common.env import load_env
 
 from discord_sender.delivery import deliver_one
 
@@ -15,7 +15,7 @@ from discord_sender.delivery import deliver_one
     "--once", is_flag=True, help="Drain currently available deliveries and exit."
 )
 def main(once: bool):
-    """Send committed pending deliveries using only notification credentials."""
+    """Send queued Discord messages using only Discord database credentials."""
     configure_logging()
     webhook = os.environ.get("DISCORD_WEBHOOK_URL")
     if not webhook:
