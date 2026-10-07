@@ -46,6 +46,7 @@ def event(offer_id="ABC", **changes):
     from job_contracts import OfferDetails, OfferEvent
 
     fields: dict[str, Any] = {
+        "type": "discovered",
         "source": "business_france",
         "source_offer_id": offer_id,
         "observed_at": datetime.now(UTC),
@@ -76,16 +77,6 @@ def test_update_event_ids_follow_offer_content():
     assert event(type="updated").event_id == update.event_id
     changed = event(type="updated").offer.model_copy(update={"title": "Lead"})
     assert event(type="updated", offer=changed).event_id != update.event_id
-
-
-def test_events_without_a_type_are_discoveries():
-    payload = event().model_dump(mode="json")
-    del payload["type"]
-    from job_contracts import OfferEvent
-
-    legacy = OfferEvent.model_validate(payload)
-    assert legacy.type == "discovered"
-    assert legacy.event_id == event().event_id
 
 
 def test_recorded_offers_keep_content_hash_and_sightings(source_db):
@@ -143,76 +134,6 @@ def test_concurrent_recording_keeps_one_offer(source_db):
         )
     with source_db.connect() as conn:
         assert conn.scalar(select(func.count()).select_from(Offer)) == 1
-
-
-def test_migration_requires_an_empty_outbox(database_factory):
-    from pathlib import Path
-
-    import source_store
-    from job_database.migrate import upgrade_schema
-    from source_store.migrate import upgrade
-    from sqlalchemy import text
-
-    engine = database_factory("empty")
-    migrations = Path(source_store.__file__).parent / "migrations"
-    upgrade_schema(engine, migrations, revision="source_0001")
-    with engine.begin() as conn:
-        conn.execute(
-            text(
-                "INSERT INTO offers (source_offer_id, observed_at, event_id) "
-                "VALUES ('legacy', UTC_TIMESTAMP(6), 'e1')"
-            )
-        )
-        conn.execute(
-            text(
-                "INSERT INTO outbox (event_id, payload, attempts, available_at) "
-                "VALUES ('e1', '{}', 0, UTC_TIMESTAMP(6))"
-            )
-        )
-    with pytest.raises(RuntimeError, match="1 unpublished events"):
-        upgrade(engine)
-    # The refused attempt leaves the outbox in place and can simply be rerun.
-    with engine.begin() as conn:
-        conn.execute(text("UPDATE outbox SET completed_at = UTC_TIMESTAMP(6)"))
-    upgrade(engine)
-    with engine.connect() as conn:
-        assert conn.scalar(text("SELECT COUNT(*) FROM offers")) == 1
-        assert conn.scalar(text("SELECT last_seen_at = observed_at FROM offers"))
-        assert not conn.scalar(
-            text(
-                "SELECT COUNT(*) FROM information_schema.tables "
-                "WHERE table_schema = DATABASE() "
-                "AND table_name IN ('outbox', 'retired_outbox')"
-            )
-        )
-
-
-def test_migration_finishes_after_an_interruption(database_factory):
-    from pathlib import Path
-
-    import source_store
-    from job_database.migrate import upgrade_schema
-    from source_store.migrate import upgrade
-    from sqlalchemy import text
-
-    engine = database_factory("empty")
-    migrations = Path(source_store.__file__).parent / "migrations"
-    upgrade_schema(engine, migrations, revision="source_0001")
-    # A run that stopped after adding a column and renaming the outbox.
-    with engine.begin() as conn:
-        conn.execute(text("ALTER TABLE offers ADD COLUMN content_hash VARCHAR(64)"))
-        conn.execute(text("RENAME TABLE outbox TO retired_outbox"))
-    upgrade(engine)
-    with engine.connect() as conn:
-        assert conn.scalar(text("SELECT version_num FROM alembic_version")) == (
-            "source_0002"
-        )
-        assert not conn.scalar(
-            text(
-                "SELECT COUNT(*) FROM information_schema.tables "
-                "WHERE table_schema = DATABASE() AND table_name = 'retired_outbox'"
-            )
-        )
 
 
 @pytest.mark.parametrize("owner", [0, 1, 2])

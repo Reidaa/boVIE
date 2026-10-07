@@ -34,6 +34,7 @@ DEFAULT_BOVIE_OFFER_MAX = 25
 
 def normalize(job: Job) -> OfferEvent:
     return OfferEvent(
+        type="discovered",
         source="business_france",
         source_offer_id=str(job.id),
         offer=OfferDetails(

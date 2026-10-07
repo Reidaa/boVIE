@@ -158,17 +158,12 @@ uv run --package bovie-discord-sender discord-sender
 invocation. Without it, these commands poll continuously. The `nats-setup` Compose job uses a
 separate administrator account and must run before collectors or receivers.
 
-The old collector `--webhook-url` option is removed. Terminal output records a
-discovery; Discord delivery is acknowledged only by the notification worker.
-There are no file-storage, bot/pull subcommands, or collector continuous-mode flags.
-
 ## Delivery and recovery
 
 - An event has `version=1`, a `type` (`discovered`, `updated`, or `closed`), UUID
   `event_id`, `source`, case-sensitive string `source_offer_id`, aware UTC
-  `observed_at`, and normalized display fields. Events without a `type` are
-  discoveries. Collectors only publish discoveries today, and only discoveries
-  notify. Cross-board deduplication is not included.
+  `observed_at`, and normalized display fields. Collectors only publish
+  discoveries today, and only discoveries notify. Cross-board deduplication is not included.
 - `event_id` is derived from the source, offer ID, and type (plus the content hash
   for updates). A republished event keeps its ID and `Nats-Msg-Id`. The notification
   inbox drops it even after the broker's two-minute deduplication window.
@@ -199,19 +194,6 @@ Use JetStream consumer statistics to inspect pending/redelivered messages.
 Completed rows and inbox deduplication records are retained; plan storage and
 retention before deleting history. Back up all databases and the broker volume.
 
-## Existing Postgres data
-
-This change does not transfer or delete an existing Postgres database or volume.
-Before a live cutover, decide whether offer history must be retained. Alembic
-creates the MySQL schema; it does not transfer records between database engines.
-
-If legacy history is required, an explicit, tested export/import must precede
-collection against MySQL. Import distinct legacy offer IDs as seen offers without
-payloads or events. Legacy rows cannot prove Discord delivery because the
-old writer ordering could record terminal success before Discord failed. Keep
-the original database for reconciliation. No legacy importer is run automatically.
-Do not use `docker compose down -v` on an existing deployment.
-
 ## Deployment and validation
 
 Railway staging is defined in `infra/railway/railway.ts`. It creates three Railway MySQL
@@ -222,31 +204,7 @@ Discord delivery starts without a source connection until you configure a stagin
 Docker builds use the repository root as context. Select the service directory name
 as the target, for example `docker build --target collector-wttj -t bovie-collector-wttj .`.
 Each final image contains only that service and its installed dependencies.
-The default Docker target remains Business France.
-
-The old `bovie-worker` and `bovie-migrate DOMAIN` commands are removed.
-Replace them with the commands above when updating an existing deployment.
-Existing MySQL tables, Alembic revision IDs, and version-1 events remain compatible.
-Remove `WTTJ_QUERY=VIE` from an existing environment to enable the broader default.
-Collection can create more notifications once non-VIE offers enter the scan window.
-
-### Upgrading from the outbox relay
-
-Earlier releases wrote events to a source `outbox` table, and an `outbox-relay`
-service published them to a work-queue stream. To upgrade an existing deployment:
-
-1. Stop the collectors. Let each relay publish its remaining outbox events, or run
-   the previous release's `outbox-relay --source SOURCE --once`.
-2. Let notification intake drain the `OFFERS` stream, then stop the relays.
-3. Deploy this release. `source-migrate` refuses to drop an outbox that still has
-   unpublished events. `nats-setup` replaces the empty work-queue stream with a
-   limits-retention stream and refuses if the old stream still holds messages.
-   Both checks first block new writes (by renaming the outbox, or detaching the
-   stream from the offer subjects), so a process still running from the previous
-   release fails and retries instead of losing an event. On a refusal, the outbox
-   or stream is restored; drain it and deploy again.
-4. Give each collector its source's `NATS_URL`, `NATS_USER`, and `NATS_PASSWORD`.
-   The broker accounts and permissions are unchanged.
+The default Docker target is the Business France collector.
 
 ```sh
 npx turbo run lint format:check check test verify:packages

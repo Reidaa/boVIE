@@ -19,13 +19,11 @@ A library cannot import a service. A service cannot import another service.
 `scripts/check_packages.py` installs each service from wheels into a separate environment.
 It checks entrypoints, packaged migrations, and the absence of unrelated service code.
 
-The old shared worker command is removed. Each worker has one role.
+Each worker has one role.
 Collectors cannot send Discord messages. `discord-sender` has no NATS client.
 `nats-setup` has no database dependency. Each collector publishes only its own source's subject.
 Intake and delivery share the notification database and never query source databases.
 
-The MySQL tables, Alembic revision IDs, event version, and NATS subjects are unchanged.
-Existing databases do not require a data transfer for this package split.
 Collectors publish each page and wait for JetStream acknowledgments before recording it.
 A crash in between republishes the same event IDs; the notification inbox drops the duplicates.
 Collection restarts replay from the beginning because search results can move between runs.
@@ -38,9 +36,7 @@ WTTJ defaults to an empty title query and no contract filter.
 The API requires the `job_title` parameter even when its value is empty.
 Only published job details enter storage. Optional contract filters apply to search and detail responses.
 The scan remains bounded by public search results, `--limit`, and `--max-pages`.
-Remove any existing `WTTJ_QUERY=VIE` setting to adopt the broader default.
 
-No legacy Postgres data is transferred or deleted. Retain that database if its offer history is required.
 Production deployments still need separate credentials, TLS, backups, and a broker availability plan.
 The Compose passwords are local development examples.
 Use the [README](../README.md) for commands and the [WTTJ request contract](wttj-api.md) for observed API behavior.

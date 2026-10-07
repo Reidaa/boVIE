@@ -31,11 +31,10 @@ class Offer(SourceBase):
     __table_args__ = TABLE_OPTIONS
     source_offer_id: Mapped[str] = mapped_column(String(255), primary_key=True)
     observed_at: Mapped[datetime] = mapped_column(UTCDateTime())
-    event_id: Mapped[str | None] = mapped_column(String(36), unique=True)
-    payload: Mapped[dict | None] = mapped_column(JSON)
-    # Null for offers recorded before hashes existed.
-    content_hash: Mapped[str | None] = mapped_column(String(64))
-    last_seen_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
+    event_id: Mapped[str] = mapped_column(String(36), unique=True)
+    payload: Mapped[dict] = mapped_column(JSON)
+    content_hash: Mapped[str] = mapped_column(String(64))
+    last_seen_at: Mapped[datetime] = mapped_column(UTCDateTime())
 
 
 class Checkpoint(SourceBase):
@@ -70,6 +69,7 @@ def record_page(
                 event_id=str(event.event_id),
                 payload=event.model_dump(mode="json"),
                 content_hash=event.offer.content_hash,
+                last_seen_at=now,
             )
             # A concurrent run may have recorded the same offer first; keep its row.
             session.execute(

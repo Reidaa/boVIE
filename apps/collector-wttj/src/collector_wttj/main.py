@@ -50,6 +50,7 @@ def normalize(job: JobDetail) -> OfferEvent:
         fields.append(DisplayField(name="Candidature", value=job.apply_url[:1024]))
     office = job.offices[0] if job.offices else None
     return OfferEvent(
+        type="discovered",
         source="wttj",
         source_offer_id=job.wttj_reference,
         offer=OfferDetails(

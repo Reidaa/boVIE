@@ -1,4 +1,4 @@
-"""Source-owned offers, discovery outbox and scan checkpoints."""
+"""Source-owned published offers and scan checkpoints."""
 
 from typing import Any
 
@@ -23,22 +23,12 @@ def upgrade():
         "offers",
         sa.Column("source_offer_id", sa.String(255), primary_key=True),
         sa.Column("observed_at", DATETIME(fsp=6), nullable=False),
-        sa.Column("event_id", sa.String(36), unique=True),
-        sa.Column("payload", sa.JSON()),
-        **OPTIONS,
-    )
-    op.create_table(
-        "outbox",
-        sa.Column("event_id", sa.String(36), primary_key=True),
+        sa.Column("event_id", sa.String(36), nullable=False, unique=True),
         sa.Column("payload", sa.JSON(), nullable=False),
-        sa.Column("attempts", sa.Integer(), nullable=False),
-        sa.Column("available_at", DATETIME(fsp=6), nullable=False),
-        sa.Column("claim_token", sa.String(36)),
-        sa.Column("lease_until", DATETIME(fsp=6)),
-        sa.Column("completed_at", DATETIME(fsp=6)),
+        sa.Column("content_hash", sa.String(64), nullable=False),
+        sa.Column("last_seen_at", DATETIME(fsp=6), nullable=False),
         **OPTIONS,
     )
-    op.create_index("ix_outbox_available_at", "outbox", ["available_at"])
     op.create_table(
         "checkpoints",
         sa.Column("scan", sa.String(64), primary_key=True),
@@ -49,5 +39,4 @@ def upgrade():
 
 def downgrade():
     op.drop_table("checkpoints")
-    op.drop_table("outbox")
     op.drop_table("offers")

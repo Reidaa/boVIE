@@ -5,7 +5,6 @@ consumers can read it and a new consumer can replay the retained history.
 """
 
 import asyncio
-from dataclasses import replace
 
 import click
 from job_messaging import CONSUMER, STREAM, connect
@@ -23,27 +22,6 @@ from nats.js.errors import NotFoundError
 RETENTION_DAYS = 90
 # Stream limits that NATS can change in place.
 LIMITS = ("max_age", "max_bytes", "max_msg_size", "duplicate_window")
-
-
-async def replace_work_queue(js, existing: StreamConfig, config: StreamConfig):
-    """Replace an empty work-queue stream; NATS cannot change retention in place.
-
-    The old stream is detached from the offer subjects before its messages are
-    counted. Publishes in that window fail and the collector retries on its next
-    run, so no acknowledged event can be deleted with the stream.
-    """
-    await js.update_stream(
-        config=replace(existing, subjects=[f"retired.{existing.name}"])
-    )
-    pending = (await js.stream_info(existing.name)).state.messages
-    if pending:
-        await js.update_stream(config=existing)
-        raise ValueError(
-            f"Stream {existing.name} is a work queue with {pending} messages. "
-            "Let notification intake drain it, then run setup again."
-        )
-    await js.delete_stream(existing.name)
-    await js.add_stream(config=config)
 
 
 async def setup(js, *, stream: str = STREAM, consumer: str = CONSUMER):
@@ -64,9 +42,7 @@ async def setup(js, *, stream: str = STREAM, consumer: str = CONSUMER):
     except NotFoundError:
         await js.add_stream(config=config)
     else:
-        if existing.config.retention == RetentionPolicy.WORK_QUEUE:
-            await replace_work_queue(js, existing.config, config)
-        elif (
+        if (
             existing.config.subjects != config.subjects
             or existing.config.storage != config.storage
             or existing.config.retention != config.retention

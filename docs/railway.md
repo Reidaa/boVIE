@@ -82,29 +82,11 @@ The apply connects the service to GitHub and starts its first deployment.
 Run the checks, plan, and apply commands again.
 Starting delivery sends all pending staging discoveries, including older queued offers.
 
-## Remove the outbox relays
-
-Earlier versions of this configuration deployed `relay-bf` and `relay-wttj`.
-Before applying this version, follow the upgrade steps in the README so the
-outboxes and the work-queue stream are empty. If the plan does not remove the
-relay services, delete them in the Railway dashboard after the apply.
-
-## Renamed services
-
-Earlier versions named the services `business-france`, `wttj`, `broker-setup`,
-`notification-intake`, and `discord-delivery`. Railway identifies services by name,
-so the next apply creates `collector-business-france`, `collector-wttj`, `nats-setup`,
-`discord-intake`, and `discord-sender`. The databases and NATS keep their names and data.
-After the apply, delete the old services in the Railway dashboard if the plan did
-not remove them. Set `DISCORD_WEBHOOK_URL` again on `discord-sender`, because the
-value stays on the old `discord-delivery` service.
-
 ## Updates and checks
 
 Push changes to the configured branch to trigger Railway builds for affected services.
 Run `npm run railway:plan` after changing infrastructure configuration.
 Apply the reviewed plan to update the service configuration.
-The old root `railway.json` is removed because it only described Business France.
 
 ```sh
 npx railway status

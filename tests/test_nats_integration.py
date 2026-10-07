@@ -6,11 +6,10 @@ from uuid import uuid4
 import httpx
 import nats
 import pytest
-from nats.js.api import ConsumerConfig, RetentionPolicy, StreamConfig
+from nats.js.api import ConsumerConfig
 from sqlalchemy import func, select
 
 from tests.test_collection import job
-from tests.test_storage import event
 from tests.test_wttj import detail, hit
 
 
@@ -126,44 +125,6 @@ def test_both_sources_through_real_jetstream_and_captured_discord(
         while deliver_one(notification, client, "https://discord.invalid/webhook"):
             pass
     assert len(sent) == 2
-
-
-def test_setup_replaces_only_an_empty_work_queue_stream():
-    from nats_setup.main import setup
-
-    url = nats_url()
-    stream = "TEST_" + uuid4().hex
-
-    async def flow():
-        nc = await nats.connect(url)
-        js = nc.jetstream()
-        try:
-            await js.add_stream(
-                config=StreamConfig(
-                    name=stream,
-                    subjects=["offers.*.v1"],
-                    retention=RetentionPolicy.WORK_QUEUE,
-                )
-            )
-            await js.publish("offers.wttj.v1", event().model_dump_json().encode())
-            with pytest.raises(ValueError, match="1 messages"):
-                await setup(js, stream=stream)
-            # A refused replacement reattaches the old stream to the offer subjects.
-            info = await js.stream_info(stream)
-            assert info.config.subjects == ["offers.*.v1"]
-            assert info.config.retention == RetentionPolicy.WORK_QUEUE
-            assert info.state.messages == 1
-            await js.purge_stream(stream)
-            await setup(js, stream=stream)
-            info = await js.stream_info(stream)
-            assert info.config.retention == RetentionPolicy.LIMITS
-            assert info.config.max_age == 90 * 24 * 60 * 60
-            assert (await js.consumer_info(stream, "notifications")).config.durable_name
-        finally:
-            await js.delete_stream(stream)
-            await nc.close()
-
-    asyncio.run(flow())
 
 
 def test_setup_applies_changed_stream_limits():

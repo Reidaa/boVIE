@@ -35,12 +35,7 @@ class Delivery(QueueColumns, NotificationBase):
 
 
 def identity(payload: dict) -> tuple:
-    # Events written before the type field existed were all discoveries.
-    return (
-        payload["source"],
-        payload["source_offer_id"],
-        payload.get("type", "discovered"),
-    )
+    return (payload["source"], payload["source_offer_id"], payload["type"])
 
 
 def accept(engine: Engine, event: OfferEvent) -> bool:

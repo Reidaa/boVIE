@@ -48,7 +48,7 @@ def stable_event_id(data: dict[str, Any]) -> UUID:
 class OfferEvent(BaseModel):
     model_config = ConfigDict(extra="forbid")
     version: Literal[1] = 1
-    type: EventType = "discovered"
+    type: EventType
     source: Literal["business_france", "wttj"]
     source_offer_id: str = Field(min_length=1, max_length=255)
     offer: OfferDetails
