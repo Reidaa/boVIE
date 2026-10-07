@@ -10,7 +10,7 @@ from tests.test_storage import event
 
 
 def test_receiver_commit_precedes_ack(notification_db):
-    from notification_intake.main import receive_message
+    from discord_intake.main import receive_message
     from notification_store import Delivery
 
     discovered = event()
@@ -34,7 +34,7 @@ def test_receiver_commit_precedes_ack(notification_db):
 
 
 def test_discord_outage_then_success(notification_db):
-    from discord_delivery.delivery import deliver_one
+    from discord_sender.delivery import deliver_one
     from notification_store import Delivery, accept
 
     discovered = event()

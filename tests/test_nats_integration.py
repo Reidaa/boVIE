@@ -24,14 +24,14 @@ def nats_url():
 def test_both_sources_through_real_jetstream_and_captured_discord(
     database_factory, monkeypatch
 ):
-    from bovie import main
-    from bovie.job.models.search import SearchParameters
-    from broker_setup.main import setup
-    from discord_delivery.delivery import deliver_one
+    from collector_business_france import main
+    from collector_business_france.job.models.search import SearchParameters
+    from collector_wttj.main import collect
+    from discord_intake.main import receive_message
+    from discord_sender.delivery import deliver_one
     from job_messaging import Publisher
-    from notification_intake.main import receive_message
+    from nats_setup.main import setup
     from notification_store import Delivery
-    from wttf.main import collect
 
     url = nats_url()
     monkeypatch.setenv("NATS_URL", url)
@@ -129,7 +129,7 @@ def test_both_sources_through_real_jetstream_and_captured_discord(
 
 
 def test_setup_replaces_only_an_empty_work_queue_stream():
-    from broker_setup.main import setup
+    from nats_setup.main import setup
 
     url = nats_url()
     stream = "TEST_" + uuid4().hex
@@ -167,7 +167,7 @@ def test_setup_replaces_only_an_empty_work_queue_stream():
 
 
 def test_setup_applies_changed_stream_limits():
-    from broker_setup.main import setup
+    from nats_setup.main import setup
 
     url = nats_url()
     stream = "TEST_" + uuid4().hex

@@ -16,7 +16,7 @@ from pydantic import HttpUrl
 from source_store import record_page, seen
 from sqlalchemy.engine import Engine
 
-from wttf.core.search import DetailResponse, JobDetail, SearchResponse
+from collector_wttj.core.search import DetailResponse, JobDetail, SearchResponse
 
 API_URL = "https://api.welcometothejungle.com"
 

@@ -1,6 +1,6 @@
 import httpx
-from bovie import job
-from bovie.job.models.search import SearchParameters
+from collector_business_france import job
+from collector_business_france.job.models.search import SearchParameters
 
 
 def test_business_france_search_uses_public_site_key_and_api_field_names(monkeypatch):

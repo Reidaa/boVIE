@@ -15,11 +15,11 @@ package = false
 members = ["apps/*", "packages/*"]
 
 [tool.uv.sources]
-bovie-business-france = { workspace = true }
-bovie-wttj = { workspace = true }
-bovie-notification-intake = { workspace = true }
-bovie-discord-delivery = { workspace = true }
-bovie-broker-setup = { workspace = true }
+bovie-collector-business-france = { workspace = true }
+bovie-collector-wttj = { workspace = true }
+bovie-discord-intake = { workspace = true }
+bovie-discord-sender = { workspace = true }
+bovie-nats-setup = { workspace = true }
 bovie-contracts = { workspace = true }
 bovie-database = { workspace = true }
 bovie-source-store = { workspace = true }

@@ -9,8 +9,8 @@ from tests.test_storage import event
 
 
 def test_deployment_nats_permissions_and_durable_acknowledgments(monkeypatch):
-    from broker_setup.main import setup
     from job_messaging import connect
+    from nats_setup.main import setup
 
     url = os.environ.get("NATS_AUTH_TEST_URL")
     if not url:

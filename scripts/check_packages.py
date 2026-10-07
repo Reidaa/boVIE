@@ -8,33 +8,33 @@ import tempfile
 from pathlib import Path
 
 SERVICES = {
-    "business-france": (
-        "bovie",
-        "bovie.main",
+    "collector-business-france": (
+        "collector-business-france",
+        "collector_business_france.main",
         ["source-migrate"],
         ["nextcord", "notification_store"],
     ),
-    "wttj": (
-        "wttf",
-        "wttf.main",
+    "collector-wttj": (
+        "collector-wttj",
+        "collector_wttj.main",
         ["source-migrate"],
-        ["nextcord", "bovie", "notification_store"],
+        ["nextcord", "collector_business_france", "notification_store"],
     ),
-    "notification-intake": (
-        "notification-intake",
-        "notification_intake.main",
+    "discord-intake": (
+        "discord-intake",
+        "discord_intake.main",
         ["notification-migrate"],
         ["httpx", "nextcord", "source_store"],
     ),
-    "discord-delivery": (
-        "discord-delivery",
-        "discord_delivery.main",
+    "discord-sender": (
+        "discord-sender",
+        "discord_sender.main",
         ["notification-migrate"],
         ["nats", "nextcord", "source_store"],
     ),
-    "broker-setup": (
-        "broker-setup",
-        "broker_setup.main",
+    "nats-setup": (
+        "nats-setup",
+        "nats_setup.main",
         [],
         ["sqlalchemy", "httpx", "source_store", "notification_store"],
     ),
@@ -120,7 +120,7 @@ importlib.import_module({(owner + ".migrate")!r})
                     env=environment,
                     stdout=subprocess.DEVNULL,
                 )
-            if service == "business-france":
+            if service == "collector-business-france":
                 subprocess.run(
                     [str(venv / "bin" / command), "--version"],
                     check=True,

@@ -34,7 +34,7 @@ import sqlalchemy
 def forbidden(*args, **kwargs):
     raise AssertionError('Import attempted to create an engine')
 sqlalchemy.create_engine = forbidden
-import job_database.env, job_database, bovie.main
+import job_database.env, job_database, collector_business_france.main
 """,
         ],
         env=environment,

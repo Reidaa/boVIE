@@ -30,11 +30,11 @@ for (const owner of Object.keys(credentials) as (keyof typeof credentials)[]) {
     : {};
   bootstrap[owner] = missingCredentials(owner, existing);
 }
-const deliveryVariables = services.some((service) => service.name === "discord-delivery")
-  ? read(["variable", "list", "--service", "discord-delivery", "--json"])
+const deliveryVariables = services.some((service) => service.name === "discord-sender")
+  ? read(["variable", "list", "--service", "discord-sender", "--json"])
   : {};
 if (!Object.hasOwn(deliveryVariables, "DISCORD_WEBHOOK_URL")) {
-  bootstrap["discord-delivery"] = { DISCORD_WEBHOOK_URL: "" };
+  bootstrap["discord-sender"] = { DISCORD_WEBHOOK_URL: "" };
 }
 const result = spawnSync(cli, ["config", action, ...process.argv.slice(3)], {
   stdio: "inherit",

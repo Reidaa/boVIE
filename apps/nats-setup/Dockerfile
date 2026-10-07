@@ -3,10 +3,10 @@ WORKDIR /app
 COPY pyproject.toml uv.lock ./
 COPY packages ./packages
 COPY apps ./apps
-RUN uv sync --frozen --no-dev --no-editable --package bovie-notification-intake
+RUN uv sync --frozen --no-dev --no-editable --package bovie-nats-setup
 
 FROM python:3.13-slim-bookworm
 WORKDIR /app
 COPY --from=build /app/.venv /app/.venv
 ENV PATH="/app/.venv/bin:$PATH"
-CMD ["notification-intake"]
+CMD ["nats-setup"]

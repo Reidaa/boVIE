@@ -22,7 +22,7 @@ hit's `reference`. The detail has `offices`, not the legacy single `office` fiel
 The collector validates this identity before storing anything and checks both
 search and detail contract type when a contract filter is present. Geography is filtered against all detail offices.
 
-`apps/wttj/src/wttf/core/search.py` contains minimal projections of the verified v3
+`apps/collector-wttj/src/collector_wttj/core/search.py` contains minimal projections of the verified v3
 responses. Existing v1 models in `types.py` and Yaak examples are preserved.
 `tests/test_wttj.py` uses synthetic, credential-free responses with the observed
 shape. No live requests are needed to run tests.

@@ -3,7 +3,7 @@
 from dateutil.parser import isoparse
 from job_contracts import DisplayField
 
-from bovie.job.models.job import Job
+from collector_business_france.job.models.job import Job
 
 
 def display_fields(job: Job) -> list[DisplayField]:

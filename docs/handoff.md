@@ -7,11 +7,11 @@ The root project installs development tools only.
 
 | Library | Owns | Used by |
 | --- | --- | --- |
-| `job_contracts` | Version-1 offer events with stable event IDs | Collectors, intake, delivery |
+| `job_contracts` | Version-1 offer events with stable event IDs | Collectors, `discord-intake`, `discord-sender` |
 | `source_store` | Published offers, content hashes, sightings, checkpoints, source migrations | Collectors |
-| `notification_store` | Inbox, pending deliveries, atomic acceptance, notification migrations | Intake and delivery |
+| `notification_store` | Inbox, pending deliveries, atomic acceptance, notification migrations | `discord-intake` and `discord-sender` |
 | `job_database` | MySQL connections, UTC timestamps, queue leases, migration execution | Both storage libraries and database clients |
-| `job_messaging` | NATS connection, stream names, and the collectors' synchronous publisher | Collectors, intake, broker setup |
+| `job_messaging` | NATS connection, stream names, and the collectors' synchronous publisher | Collectors, `discord-intake`, `nats-setup` |
 | `job_runtime` | Entrypoint environment loading and failure logging | Deployable services |
 
 A library cannot import a service. A service cannot import another service.
@@ -20,8 +20,8 @@ A library cannot import a service. A service cannot import another service.
 It checks entrypoints, packaged migrations, and the absence of unrelated service code.
 
 The old shared worker command is removed. Each worker has one role.
-Collectors cannot send Discord messages. The Discord delivery package has no NATS client.
-Broker setup has no database dependency. Each collector publishes only its own source's subject.
+Collectors cannot send Discord messages. `discord-sender` has no NATS client.
+`nats-setup` has no database dependency. Each collector publishes only its own source's subject.
 Intake and delivery share the notification database and never query source databases.
 
 The MySQL tables, Alembic revision IDs, event version, and NATS subjects are unchanged.

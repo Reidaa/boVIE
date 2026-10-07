@@ -1,4 +1,8 @@
-from bovie.job.models.geozone import get_zone_id_from_name, get_zone_ids, get_zone_names
+from collector_business_france.job.models.geozone import (
+    get_zone_id_from_name,
+    get_zone_ids,
+    get_zone_names,
+)
 
 
 def test_get_zone_names():

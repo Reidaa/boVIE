@@ -32,8 +32,8 @@ def detail(identity, contract="vie"):
 
 
 def test_wttj_pagination_filtering_and_detail_normalization(source_db):
+    from collector_wttj.main import collect
     from source_store import Offer
-    from wttf.main import collect
 
     paths = []
     published = []
@@ -95,8 +95,8 @@ def test_wttj_pagination_filtering_and_detail_normalization(source_db):
 
 
 def test_wttj_failed_detail_does_not_commit_page(source_db):
+    from collector_wttj.main import collect
     from source_store import Checkpoint, Offer
-    from wttf.main import collect
 
     published = []
 
@@ -138,7 +138,7 @@ def test_wttj_failed_detail_does_not_commit_page(source_db):
     ],
 )
 def test_all_contract_types_are_collected_by_default(monkeypatch, contract):
-    import wttf.main as worker
+    import collector_wttj.main as worker
 
     recorded = []
     monkeypatch.setattr(worker, "seen", lambda engine, identity: False)
@@ -172,7 +172,7 @@ def test_all_contract_types_are_collected_by_default(monkeypatch, contract):
 
 
 def test_optional_filters_and_publication_status(monkeypatch):
-    import wttf.main as worker
+    import collector_wttj.main as worker
 
     recorded = []
     fetched = []
@@ -227,7 +227,7 @@ def test_optional_filters_and_publication_status(monkeypatch):
 
 
 def test_unfiltered_collection_still_rejects_unpublished_jobs(monkeypatch):
-    import wttf.main as worker
+    import collector_wttj.main as worker
 
     recorded = []
     monkeypatch.setattr(worker, "seen", lambda engine, identity: False)

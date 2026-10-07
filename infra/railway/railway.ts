@@ -78,14 +78,14 @@ export default defineRailway((ctx) => {
   const bfDatabase = { DATABASE_URL: businessFranceDb.env.MYSQL_URL };
   const wttjDatabase = { DATABASE_URL: wttjDb.env.MYSQL_URL };
   const notificationDatabase = { DATABASE_URL: notificationsDb.env.MYSQL_URL };
-  const businessFrance = app("business-france", "business-france", {
-    start: "bovie",
+  const businessFrance = app("collector-business-france", "collector-business-france", {
+    start: "collector-business-france",
     preDeploy: "source-migrate --wait-timeout 180",
     deploy: { cronSchedule: "12 */2 * * *", restartPolicyType: "NEVER" },
     env: { ...bfDatabase, ...broker("business_france", "NATS_BF_PASSWORD"), BOVIE_LIMIT: "25" },
   });
-  const wttj = app("wttj", "wttj", {
-    start: "wttf",
+  const wttj = app("collector-wttj", "collector-wttj", {
+    start: "collector-wttj",
     preDeploy: "source-migrate --wait-timeout 180",
     deploy: { cronSchedule: "22 */2 * * *", restartPolicyType: "NEVER" },
     env: {
@@ -97,21 +97,21 @@ export default defineRailway((ctx) => {
       WTTJ_MAX_PAGES: "5",
     },
   });
-  const setup = app("broker-setup", "broker-setup", {
-    start: "broker-setup",
+  const setup = app("nats-setup", "nats-setup", {
+    start: "nats-setup",
     env: broker("admin", "NATS_ADMIN_PASSWORD"),
   });
-  const intake = app("notification-intake", "notification-intake", {
-    start: "notification-intake",
+  const intake = app("discord-intake", "discord-intake", {
+    start: "discord-intake",
     preDeploy: "notification-migrate --wait-timeout 180",
     env: { ...notificationDatabase, ...broker("notifications", "NATS_NOTIFICATIONS_PASSWORD") },
   });
-  const delivery = app("discord-delivery", "discord-delivery", {
-    start: "discord-delivery",
+  const delivery = app("discord-sender", "discord-sender", {
+    start: "discord-sender",
     source: deliveryEnabled ? source : undefined,
     env: {
       ...notificationDatabase,
-      DISCORD_WEBHOOK_URL: secret("discord-delivery", "DISCORD_WEBHOOK_URL"),
+      DISCORD_WEBHOOK_URL: secret("discord-sender", "DISCORD_WEBHOOK_URL"),
     },
   });
   return project(ctx.projectName ?? "boVIE", {

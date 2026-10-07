@@ -38,8 +38,8 @@ services:
     <<: *app
     build:
       context: .
-      target: business-france
-    image: bovie-business-france:local
+      target: collector-business-france
+    image: bovie-collector-business-france:local
     command: [source-migrate]
     environment:
       DATABASE_URL: mysql+pymysql://business_france:local-bf-only@mysql/business_france
@@ -50,8 +50,8 @@ services:
     <<: *app
     build:
       context: .
-      target: wttj
-    image: bovie-wttj:local
+      target: collector-wttj
+    image: bovie-collector-wttj:local
     command: [source-migrate]
     environment:
       DATABASE_URL: mysql+pymysql://wttj:local-wttj-only@mysql/wttj
@@ -62,21 +62,21 @@ services:
     <<: *app
     build:
       context: .
-      target: notification-intake
-    image: bovie-notification-intake:local
+      target: discord-intake
+    image: bovie-discord-intake:local
     command: [notification-migrate]
     environment:
       DATABASE_URL: mysql+pymysql://notifications:local-notifications-only@mysql/notifications
     depends_on:
       mysql: {condition: service_healthy}
 
-  setup-nats:
+  nats-setup:
     <<: *app
     build:
       context: .
-      target: broker-setup
-    image: bovie-broker-setup:local
-    command: [broker-setup]
+      target: nats-setup
+    image: bovie-nats-setup:local
+    command: [nats-setup]
     environment:
       NATS_URL: nats://nats:4222
       NATS_USER: admin
@@ -84,13 +84,13 @@ services:
     depends_on:
       nats: {condition: service_healthy}
 
-  business-france:
+  collector-business-france:
     <<: *app
     build:
       context: .
-      target: business-france
-    image: bovie-business-france:local
-    command: [bovie]
+      target: collector-business-france
+    image: bovie-collector-business-france:local
+    command: [collector-business-france]
     environment:
       DATABASE_URL: mysql+pymysql://business_france:local-bf-only@mysql/business_france
       BOVIE_LIMIT: ${BOVIE_LIMIT:-25}
@@ -102,15 +102,15 @@ services:
       NATS_PASSWORD: ${NATS_BF_PASSWORD:-local-nats-bf}
     depends_on:
       migrate-bf: {condition: service_completed_successfully}
-      setup-nats: {condition: service_completed_successfully}
+      nats-setup: {condition: service_completed_successfully}
 
-  wttj:
+  collector-wttj:
     <<: *app
     build:
       context: .
-      target: wttj
-    image: bovie-wttj:local
-    command: [wttf]
+      target: collector-wttj
+    image: bovie-collector-wttj:local
+    command: [collector-wttj]
     environment:
       DATABASE_URL: mysql+pymysql://wttj:local-wttj-only@mysql/wttj
       WTTJ_QUERY: ${WTTJ_QUERY:-}
@@ -122,15 +122,15 @@ services:
       NATS_PASSWORD: ${NATS_WTTJ_PASSWORD:-local-nats-wttj}
     depends_on:
       migrate-wttj: {condition: service_completed_successfully}
-      setup-nats: {condition: service_completed_successfully}
+      nats-setup: {condition: service_completed_successfully}
 
-  receiver:
+  discord-intake:
     <<: *app
     build:
       context: .
-      target: notification-intake
-    image: bovie-notification-intake:local
-    command: [notification-intake]
+      target: discord-intake
+    image: bovie-discord-intake:local
+    command: [discord-intake]
     restart: unless-stopped
     environment:
       DATABASE_URL: mysql+pymysql://notifications:local-notifications-only@mysql/notifications
@@ -139,15 +139,15 @@ services:
       NATS_PASSWORD: ${NATS_NOTIFICATIONS_PASSWORD:-local-nats-notifications}
     depends_on:
       migrate-notifications: {condition: service_completed_successfully}
-      setup-nats: {condition: service_completed_successfully}
+      nats-setup: {condition: service_completed_successfully}
 
-  delivery:
+  discord-sender:
     <<: *app
     build:
       context: .
-      target: discord-delivery
-    image: bovie-discord-delivery:local
-    command: [discord-delivery]
+      target: discord-sender
+    image: bovie-discord-sender:local
+    command: [discord-sender]
     restart: unless-stopped
     environment:
       DATABASE_URL: mysql+pymysql://notifications:local-notifications-only@mysql/notifications

@@ -1,4 +1,4 @@
-from bovie.job.models.job import Job
+from collector_business_france.job.models.job import Job
 
 
 def test_job_detects_external_application_url():

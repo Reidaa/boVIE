@@ -1,6 +1,6 @@
 import pytest
-from bovie.job.models.job import Job
-from bovie.job.models.search import SearchParameters
+from collector_business_france.job.models.job import Job
+from collector_business_france.job.models.search import SearchParameters
 from sqlalchemy import func, select
 
 
@@ -24,7 +24,7 @@ def job(identity):
 
 
 def test_interrupted_collection_replays_without_skipping(source_db, monkeypatch):
-    from bovie import main
+    from collector_business_france import main
     from source_store import Offer
 
     def search(params):
@@ -51,7 +51,7 @@ def test_interrupted_collection_replays_without_skipping(source_db, monkeypatch)
 
 
 def test_failed_publish_leaves_page_unrecorded(source_db, monkeypatch):
-    from bovie import main
+    from collector_business_france import main
     from source_store import Checkpoint, Offer
 
     monkeypatch.setattr(main, "search_id", lambda params: [1, 2])
@@ -78,7 +78,7 @@ def test_failed_publish_leaves_page_unrecorded(source_db, monkeypatch):
 
 
 def test_business_france_preserves_notification_fields():
-    from bovie.main import normalize
+    from collector_business_france.main import normalize
 
     event = normalize(job(1))
     assert event.source_offer_id == "1"

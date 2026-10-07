@@ -7,7 +7,7 @@ from job_database import make_engine
 from job_database.env import load_env
 from job_runtime import configure_logging, log_failure
 
-from discord_delivery.delivery import deliver_one
+from discord_sender.delivery import deliver_one
 
 
 @click.command()

@@ -37,8 +37,8 @@ test("every service has an explicit build, command, and private deployment", () 
     assert.equal(service.networking?.tcpProxies, undefined);
   }
   for (const [name, user, password] of [
-    ["business-france", "business_france", "NATS_BF_PASSWORD"],
-    ["wttj", "wttj", "NATS_WTTJ_PASSWORD"],
+    ["collector-business-france", "business_france", "NATS_BF_PASSWORD"],
+    ["collector-wttj", "wttj", "NATS_WTTJ_PASSWORD"],
   ]) {
     const service = byName.get(name)!;
     assert.equal(service.deploy?.restartPolicyType, "NEVER");
@@ -58,14 +58,14 @@ test("secrets stay with their owner and staging delivery starts stopped", () => 
   for (const service of services) {
     const variables = service.variables ?? {};
     assert.equal(variables.MYSQL_ROOT_PASSWORD, undefined);
-    if (service.name !== "discord-delivery") assert.equal(variables.DISCORD_WEBHOOK_URL, undefined);
+    if (service.name !== "discord-sender") assert.equal(variables.DISCORD_WEBHOOK_URL, undefined);
     for (const key of Object.keys(variables)) assert.ok(!key.endsWith("DATABASE_PASSWORD"));
   }
-  assert.equal(byName.get("broker-setup")!.variables!.DATABASE_URL, undefined);
-  const delivery = byName.get("discord-delivery")!;
+  assert.equal(byName.get("nats-setup")!.variables!.DATABASE_URL, undefined);
+  const delivery = byName.get("discord-sender")!;
   assert.equal(delivery.source?.type, deliveryEnabled ? "github" : undefined);
   if (!deliveryEnabled) assert.equal(delivery.source?.repo, undefined);
-  assert.equal(byName.get("discord-delivery")!.variables!.NATS_PASSWORD, undefined);
+  assert.equal(byName.get("discord-sender")!.variables!.NATS_PASSWORD, undefined);
 });
 
 test("stateful services require persistent mounts", () => {
@@ -79,10 +79,10 @@ test("stateful services require persistent mounts", () => {
     assert.equal(database.deploy?.multiRegionConfig?.["europe-west4-drams3a"]?.numReplicas, 1);
   }
   for (const [service, database] of [
-    ["business-france", "mysql-business-france"],
-    ["wttj", "mysql-wttj"],
-    ["notification-intake", "mysql-notifications"],
-    ["discord-delivery", "mysql-notifications"],
+    ["collector-business-france", "mysql-business-france"],
+    ["collector-wttj", "mysql-wttj"],
+    ["discord-intake", "mysql-notifications"],
+    ["discord-sender", "mysql-notifications"],
   ]) {
     assert.deepEqual(byName.get(service)!.variables!.DATABASE_URL, {
       type: "reference",
@@ -96,11 +96,11 @@ test("stateful services require persistent mounts", () => {
 
 test("each application image installs only its workspace package", () => {
   for (const name of [
-    "business-france",
-    "wttj",
-    "notification-intake",
-    "discord-delivery",
-    "broker-setup",
+    "collector-business-france",
+    "collector-wttj",
+    "discord-intake",
+    "discord-sender",
+    "nats-setup",
   ]) {
     const dockerfile = readFileSync(`${root}apps/${name}/Dockerfile`, "utf8");
     assert.ok(dockerfile.includes(`--package bovie-${name}`));

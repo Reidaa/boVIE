@@ -126,7 +126,9 @@ def task(
     type=Choice(get_specialization_names(), case_sensitive=False),
     help="Specializations to filter on",
 )
-@click.version_option(package_name="bovie-business-france", message="Bovie %(version)s")
+@click.version_option(
+    package_name="bovie-collector-business-france", message="Bovie %(version)s"
+)
 def cli(
     debug: bool,
     limit: int,

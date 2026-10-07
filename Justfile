@@ -6,7 +6,7 @@ REPOSITORY := "reidaa"
 DOCKERFILE := "Dockerfile"
 DOCKERTAG := "latest"
 
-PACKAGE := "bovie"
+PACKAGE := "collector_business_france"
 
 TURBO := "npx turbo run"
 
@@ -64,7 +64,7 @@ verify-packages:
 	{{TURBO}} verify:packages
 
 workers:
-	docker compose --profile workers up --build -d receiver delivery
+	docker compose --profile workers up --build -d discord-intake discord-sender
 
 down:
 	docker compose down

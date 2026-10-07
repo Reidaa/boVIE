@@ -3,10 +3,10 @@ WORKDIR /app
 COPY pyproject.toml uv.lock ./
 COPY packages ./packages
 COPY apps ./apps
-RUN uv sync --frozen --no-dev --no-editable --package bovie-broker-setup
+RUN uv sync --frozen --no-dev --no-editable --package bovie-discord-sender
 
 FROM python:3.13-slim-bookworm
 WORKDIR /app
 COPY --from=build /app/.venv /app/.venv
 ENV PATH="/app/.venv/bin:$PATH"
-CMD ["broker-setup"]
+CMD ["discord-sender"]

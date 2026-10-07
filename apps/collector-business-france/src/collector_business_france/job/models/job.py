@@ -2,7 +2,7 @@ from urllib.parse import urlparse
 
 from pydantic import BaseModel, Field, field_validator
 
-from bovie.job.models.specialization import Specialization
+from collector_business_france.job.models.specialization import Specialization
 
 BUSINESS_FRANCE_HOSTS = {
     "businessfrance.fr",
