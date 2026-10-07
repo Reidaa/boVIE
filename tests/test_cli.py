@@ -4,6 +4,19 @@ from click.testing import CliRunner
 from dotenv import dotenv_values
 
 
+class Publisher:
+    """Stands in for the broker connection the collectors open."""
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc_info):
+        pass
+
+    def publish(self, event):
+        raise AssertionError("CLI tests replace collection")
+
+
 def test_cli_loads_dotenv_before_resolving_options(tmp_path, monkeypatch):
     from bovie import main
 
@@ -20,8 +33,9 @@ def test_cli_loads_dotenv_before_resolving_options(tmp_path, monkeypatch):
             pass
 
     monkeypatch.setattr(main, "make_engine", lambda url: Engine())
+    monkeypatch.setattr(main, "Publisher", Publisher)
     monkeypatch.setattr(
-        main, "task", lambda params, engine: observed.append(params.limit)
+        main, "task", lambda params, engine, publish: observed.append(params.limit)
     )
     result = CliRunner().invoke(main.cli)
     assert result.exit_code == 0, result.output
@@ -42,7 +56,10 @@ def test_example_environment_is_accepted(monkeypatch):
 
     observed = []
     monkeypatch.setattr(main, "make_engine", lambda url: Engine())
-    monkeypatch.setattr(main, "task", lambda params, engine: observed.append(params))
+    monkeypatch.setattr(main, "Publisher", Publisher)
+    monkeypatch.setattr(
+        main, "task", lambda params, engine, publish: observed.append(params)
+    )
     result = CliRunner().invoke(main.cli)
     assert result.exit_code == 0, result.output
     assert observed[0].limit == 25
@@ -63,8 +80,11 @@ def test_wttj_cli_defaults_and_optional_contract_filters(tmp_path, monkeypatch):
             pass
 
     monkeypatch.setattr(main, "make_engine", lambda url: Engine())
+    monkeypatch.setattr(main, "Publisher", Publisher)
     monkeypatch.setattr(
-        main, "collect", lambda engine, client, **kwargs: observed.append(kwargs)
+        main,
+        "collect",
+        lambda engine, client, publish, **kwargs: observed.append(kwargs),
     )
     result = CliRunner().invoke(main.main)
     assert result.exit_code == 0, result.output

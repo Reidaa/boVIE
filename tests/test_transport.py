@@ -9,33 +9,6 @@ from sqlalchemy.orm import Session
 from tests.test_storage import event
 
 
-def test_relay_lost_ack_retries_same_event(source_db):
-    from outbox_relay.main import relay_one
-    from source_store import Outbox, record_page
-
-    discovered = event()
-    record_page(source_db, [discovered], "scan", 1)
-    published = []
-
-    class Broker:
-        async def publish(self, subject, payload, **kwargs):
-            published.append((subject, payload, kwargs))
-            if len(published) == 1:
-                raise TimeoutError("Lost publish acknowledgment")
-
-    broker = Broker()
-    with pytest.raises(TimeoutError):
-        asyncio.run(relay_one(source_db, broker, "business_france"))
-    with Session(source_db) as session, session.begin():
-        row = session.get(Outbox, str(discovered.event_id))
-        assert row is not None and row.completed_at is None
-        session.execute(
-            update(Outbox).values(available_at=datetime.now(UTC) - timedelta(seconds=1))
-        )
-    assert asyncio.run(relay_one(source_db, broker, "business_france"))
-    assert published[0] == published[1]
-
-
 def test_receiver_commit_precedes_ack(notification_db):
     from notification_intake.main import receive_message
     from notification_store import Delivery

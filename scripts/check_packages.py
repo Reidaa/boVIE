@@ -12,19 +12,13 @@ SERVICES = {
         "bovie",
         "bovie.main",
         ["source-migrate"],
-        ["nats", "nextcord", "notification_store"],
+        ["nextcord", "notification_store"],
     ),
     "wttj": (
         "wttf",
         "wttf.main",
         ["source-migrate"],
-        ["nats", "nextcord", "bovie", "notification_store"],
-    ),
-    "outbox-relay": (
-        "outbox-relay",
-        "outbox_relay.main",
-        ["source-migrate"],
-        ["httpx", "nextcord", "notification_store"],
+        ["nextcord", "bovie", "notification_store"],
     ),
     "notification-intake": (
         "notification-intake",
@@ -50,6 +44,13 @@ SERVICES = {
 def check(roots: list[Path]):
     dists = sorted(path for root in roots for path in root.glob("*/dist"))
     links = [argument for dist in dists for argument in ("--find-links", str(dist))]
+    # Workspace wheels keep one version across builds; never reuse a cached copy.
+    refresh = [
+        argument
+        for dist in dists
+        for wheel in dist.glob("*.whl")
+        for argument in ("--refresh-package", wheel.name.split("-")[0])
+    ]
     environment = os.environ.copy()
     for key in ("DATABASE_URL", "DISCORD_WEBHOOK_URL", "PYTHONPATH"):
         environment.pop(key, None)
@@ -78,6 +79,7 @@ def check(roots: list[Path]):
                     "--python",
                     str(python),
                     *links,
+                    *refresh,
                     str(wheel[0]),
                 ],
                 check=True,

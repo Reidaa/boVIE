@@ -21,10 +21,12 @@ def wait_for_database(engine: Engine, timeout: float) -> Connection:
             sleep(min(2, remaining))
 
 
-def upgrade_schema(engine: Engine, path: Path, *, wait_timeout: float = 0) -> None:
+def upgrade_schema(
+    engine: Engine, path: Path, *, wait_timeout: float = 0, revision: str = "head"
+) -> None:
     config = Config()
     config.set_main_option("path_separator", "os")
     config.set_main_option("script_location", str(path))
     with wait_for_database(engine, wait_timeout) as connection, connection.begin():
         config.attributes["connection"] = connection
-        command.upgrade(config, "head")
+        command.upgrade(config, revision)

@@ -17,7 +17,6 @@ members = ["apps/*", "packages/*"]
 [tool.uv.sources]
 bovie-business-france = { workspace = true }
 bovie-wttj = { workspace = true }
-bovie-outbox-relay = { workspace = true }
 bovie-notification-intake = { workspace = true }
 bovie-discord-delivery = { workspace = true }
 bovie-broker-setup = { workspace = true }

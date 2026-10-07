@@ -10,9 +10,6 @@ RUN uv sync --frozen --no-dev --no-editable --package bovie-business-france
 FROM workspace AS build-wttj
 RUN uv sync --frozen --no-dev --no-editable --package bovie-wttj
 
-FROM workspace AS build-outbox-relay
-RUN uv sync --frozen --no-dev --no-editable --package bovie-outbox-relay
-
 FROM workspace AS build-notification-intake
 RUN uv sync --frozen --no-dev --no-editable --package bovie-notification-intake
 
@@ -33,10 +30,6 @@ CMD ["bovie"]
 FROM runtime AS wttj
 COPY --from=build-wttj /app/.venv /app/.venv
 CMD ["wttf"]
-
-FROM runtime AS outbox-relay
-COPY --from=build-outbox-relay /app/.venv /app/.venv
-CMD ["outbox-relay"]
 
 FROM runtime AS notification-intake
 COPY --from=build-notification-intake /app/.venv /app/.venv

@@ -2,6 +2,7 @@ import os
 import subprocess
 import sys
 from datetime import UTC, datetime
+from typing import Any
 
 import pytest
 from job_database.env import Env
@@ -41,72 +42,147 @@ import job_database.env, job_database, bovie.main
     )
 
 
-def event(offer_id="ABC"):
-    from job_contracts import OfferDetails, OfferDiscovered
+def event(offer_id="ABC", **changes):
+    from job_contracts import OfferDetails, OfferEvent
 
-    return OfferDiscovered(
-        source="business_france",
-        source_offer_id=offer_id,
-        observed_at=datetime.now(UTC),
-        offer=OfferDetails(
+    fields: dict[str, Any] = {
+        "source": "business_france",
+        "source_offer_id": offer_id,
+        "observed_at": datetime.now(UTC),
+        "offer": OfferDetails(
             title="Engineer",
             organization="Example",
             country="France",
             city="Paris",
             url=HttpUrl("https://example.com/jobs/abc"),
         ),
+    }
+    return OfferEvent(**(fields | changes))
+
+
+def test_event_ids_are_stable_across_republishing():
+    first = event()
+    assert event().event_id == first.event_id
+    assert event(observed_at=datetime(2026, 1, 1, tzinfo=UTC)).event_id == (
+        first.event_id
     )
+    assert event("other").event_id != first.event_id
+    assert event(type="closed").event_id != first.event_id
+    assert event(source="wttj").event_id != first.event_id
 
 
-def test_discovery_identity_and_atomic_outbox(source_db):
-    from source_store import Offer, Outbox, record_page
-
-    record_page(source_db, [event()], "scan", 1)
-    record_page(source_db, [event(), event("abc")], "scan", 2)
-    with source_db.connect() as conn:
-        assert conn.scalar(select(func.count()).select_from(Offer)) == 2
-        assert conn.scalar(select(func.count()).select_from(Outbox)) == 2
+def test_update_event_ids_follow_offer_content():
+    update = event(type="updated")
+    assert event(type="updated").event_id == update.event_id
+    changed = event(type="updated").offer.model_copy(update={"title": "Lead"})
+    assert event(type="updated", offer=changed).event_id != update.event_id
 
 
-def test_failed_page_rolls_back_offers_events_and_checkpoint(source_db):
-    from source_store import Checkpoint, Offer, Outbox, record_page
+def test_events_without_a_type_are_discoveries():
+    payload = event().model_dump(mode="json")
+    del payload["type"]
+    from job_contracts import OfferEvent
+
+    legacy = OfferEvent.model_validate(payload)
+    assert legacy.type == "discovered"
+    assert legacy.event_id == event().event_id
+
+
+def test_recorded_offers_keep_content_hash_and_sightings(source_db):
+    from source_store import Checkpoint, Offer, record_page, seen
+    from sqlalchemy.orm import Session
+
+    discovered = event()
+    record_page(source_db, [discovered], [discovered.source_offer_id], "scan", 1)
+    record_page(source_db, [discovered, event("abc")], ["ABC", "abc"], "scan", 2)
+    assert seen(source_db, "ABC") and seen(source_db, "abc")
+    with Session(source_db) as session:
+        assert session.scalar(select(func.count()).select_from(Offer)) == 2
+        offer = session.get(Offer, "ABC")
+        assert offer is not None
+        assert offer.event_id == str(discovered.event_id)
+        assert offer.content_hash == discovered.offer.content_hash
+        assert offer.observed_at == discovered.observed_at
+        assert offer.last_seen_at is not None
+        first_sighting = offer.last_seen_at
+        checkpoint = session.get(Checkpoint, "scan")
+        assert checkpoint is not None and checkpoint.offset == 2
+    record_page(source_db, [], ["ABC", "unrecorded"], "scan", 3)
+    with Session(source_db) as session:
+        offer = session.get(Offer, "ABC")
+        assert offer is not None and offer.last_seen_at is not None
+        assert offer.last_seen_at > first_sighting
+        assert session.get(Offer, "unrecorded") is None
+
+
+def test_failed_page_rolls_back_offers_and_checkpoint(source_db):
+    from source_store import Checkpoint, Offer, record_page
 
     def broken_events():
         yield event()
         raise RuntimeError("interrupted")
 
     with pytest.raises(RuntimeError, match="interrupted"):
-        record_page(source_db, broken_events(), "scan", 1)
+        record_page(source_db, broken_events(), [], "scan", 1)
     with source_db.connect() as conn:
-        for table in (Offer, Outbox, Checkpoint):
+        for table in (Offer, Checkpoint):
             assert conn.scalar(select(func.count()).select_from(table)) == 0
 
 
-def test_utc_round_trip(source_db):
-    from source_store import Offer, record_page
-    from sqlalchemy.orm import Session
-
-    discovered = event()
-    record_page(source_db, [discovered], "scan", 1)
-    with Session(source_db) as session:
-        offer = session.get(Offer, discovered.source_offer_id)
-        assert offer is not None
-        assert offer.observed_at == discovered.observed_at
-
-
-def test_concurrent_discovery_creates_one_event(source_db):
+def test_concurrent_recording_keeps_one_offer(source_db):
     from concurrent.futures import ThreadPoolExecutor
 
-    from source_store import Outbox, record_page
+    from source_store import Offer, record_page
 
     with ThreadPoolExecutor(max_workers=4) as workers:
         list(
             workers.map(
-                lambda _: record_page(source_db, [event()], "scan", 1), range(4)
+                lambda _: record_page(source_db, [event()], ["ABC"], "scan", 1),
+                range(4),
             )
         )
     with source_db.connect() as conn:
-        assert conn.scalar(select(func.count()).select_from(Outbox)) == 1
+        assert conn.scalar(select(func.count()).select_from(Offer)) == 1
+
+
+def test_migration_requires_an_empty_outbox(database_factory):
+    from pathlib import Path
+
+    import source_store
+    from job_database.migrate import upgrade_schema
+    from source_store.migrate import upgrade
+    from sqlalchemy import text
+
+    engine = database_factory("empty")
+    migrations = Path(source_store.__file__).parent / "migrations"
+    upgrade_schema(engine, migrations, revision="source_0001")
+    with engine.begin() as conn:
+        conn.execute(
+            text(
+                "INSERT INTO offers (source_offer_id, observed_at, event_id) "
+                "VALUES ('legacy', UTC_TIMESTAMP(6), 'e1')"
+            )
+        )
+        conn.execute(
+            text(
+                "INSERT INTO outbox (event_id, payload, attempts, available_at) "
+                "VALUES ('e1', '{}', 0, UTC_TIMESTAMP(6))"
+            )
+        )
+    with pytest.raises(RuntimeError, match="1 unpublished events"):
+        upgrade(engine)
+    with engine.begin() as conn:
+        conn.execute(text("UPDATE outbox SET completed_at = UTC_TIMESTAMP(6)"))
+    upgrade(engine)
+    with engine.connect() as conn:
+        assert conn.scalar(text("SELECT COUNT(*) FROM offers")) == 1
+        assert conn.scalar(text("SELECT last_seen_at = observed_at FROM offers"))
+        assert not conn.scalar(
+            text(
+                "SELECT COUNT(*) FROM information_schema.tables "
+                "WHERE table_schema = DATABASE() AND table_name = 'outbox'"
+            )
+        )
 
 
 @pytest.mark.parametrize("owner", [0, 1, 2])

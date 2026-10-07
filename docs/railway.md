@@ -24,7 +24,7 @@ Run `npx turbo run format --filter=bovie-railway` to format the TypeScript files
 
 For a new project, first create the project and an empty staging environment in Railway.
 The plan must target `staging`. A new environment gets three Railway MySQL databases,
-eight application or broker services, and one NATS volume.
+six application or broker services, and one NATS volume.
 `apply` displays the plan before confirmation.
 The deployment uses private networking and creates no public domains or database proxies.
 Do not use this configuration to replace an existing production environment.
@@ -37,11 +37,9 @@ Do not use this configuration to replace an existing production environment.
 | `mysql-wttj` | WTTJ data | Railway MySQL |
 | `mysql-notifications` | Inbox and pending deliveries | Railway MySQL |
 | `nats` | Persistent JetStream broker | NATS with the repository configuration |
-| `business-france` | Scheduled collection at minute 12, every two hours UTC | `bovie` |
-| `wttj` | Scheduled collection at minute 22, every two hours UTC | `wttf` |
+| `business-france` | Collect and publish at minute 12, every two hours UTC | `bovie` |
+| `wttj` | Collect and publish at minute 22, every two hours UTC | `wttf` |
 | `broker-setup` | Provision the stream and consumer, then exit | `broker-setup` |
-| `relay-bf` | Publish Business France events | `outbox-relay --source business_france` |
-| `relay-wttj` | Publish WTTJ events | `outbox-relay --source wttj` |
 | `notification-intake` | Store events and pending deliveries | `notification-intake` |
 | `discord-delivery` | Send pending deliveries, initially stopped | `discord-delivery` |
 
@@ -57,6 +55,7 @@ They pass new values to the configuration through the local process environment.
 Existing values, including sealed variables, are preserved on later applies.
 Use these npm scripts for the first deployment so NATS credentials are initialized.
 Railway provisions MySQL connection variables. Each worker references only its database's `MYSQL_URL`.
+Each collector references only its own source's NATS password.
 The database library accepts Railway's `mysql://` URL and uses PyMySQL.
 Generated passwords start with `bovie_` so NATS reads them as strings.
 Retain an alphabetic prefix when rotating NATS passwords.
@@ -83,6 +82,13 @@ The apply connects the service to GitHub and starts its first deployment.
 Run the checks, plan, and apply commands again.
 Starting delivery sends all pending staging discoveries, including older queued offers.
 
+## Remove the outbox relays
+
+Earlier versions of this configuration deployed `relay-bf` and `relay-wttj`.
+Before applying this version, follow the upgrade steps in the README so the
+outboxes and the work-queue stream are empty. If the plan does not remove the
+relay services, delete them in the Railway dashboard after the apply.
+
 ## Updates and checks
 
 Push changes to the configured branch to trigger Railway builds for affected services.
@@ -98,7 +104,7 @@ npm run railway:plan
 ```
 
 Collectors and broker setup finish after successful runs. That exit is expected.
-The relay and intake services must stay running. Delivery must remain stopped until its webhook is configured.
+The intake service must stay running. Delivery must remain stopped until its webhook is configured.
 A repeated plan after deployment must show no changes.
 
 The configuration follows Railway's [Infrastructure as Code guide](https://docs.railway.com/infrastructure-as-code)

@@ -15,6 +15,7 @@ def database_factory():
     databases = []
 
     def create(domain):
+        """Create a database migrated for "source" or "notification", else empty."""
         from job_database import make_engine
         from notification_store.migrate import upgrade as upgrade_notification
         from source_store.migrate import upgrade as upgrade_source
@@ -24,7 +25,10 @@ def database_factory():
             conn.execute(text(f"CREATE DATABASE `{name}` CHARACTER SET utf8mb4"))
         engine = make_engine(admin.url.set(database=name))
         databases.append((name, engine))
-        (upgrade_source if domain == "source" else upgrade_notification)(engine)
+        if domain == "source":
+            upgrade_source(engine)
+        elif domain == "notification":
+            upgrade_notification(engine)
         return engine
 
     yield create

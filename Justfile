@@ -64,7 +64,7 @@ verify-packages:
 	{{TURBO}} verify:packages
 
 workers:
-	docker compose --profile workers up --build -d relay-bf relay-wttj receiver delivery
+	docker compose --profile workers up --build -d receiver delivery
 
 down:
 	docker compose down

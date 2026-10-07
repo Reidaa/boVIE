@@ -1,17 +1,17 @@
 # Service ownership
 
 The project collects general job offers from WTTJ and VIE/VIA offers from Business France.
-The uv workspace separates six deployable services from six shared libraries.
+The uv workspace separates five deployable services from six shared libraries.
 Each service declares its own dependencies and has a dedicated Docker target.
 The root project installs development tools only.
 
 | Library | Owns | Used by |
 | --- | --- | --- |
-| `job_contracts` | Version-1 discovery events | Collectors, relay, intake, delivery |
-| `source_store` | Offers, checkpoints, outbox, source migrations | Collectors and relay |
+| `job_contracts` | Version-1 offer events with stable event IDs | Collectors, intake, delivery |
+| `source_store` | Published offers, content hashes, sightings, checkpoints, source migrations | Collectors |
 | `notification_store` | Inbox, pending deliveries, atomic acceptance, notification migrations | Intake and delivery |
 | `job_database` | MySQL connections, UTC timestamps, queue leases, migration execution | Both storage libraries and database clients |
-| `job_messaging` | NATS connection configuration and stream names | Relay, intake, broker setup |
+| `job_messaging` | NATS connection, stream names, and the collectors' synchronous publisher | Collectors, intake, broker setup |
 | `job_runtime` | Entrypoint environment loading and failure logging | Deployable services |
 
 A library cannot import a service. A service cannot import another service.
@@ -21,14 +21,17 @@ It checks entrypoints, packaged migrations, and the absence of unrelated service
 
 The old shared worker command is removed. Each worker has one role.
 Collectors cannot send Discord messages. The Discord delivery package has no NATS client.
-Broker setup has no database dependency. The relay uses one source database per deployment.
+Broker setup has no database dependency. Each collector publishes only its own source's subject.
 Intake and delivery share the notification database and never query source databases.
 
 The MySQL tables, Alembic revision IDs, event version, and NATS subjects are unchanged.
 Existing databases do not require a data transfer for this package split.
+Collectors publish each page and wait for JetStream acknowledgments before recording it.
+A crash in between republishes the same event IDs; the notification inbox drops the duplicates.
 Collection restarts replay from the beginning because search results can move between runs.
 One active collector per source remains the supported mode.
-Queue claims expire after 120 seconds. Discord delivery remains at least once.
+The stream keeps acknowledged messages for 90 days, so new consumers can replay them.
+Delivery claims expire after 120 seconds. Discord delivery remains at least once.
 A crash after Discord accepts a message can produce a duplicate on retry.
 
 WTTJ defaults to an empty title query and no contract filter.

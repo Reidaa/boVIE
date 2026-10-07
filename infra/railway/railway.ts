@@ -82,7 +82,7 @@ export default defineRailway((ctx) => {
     start: "bovie",
     preDeploy: "source-migrate --wait-timeout 180",
     deploy: { cronSchedule: "12 */2 * * *", restartPolicyType: "NEVER" },
-    env: { ...bfDatabase, BOVIE_LIMIT: "25" },
+    env: { ...bfDatabase, ...broker("business_france", "NATS_BF_PASSWORD"), BOVIE_LIMIT: "25" },
   });
   const wttj = app("wttj", "wttj", {
     start: "wttf",
@@ -90,6 +90,7 @@ export default defineRailway((ctx) => {
     deploy: { cronSchedule: "22 */2 * * *", restartPolicyType: "NEVER" },
     env: {
       ...wttjDatabase,
+      ...broker("wttj", "NATS_WTTJ_PASSWORD"),
       WTTJ_QUERY: "",
       WTTJ_CONTRACTS: "",
       WTTJ_LIMIT: "50",
@@ -99,14 +100,6 @@ export default defineRailway((ctx) => {
   const setup = app("broker-setup", "broker-setup", {
     start: "broker-setup",
     env: broker("admin", "NATS_ADMIN_PASSWORD"),
-  });
-  const relayBf = app("relay-bf", "outbox-relay", {
-    start: "outbox-relay --source business_france",
-    env: { ...bfDatabase, ...broker("business_france", "NATS_BF_PASSWORD") },
-  });
-  const relayWttj = app("relay-wttj", "outbox-relay", {
-    start: "outbox-relay --source wttj",
-    env: { ...wttjDatabase, ...broker("wttj", "NATS_WTTJ_PASSWORD") },
   });
   const intake = app("notification-intake", "notification-intake", {
     start: "notification-intake",
@@ -131,8 +124,6 @@ export default defineRailway((ctx) => {
       businessFrance,
       wttj,
       setup,
-      relayBf,
-      relayWttj,
       intake,
       delivery,
     ],

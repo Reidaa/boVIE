@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 5
 requires-python = ">=3.13"
 resolution-markers = [
     "python_full_version >= '3.15'",
@@ -16,7 +16,6 @@ members = [
     "bovie-messaging",
     "bovie-notification-intake",
     "bovie-notification-store",
-    "bovie-outbox-relay",
     "bovie-runtime",
     "bovie-source-store",
     "bovie-workspace",
@@ -84,6 +83,7 @@ source = { editable = "apps/business-france" }
 dependencies = [
     { name = "bovie-contracts" },
     { name = "bovie-database" },
+    { name = "bovie-messaging" },
     { name = "bovie-runtime" },
     { name = "bovie-source-store" },
     { name = "click" },
@@ -98,6 +98,7 @@ dependencies = [
 requires-dist = [
     { name = "bovie-contracts", editable = "packages/contracts" },
     { name = "bovie-database", editable = "packages/database" },
+    { name = "bovie-messaging", editable = "packages/messaging" },
     { name = "bovie-runtime", editable = "packages/runtime" },
     { name = "bovie-source-store", editable = "packages/source-store" },
     { name = "click", specifier = ">=8.1.8" },
@@ -172,11 +173,15 @@ name = "bovie-messaging"
 version = "0.4.0"
 source = { editable = "packages/messaging" }
 dependencies = [
+    { name = "bovie-contracts" },
     { name = "nats-py" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "nats-py", specifier = ">=2.10,<3" }]
+requires-dist = [
+    { name = "bovie-contracts", editable = "packages/contracts" },
+    { name = "nats-py", specifier = ">=2.10,<3" },
+]
 
 [[package]]
 name = "bovie-notification-intake"
@@ -223,33 +228,6 @@ requires-dist = [
     { name = "bovie-contracts", editable = "packages/contracts" },
     { name = "bovie-database", editable = "packages/database" },
     { name = "click", specifier = ">=8.1.8" },
-    { name = "sqlalchemy", specifier = ">=2.0,<2.1" },
-]
-
-[[package]]
-name = "bovie-outbox-relay"
-version = "0.4.0"
-source = { editable = "apps/outbox-relay" }
-dependencies = [
-    { name = "bovie-contracts" },
-    { name = "bovie-database" },
-    { name = "bovie-messaging" },
-    { name = "bovie-runtime" },
-    { name = "bovie-source-store" },
-    { name = "click" },
-    { name = "loguru" },
-    { name = "sqlalchemy" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "bovie-contracts", editable = "packages/contracts" },
-    { name = "bovie-database", editable = "packages/database" },
-    { name = "bovie-messaging", editable = "packages/messaging" },
-    { name = "bovie-runtime", editable = "packages/runtime" },
-    { name = "bovie-source-store", editable = "packages/source-store" },
-    { name = "click", specifier = ">=8.1.8" },
-    { name = "loguru", specifier = ">=0.7.3" },
     { name = "sqlalchemy", specifier = ">=2.0,<2.1" },
 ]
 
@@ -321,6 +299,7 @@ source = { editable = "apps/wttj" }
 dependencies = [
     { name = "bovie-contracts" },
     { name = "bovie-database" },
+    { name = "bovie-messaging" },
     { name = "bovie-runtime" },
     { name = "bovie-source-store" },
     { name = "click" },
@@ -334,6 +313,7 @@ dependencies = [
 requires-dist = [
     { name = "bovie-contracts", editable = "packages/contracts" },
     { name = "bovie-database", editable = "packages/database" },
+    { name = "bovie-messaging", editable = "packages/messaging" },
     { name = "bovie-runtime", editable = "packages/runtime" },
     { name = "bovie-source-store", editable = "packages/source-store" },
     { name = "click", specifier = ">=8.1.8" },

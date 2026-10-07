@@ -12,6 +12,7 @@ dependencies = [
     "bovie-contracts",
     "bovie-database",
     "bovie-source-store",
+    "bovie-messaging",
     "bovie-runtime"
 ]
 

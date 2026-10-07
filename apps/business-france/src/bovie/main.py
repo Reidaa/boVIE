@@ -6,11 +6,13 @@ Bovie - A tool to discover VIE/VIA opportunities from Business France
 import hashlib
 import json
 import sys
+from collections.abc import Callable
 
 import click
-from job_contracts import OfferDetails, OfferDiscovered
+from job_contracts import OfferDetails, OfferEvent
 from job_database import make_engine
 from job_database.env import load_env
+from job_messaging import Publisher
 from job_runtime import EnvironmentCommand
 from loguru import logger
 from pydantic import HttpUrl
@@ -30,8 +32,8 @@ from .t import Choice
 DEFAULT_BOVIE_OFFER_MAX = 25
 
 
-def normalize(job: Job) -> OfferDiscovered:
-    return OfferDiscovered(
+def normalize(job: Job) -> OfferEvent:
+    return OfferEvent(
         source="business_france",
         source_offer_id=str(job.id),
         offer=OfferDetails(
@@ -45,7 +47,13 @@ def normalize(job: Job) -> OfferDiscovered:
     )
 
 
-def task(params: SearchParameters, engine: Engine, *, page_size: int = 25):
+def task(
+    params: SearchParameters,
+    engine: Engine,
+    publish: Callable[[OfferEvent], None],
+    *,
+    page_size: int = 25,
+):
     scan = hashlib.sha256(
         json.dumps(params.model_dump(), sort_keys=True).encode()
     ).hexdigest()
@@ -63,7 +71,11 @@ def task(params: SearchParameters, engine: Engine, *, page_size: int = 25):
                 raise RuntimeError(f"Unable to fetch offer {identity}")
             events.append(normalize(job))
         offset += len(ids)
-        for event in record_page(engine, events, scan, offset):
+        # Publish before recording: an unrecorded offer is published again next run.
+        for event in events:
+            publish(event)
+        record_page(engine, events, [str(identity) for identity in ids], scan, offset)
+        for event in events:
             logger.info(
                 "New offer: {} in {} at {}",
                 event.offer.title,
@@ -147,7 +159,8 @@ def cli(
     logger.info("Starting ...")
     engine = make_engine(load_env().database_url)
     try:
-        task(params=params, engine=engine)
+        with Publisher() as publisher:
+            task(params=params, engine=engine, publish=publisher.publish)
     except Exception as e:
         logger.exception("Business France collection failed")
         raise click.ClickException("Business France collection failed") from e

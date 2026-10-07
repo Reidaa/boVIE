@@ -2,7 +2,7 @@
 
 from datetime import UTC, datetime
 
-from job_contracts import OfferDiscovered
+from job_contracts import OfferEvent
 from job_database import UTCDateTime
 from job_database.queue import QueueColumns
 from sqlalchemy import JSON, String
@@ -34,7 +34,21 @@ class Delivery(QueueColumns, NotificationBase):
     __table_args__ = TABLE_OPTIONS
 
 
-def accept(engine: Engine, event: OfferDiscovered) -> bool:
+def identity(payload: dict) -> tuple:
+    # Events written before the type field existed were all discoveries.
+    return (
+        payload["source"],
+        payload["source_offer_id"],
+        payload.get("type", "discovered"),
+    )
+
+
+def accept(engine: Engine, event: OfferEvent) -> bool:
+    """Store the event once and queue a Discord delivery for new discoveries.
+
+    A republished event keeps its ID but can carry a later observed_at, so
+    duplicates are matched on the offer identity, not on the whole payload.
+    """
     payload = event.model_dump(mode="json")
     event_id = str(event.event_id)
     with Session(engine) as session, session.begin():
@@ -45,9 +59,9 @@ def accept(engine: Engine, event: OfferDiscovered) -> bool:
         )
         session.execute(stmt.on_duplicate_key_update(event_id=stmt.inserted.event_id))
         saved = session.get(Inbox, event_id, populate_existing=True)
-        if saved is None or saved.payload != payload:
-            raise ValueError("Event ID already belongs to a different payload")
-        if session.get(Delivery, event_id) is not None:
+        if saved is None or identity(saved.payload) != identity(payload):
+            raise ValueError("Event ID already belongs to a different offer")
+        if event.type != "discovered" or session.get(Delivery, event_id) is not None:
             return False
         session.add(Delivery(event_id=event_id, payload=payload))
     return True

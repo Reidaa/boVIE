@@ -4,7 +4,8 @@ version = "0.4.0"
 requires-python = ">=3.13"
 description = "BoVIE messaging"
 dependencies = [
-    "nats-py>=2.10,<3"
+    "nats-py>=2.10,<3",
+    "bovie-contracts"
 ]
 
 [tool.uv.build-backend]

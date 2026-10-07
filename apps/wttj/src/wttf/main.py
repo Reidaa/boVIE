@@ -1,13 +1,15 @@
 import hashlib
 import json
 import sys
+from collections.abc import Callable
 from urllib.parse import quote
 
 import click
 import httpx
-from job_contracts import DisplayField, OfferDetails, OfferDiscovered
+from job_contracts import DisplayField, OfferDetails, OfferEvent
 from job_database import make_engine
 from job_database.env import load_env
+from job_messaging import Publisher
 from job_runtime import EnvironmentCommand
 from loguru import logger
 from pydantic import HttpUrl
@@ -19,7 +21,7 @@ from wttf.core.search import DetailResponse, JobDetail, SearchResponse
 API_URL = "https://api.welcometothejungle.com"
 
 
-def normalize(job: JobDetail) -> OfferDiscovered:
+def normalize(job: JobDetail) -> OfferEvent:
     fields = [
         DisplayField(name="Entreprise", value=job.organization.name[:1024]),
         DisplayField(
@@ -47,7 +49,7 @@ def normalize(job: JobDetail) -> OfferDiscovered:
     if job.apply_url and job.apply_url.startswith(("https://", "http://")):
         fields.append(DisplayField(name="Candidature", value=job.apply_url[:1024]))
     office = job.offices[0] if job.offices else None
-    return OfferDiscovered(
+    return OfferEvent(
         source="wttj",
         source_offer_id=job.wttj_reference,
         offer=OfferDetails(
@@ -67,6 +69,7 @@ def normalize(job: JobDetail) -> OfferDiscovered:
 def collect(
     engine: Engine,
     client: httpx.Client,
+    publish: Callable[[OfferEvent], None],
     *,
     query: str = "",
     limit: int = 50,
@@ -88,7 +91,8 @@ def collect(
         if result.metadata.page != page:
             raise ValueError("WTTJ returned an unexpected page number")
         events = []
-        for hit in result.data[: limit - inspected]:
+        hits = result.data[: limit - inspected]
+        for hit in hits:
             inspected += 1
             if contracts and hit.contract_type not in contracts:
                 continue
@@ -112,7 +116,11 @@ def collect(
             ):
                 continue
             events.append(normalize(job))
-        for event in record_page(engine, events, scan, page):
+        # Publish before recording: an unrecorded offer is published again next run.
+        for event in events:
+            publish(event)
+        record_page(engine, events, [hit.reference for hit in hits], scan, page)
+        for event in events:
             logger.info(
                 "New WTTJ offer: {} at {}", event.offer.title, event.offer.organization
             )
@@ -159,10 +167,14 @@ def main(
     logger.add(sys.stderr, diagnose=False)
     engine = make_engine(load_env().database_url)
     try:
-        with httpx.Client(base_url=API_URL, timeout=15) as client:
+        with (
+            httpx.Client(base_url=API_URL, timeout=15) as client,
+            Publisher() as publisher,
+        ):
             collect(
                 engine,
                 client,
+                publisher.publish,
                 query=query,
                 limit=limit,
                 max_pages=max_pages,

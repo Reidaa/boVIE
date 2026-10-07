@@ -97,8 +97,12 @@ services:
       BOVIE_REGION: ${BOVIE_REGION:-}
       BOVIE_COUNTRY: ${BOVIE_COUNTRY:-}
       BOVIE_SPECIALIZATION: ${BOVIE_SPECIALIZATION:-}
+      NATS_URL: nats://nats:4222
+      NATS_USER: business_france
+      NATS_PASSWORD: ${NATS_BF_PASSWORD:-local-nats-bf}
     depends_on:
       migrate-bf: {condition: service_completed_successfully}
+      setup-nats: {condition: service_completed_successfully}
 
   wttj:
     <<: *app
@@ -113,36 +117,6 @@ services:
       WTTJ_CONTRACTS: ${WTTJ_CONTRACTS:-}
       WTTJ_LIMIT: ${WTTJ_LIMIT:-50}
       WTTJ_MAX_PAGES: ${WTTJ_MAX_PAGES:-5}
-    depends_on:
-      migrate-wttj: {condition: service_completed_successfully}
-
-  relay-bf:
-    <<: *app
-    build:
-      context: .
-      target: outbox-relay
-    image: bovie-outbox-relay:local
-    command: [outbox-relay, --source, business_france]
-    restart: unless-stopped
-    environment:
-      DATABASE_URL: mysql+pymysql://business_france:local-bf-only@mysql/business_france
-      NATS_URL: nats://nats:4222
-      NATS_USER: business_france
-      NATS_PASSWORD: ${NATS_BF_PASSWORD:-local-nats-bf}
-    depends_on:
-      migrate-bf: {condition: service_completed_successfully}
-      setup-nats: {condition: service_completed_successfully}
-
-  relay-wttj:
-    <<: *app
-    build:
-      context: .
-      target: outbox-relay
-    image: bovie-outbox-relay:local
-    command: [outbox-relay, --source, wttj]
-    restart: unless-stopped
-    environment:
-      DATABASE_URL: mysql+pymysql://wttj:local-wttj-only@mysql/wttj
       NATS_URL: nats://nats:4222
       NATS_USER: wttj
       NATS_PASSWORD: ${NATS_WTTJ_PASSWORD:-local-nats-wttj}

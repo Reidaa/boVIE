@@ -2,18 +2,18 @@ import asyncio
 
 import click
 import nats.errors
-from job_contracts import OfferDiscovered
+from job_contracts import OfferEvent
 from job_database import make_engine
 from job_database.env import load_env
-from job_messaging import CONSUMER, STREAM, connect
+from job_messaging import CONSUMER, STREAM, connect, subject
 from job_runtime import configure_logging, log_failure
 from notification_store import accept
 from sqlalchemy.engine import Engine
 
 
 async def receive_message(engine: Engine, message):
-    event = OfferDiscovered.model_validate_json(message.data)
-    if message.subject != f"offers.{event.source}.v1":
+    event = OfferEvent.model_validate_json(message.data)
+    if message.subject != subject(event.source):
         raise ValueError("Event source does not match its NATS subject")
     await asyncio.to_thread(accept, engine, event)
     await message.ack_sync(timeout=10)

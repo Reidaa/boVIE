@@ -32,10 +32,11 @@ def detail(identity, contract="vie"):
 
 
 def test_wttj_pagination_filtering_and_detail_normalization(source_db):
-    from source_store import Offer, Outbox
+    from source_store import Offer
     from wttf.main import collect
 
     paths = []
+    published = []
 
     def handler(request):
         paths.append(request.url.path)
@@ -67,11 +68,23 @@ def test_wttj_pagination_filtering_and_detail_normalization(source_db):
     with httpx.Client(
         base_url="https://example.invalid", transport=httpx.MockTransport(handler)
     ) as client:
-        collect(source_db, client, limit=10, max_pages=5)
-        collect(source_db, client, limit=10, max_pages=5)
+        collect(source_db, client, published.append, limit=10, max_pages=5)
+        collect(source_db, client, published.append, limit=10, max_pages=5)
+    assert [event.source_offer_id for event in published] == [
+        "first",
+        "full-time",
+        "second",
+    ]
     with source_db.connect() as conn:
         assert conn.scalar(select(func.count()).select_from(Offer)) == 3
-        assert conn.scalar(select(func.count()).select_from(Outbox)) == 3
+        assert (
+            conn.scalar(
+                select(func.count())
+                .select_from(Offer)
+                .where(Offer.last_seen_at.is_not(None))
+            )
+            == 3
+        )
         payload = conn.scalar(
             select(Offer.payload).where(Offer.source_offer_id == "first")
         )
@@ -82,8 +95,10 @@ def test_wttj_pagination_filtering_and_detail_normalization(source_db):
 
 
 def test_wttj_failed_detail_does_not_commit_page(source_db):
-    from source_store import Checkpoint, Outbox
+    from source_store import Checkpoint, Offer
     from wttf.main import collect
+
+    published = []
 
     def handler(request):
         if request.url.path.endswith("/public/jobs"):
@@ -102,9 +117,10 @@ def test_wttj_failed_detail_does_not_commit_page(source_db):
         base_url="https://example.invalid", transport=httpx.MockTransport(handler)
     ) as client:
         with pytest.raises(httpx.HTTPStatusError):
-            collect(source_db, client)
+            collect(source_db, client, published.append)
+    assert published == []
     with source_db.connect() as conn:
-        assert conn.scalar(select(func.count()).select_from(Outbox)) == 0
+        assert conn.scalar(select(func.count()).select_from(Offer)) == 0
         assert conn.scalar(select(func.count()).select_from(Checkpoint)) == 0
 
 
@@ -126,11 +142,7 @@ def test_all_contract_types_are_collected_by_default(monkeypatch, contract):
 
     recorded = []
     monkeypatch.setattr(worker, "seen", lambda engine, identity: False)
-    monkeypatch.setattr(
-        worker,
-        "record_page",
-        lambda engine, events, scan, page: recorded.extend(events) or events,
-    )
+    monkeypatch.setattr(worker, "record_page", lambda *args: None)
 
     def handler(request):
         if request.url.path.endswith("/public/jobs"):
@@ -148,7 +160,7 @@ def test_all_contract_types_are_collected_by_default(monkeypatch, contract):
     with httpx.Client(
         base_url="https://example.invalid", transport=httpx.MockTransport(handler)
     ) as client:
-        worker.collect(Mock(spec=Engine), client)
+        worker.collect(Mock(spec=Engine), client, recorded.append)
     assert len(recorded) == 1
     assert recorded[0].source_offer_id == "job"
     assert (
@@ -165,11 +177,7 @@ def test_optional_filters_and_publication_status(monkeypatch):
     recorded = []
     fetched = []
     monkeypatch.setattr(worker, "seen", lambda engine, identity: identity == "seen")
-    monkeypatch.setattr(
-        worker,
-        "record_page",
-        lambda engine, events, scan, page: recorded.extend(events) or events,
-    )
+    monkeypatch.setattr(worker, "record_page", lambda *args: None)
 
     def handler(request):
         if request.url.path.endswith("/public/jobs"):
@@ -208,6 +216,7 @@ def test_optional_filters_and_publication_status(monkeypatch):
         worker.collect(
             Mock(spec=Engine),
             client,
+            recorded.append,
             query="engineer",
             countries=("CA",),
             contracts=("full_time", "internship"),
@@ -222,11 +231,7 @@ def test_unfiltered_collection_still_rejects_unpublished_jobs(monkeypatch):
 
     recorded = []
     monkeypatch.setattr(worker, "seen", lambda engine, identity: False)
-    monkeypatch.setattr(
-        worker,
-        "record_page",
-        lambda engine, events, scan, page: recorded.extend(events) or events,
-    )
+    monkeypatch.setattr(worker, "record_page", lambda *args: None)
 
     def handler(request):
         if request.url.path.endswith("/public/jobs"):
@@ -244,5 +249,5 @@ def test_unfiltered_collection_still_rejects_unpublished_jobs(monkeypatch):
     with httpx.Client(
         base_url="https://example.invalid", transport=httpx.MockTransport(handler)
     ) as client:
-        worker.collect(Mock(spec=Engine), client)
+        worker.collect(Mock(spec=Engine), client, recorded.append)
     assert recorded == []

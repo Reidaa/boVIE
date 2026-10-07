@@ -27,7 +27,7 @@ test("configuration cannot accidentally replace production", async () => {
 });
 
 test("every service has an explicit build, command, and private deployment", () => {
-  assert.equal(services.length, 8);
+  assert.equal(services.length, 6);
   for (const service of services) {
     if (service.source) assert.equal(service.source?.rootDirectory, "/");
     assert.equal(service.build?.builder, "DOCKERFILE");
@@ -36,16 +36,21 @@ test("every service has an explicit build, command, and private deployment", () 
     assert.equal(service.networking?.serviceDomains, undefined);
     assert.equal(service.networking?.tcpProxies, undefined);
   }
-  for (const name of ["business-france", "wttj"]) {
+  for (const [name, user, password] of [
+    ["business-france", "business_france", "NATS_BF_PASSWORD"],
+    ["wttj", "wttj", "NATS_WTTJ_PASSWORD"],
+  ]) {
     const service = byName.get(name)!;
     assert.equal(service.deploy?.restartPolicyType, "NEVER");
     assert.equal(service.deploy?.restartPolicyMaxRetries, undefined);
     assert.ok(service.deploy?.cronSchedule);
     assert.deepEqual(service.deploy?.preDeployCommand, ["source-migrate --wait-timeout 180"]);
-    assert.deepEqual(
-      Object.keys(service.variables!).filter((key) => key.startsWith("NATS_")),
-      [],
-    );
+    // Collectors publish their own events, using only their source's broker account.
+    assert.deepEqual(service.variables!.NATS_USER, { type: "literal", value: user });
+    assert.deepEqual(service.variables!.NATS_PASSWORD, {
+      type: "literal",
+      value: `\${{nats.${password}}}`,
+    });
   }
 });
 
@@ -75,9 +80,7 @@ test("stateful services require persistent mounts", () => {
   }
   for (const [service, database] of [
     ["business-france", "mysql-business-france"],
-    ["relay-bf", "mysql-business-france"],
     ["wttj", "mysql-wttj"],
-    ["relay-wttj", "mysql-wttj"],
     ["notification-intake", "mysql-notifications"],
     ["discord-delivery", "mysql-notifications"],
   ]) {
@@ -95,7 +98,6 @@ test("each application image installs only its workspace package", () => {
   for (const name of [
     "business-france",
     "wttj",
-    "outbox-relay",
     "notification-intake",
     "discord-delivery",
     "broker-setup",

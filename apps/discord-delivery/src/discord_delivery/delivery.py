@@ -1,13 +1,13 @@
 """Render and send pending Discord notifications."""
 
 import httpx
-from job_contracts import OfferDiscovered
+from job_contracts import OfferEvent
 from job_database.queue import claim, finish, retry_later
 from notification_store import Delivery
 from sqlalchemy.engine import Engine
 
 
-def discord_payload(event: OfferDiscovered) -> dict:
+def discord_payload(event: OfferEvent) -> dict:
     offer = event.offer
     fields = [field.model_dump() for field in offer.fields]
     if not fields:
@@ -47,7 +47,7 @@ def deliver_one(engine: Engine, client: httpx.Client, webhook: str) -> bool:
         response = client.post(
             webhook,
             json=discord_payload(
-                OfferDiscovered.model_validate(work.payload),
+                OfferEvent.model_validate(work.payload),
             ),
         )
         response.raise_for_status()
