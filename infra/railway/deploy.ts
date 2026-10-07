@@ -36,7 +36,9 @@ const deliveryVariables = services.some((service) => service.name === "discord-s
 if (!Object.hasOwn(deliveryVariables, "DISCORD_WEBHOOK_URL")) {
   bootstrap["discord-sender"] = { DISCORD_WEBHOOK_URL: "" };
 }
-const result = spawnSync(cli, ["config", action, ...process.argv.slice(3)], {
+// The CLI only finds `.railway/railway.ts` on its own; this workspace keeps it in infra/railway.
+const file = fileURLToPath(new URL("railway.ts", import.meta.url));
+const result = spawnSync(cli, ["config", action, "--file", file, ...process.argv.slice(3)], {
   stdio: "inherit",
   env: { ...process.env, _: cli, BOVIE_RAILWAY_BOOTSTRAP_SECRETS: JSON.stringify(bootstrap) },
 });
