@@ -52,8 +52,8 @@ run-help:
 up:
 	docker compose up -d --wait mysql nats
 
-migrate owner="source":
-	uv run --all-packages {{owner}}-migrate
+migrate store="collector-store":
+	uv run --all-packages {{store}}-migrate
 
 build:
 	{{TURBO}} build
