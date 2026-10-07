@@ -1,26 +1,26 @@
 # Deploy to Railway staging
 
-The configuration in `.railway/railway.ts` defines the staging environment in the
+The configuration in `infra/railway/railway.ts` defines the staging environment in the
 `boVIE` Railway project. It deploys from `Reidaa/boVIE`, branch `feat/wttf`.
 After this branch merges, change the source branch in that file to `main`.
 The configuration refuses to target production. Production still has the legacy
 app and Postgres database and requires a separate migration plan.
 
 Install Node.js 22.18 or later and Python 3.13 or later for local development.
-The Railway tooling uses its own package file and lockfile inside `.railway/`.
-Application images contain Python packages only.
+The Railway tooling is the `bovie-railway` npm workspace in `infra/railway/`.
+It shares the root `package-lock.json`. Application images contain Python packages only.
 
 ```sh
-npm ci --prefix .railway
-.railway/node_modules/.bin/railway login
-.railway/node_modules/.bin/railway link --project boVIE --environment staging
-npm --prefix .railway run check
-npm --prefix .railway run plan
-npm --prefix .railway run apply
+npm ci
+npx railway login
+npx railway link --project boVIE --environment staging
+npx turbo run lint format:check check test --filter=bovie-railway
+npm run railway:plan
+npm run railway:apply
 ```
 
-`check` runs Oxfmt, Oxlint, TypeScript, and the Railway configuration tests.
-Run `npm --prefix .railway run format` to format the TypeScript files.
+The Turborepo tasks run Oxlint, Oxfmt, TypeScript, and the Railway configuration tests.
+Run `npx turbo run format --filter=bovie-railway` to format the TypeScript files.
 
 For a new project, first create the project and an empty staging environment in Railway.
 The plan must target `staging`. A new environment gets three Railway MySQL databases,
@@ -78,7 +78,7 @@ Pending notifications stay in the notification database until delivery starts.
 Create a webhook for a staging Discord channel and set `DISCORD_WEBHOOK_URL`
 on the `discord-delivery` service in Railway. Keep the value out of this repository.
 
-Change `deliveryEnabled` from `false` to `true` in `.railway/railway.ts`.
+Change `deliveryEnabled` from `false` to `true` in `infra/railway/railway.ts`.
 The apply connects the service to GitHub and starts its first deployment.
 Run the checks, plan, and apply commands again.
 Starting delivery sends all pending staging discoveries, including older queued offers.
@@ -86,15 +86,15 @@ Starting delivery sends all pending staging discoveries, including older queued 
 ## Updates and checks
 
 Push changes to the configured branch to trigger Railway builds for affected services.
-Run `npm --prefix .railway run plan` after changing infrastructure configuration.
+Run `npm run railway:plan` after changing infrastructure configuration.
 Apply the reviewed plan to update the service configuration.
 The old root `railway.json` is removed because it only described Business France.
 
 ```sh
-.railway/node_modules/.bin/railway status
-.railway/node_modules/.bin/railway logs --service business-france --lines 50
-.railway/node_modules/.bin/railway logs --service notification-intake --lines 50
-npm --prefix .railway run plan
+npx railway status
+npx railway logs --service business-france --lines 50
+npx railway logs --service notification-intake --lines 50
+npm run railway:plan
 ```
 
 Collectors and broker setup finish after successful runs. That exit is expected.

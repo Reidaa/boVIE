@@ -9,7 +9,8 @@
     "format": "oxfmt \"*.ts\"",
     "format:check": "oxfmt --check \"*.ts\"",
     "lint": "oxlint --deny-warnings .",
-    "check": "npm run format:check && npm run lint && tsc --noEmit && tsx --test *.test.ts",
+    "check": "tsc --noEmit",
+    "test": "tsx --test *.test.ts",
     "plan": "tsx deploy.ts plan",
     "apply": "tsx deploy.ts apply"
   },

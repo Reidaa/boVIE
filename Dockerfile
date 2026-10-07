@@ -2,7 +2,7 @@ FROM ghcr.io/astral-sh/uv:python3.13-bookworm-slim AS workspace
 WORKDIR /app
 COPY pyproject.toml uv.lock ./
 COPY packages ./packages
-COPY services ./services
+COPY apps ./apps
 
 FROM workspace AS build-business-france
 RUN uv sync --frozen --no-dev --no-editable --package bovie-business-france

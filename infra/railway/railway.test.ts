@@ -17,7 +17,7 @@ const databases = resources.filter(
   (resource): resource is DatabaseNode => resource.type === "database",
 );
 const byName = new Map(services.map((service) => [service.name, service]));
-const root = fileURLToPath(new URL("../", import.meta.url));
+const root = fileURLToPath(new URL("../../", import.meta.url));
 
 test("configuration cannot accidentally replace production", async () => {
   await assert.rejects(
@@ -100,7 +100,7 @@ test("each application image installs only its workspace package", () => {
     "discord-delivery",
     "broker-setup",
   ]) {
-    const dockerfile = readFileSync(`${root}services/${name}/Dockerfile`, "utf8");
+    const dockerfile = readFileSync(`${root}apps/${name}/Dockerfile`, "utf8");
     assert.ok(dockerfile.includes(`--package bovie-${name}`));
     assert.ok(dockerfile.includes("--frozen --no-dev --no-editable"));
   }

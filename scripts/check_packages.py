@@ -1,4 +1,4 @@
-"""Install each service's wheels alone and check its deployable interface."""
+"""Install each app's wheels alone and check its deployable interface."""
 
 import json
 import os
@@ -47,16 +47,22 @@ SERVICES = {
 }
 
 
-def check(wheels: Path):
+def check(roots: list[Path]):
+    dists = sorted(path for root in roots for path in root.glob("*/dist"))
+    links = [argument for dist in dists for argument in ("--find-links", str(dist))]
     environment = os.environ.copy()
     for key in ("DATABASE_URL", "DISCORD_WEBHOOK_URL", "PYTHONPATH"):
         environment.pop(key, None)
     for service, (command, module, migrations, forbidden) in SERVICES.items():
-        wheel = list(
-            wheels.glob(f"bovie_{service.replace('-', '_')}-*-py3-none-any.whl")
-        )
+        wheel = [
+            path
+            for dist in dists
+            for path in dist.glob(
+                f"bovie_{service.replace('-', '_')}-*-py3-none-any.whl"
+            )
+        ]
         if len(wheel) != 1:
-            raise ValueError(f"Expected exactly one {service} wheel in {wheels}")
+            raise ValueError(f"Expected exactly one {service} wheel in {dists}")
         with tempfile.TemporaryDirectory(prefix=f"bovie-{service}-") as temporary:
             directory = Path(temporary)
             venv = directory / ".venv"
@@ -71,8 +77,7 @@ def check(wheels: Path):
                     "install",
                     "--python",
                     str(python),
-                    "--find-links",
-                    str(wheels),
+                    *links,
                     str(wheel[0]),
                 ],
                 check=True,
@@ -133,4 +138,4 @@ importlib.import_module({(owner + ".migrate")!r})
 
 
 if __name__ == "__main__":
-    check(Path(sys.argv[1]).resolve())
+    check([Path(argument).resolve() for argument in sys.argv[1:]])

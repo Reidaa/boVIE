@@ -4,12 +4,25 @@ Discover jobs from Welcome to the Jungle and VIE/VIA opportunities from
 Business France, then deliver new offers to Discord. WTTJ accepts all contract
 types by default. Python 3.13+, SQLAlchemy 2, MySQL 8.4, and NATS JetStream are required.
 
-This repository is a [uv workspace](https://docs.astral.sh/uv/concepts/projects/workspaces/).
-Each deployable service has its own package, dependencies, command, and Docker target.
-The root contains development tools and one shared lockfile. Services do not import
-other services. Tests enforce declared imports and install each service independently.
+This repository is a [Turborepo](https://turborepo.dev) monorepo. Python code is a
+[uv workspace](https://docs.astral.sh/uv/concepts/projects/workspaces/) that Turborepo
+reads natively (experimental `experimentalPythonWorkspaces`); TypeScript tooling is an
+npm workspace. Both share one task graph and cache.
 
-| Directory in `services/` | Command | Responsibility | Database | NATS access |
+| Directory | Contents | Toolchain |
+| --- | --- | --- |
+| `apps/` | Deployable services, one package and Docker target each | uv |
+| `packages/` | Shared Python libraries | uv |
+| `infra/railway/` | Railway infrastructure as code | npm, TypeScript |
+| `deploy/` | Broker and database configuration used by Compose and Railway | — |
+| `tests/` | Cross-package Python test suite | pytest |
+
+Each deployable service has its own package, dependencies, command, and Docker target.
+The root contains development tools and one lockfile per toolchain (`uv.lock`,
+`package-lock.json`). Services do not import other services. Tests enforce declared
+imports and install each service independently.
+
+| Directory in `apps/` | Command | Responsibility | Database | NATS access |
 | --- | --- | --- | --- | --- |
 | `business-france` | `bovie` | Collect Business France offers | `business_france` | None |
 | `wttj` | `wttf` | Collect WTTJ jobs | `wttj` | None |
@@ -34,8 +47,11 @@ They cannot access source databases. Sources can run on different hosts.
 
 ## Local setup
 
+Install Python 3.13+, uv, and Node.js 22.18+ (`mise install` provides all of them).
+
 ```sh
 uv sync --all-packages
+npm ci
 cp .env.example .env
 docker compose up -d --wait mysql nats
 docker compose --profile workers build
@@ -191,7 +207,7 @@ Do not use `docker compose down -v` on an existing deployment.
 
 ## Deployment and validation
 
-Railway staging is defined in `.railway/railway.ts`. It creates three Railway MySQL
+Railway staging is defined in `infra/railway/railway.ts`. It creates three Railway MySQL
 databases, the focused services, private connections, NATS storage, and collector schedules.
 Use the [Railway deployment guide](docs/railway.md) for the initial deployment and updates.
 Discord delivery starts without a source connection until you configure a staging webhook.
@@ -208,12 +224,20 @@ Remove `WTTJ_QUERY=VIE` from an existing environment to enable the broader defau
 Collection can create more notifications once non-VIE offers enter the scan window.
 
 ```sh
-uv run --all-packages ruff check services packages tests scripts
-uv run --all-packages ty check
-uv run --all-packages pytest
-uv build --all-packages --out-dir dist/workspace
-uv run --all-packages python scripts/check_packages.py dist/workspace
+npx turbo run lint format:check check test verify:packages
 ```
+
+| Task | Python (`bovie-python` root and members) | TypeScript (`bovie-railway`) |
+| --- | --- | --- |
+| `lint` | Ruff check | Oxlint |
+| `format`, `format:check` | Ruff format | Oxfmt |
+| `check` | ty | `tsc --noEmit` |
+| `test` | pytest over `tests/` | Node test runner |
+| `build` | `uv build` into each member's `dist/` | — |
+| `verify:packages` | Installs each app's wheel alone with `scripts/check_packages.py` | — |
+
+Use `--filter`, for example `npx turbo run build --filter=bovie-wttj`, to run one package
+and its dependencies. The `Justfile` recipes call the same tasks.
 
 To include integration tests, point these **test-only** variables at disposable
 servers. The MySQL fixture creates and drops uniquely named test databases/users;
@@ -221,7 +245,7 @@ the NATS test creates and deletes its test stream. Never point them at productio
 
 ```sh
 MYSQL_TEST_ADMIN_URL='mysql+pymysql://root:test-password@127.0.0.1:33077/mysql' \
-NATS_TEST_URL='nats://127.0.0.1:42277' uv run --all-packages pytest
+NATS_TEST_URL='nats://127.0.0.1:42277' npx turbo run test
 ```
 
 Without these variables, integration tests report skips. CI supplies real

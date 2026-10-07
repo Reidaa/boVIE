@@ -2,7 +2,7 @@ FROM ghcr.io/astral-sh/uv:python3.13-bookworm-slim AS build
 WORKDIR /app
 COPY pyproject.toml uv.lock ./
 COPY packages ./packages
-COPY services ./services
+COPY apps ./apps
 RUN uv sync --frozen --no-dev --no-editable --package bovie-discord-delivery
 
 FROM python:3.13-slim-bookworm

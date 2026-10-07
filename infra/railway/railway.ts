@@ -33,13 +33,13 @@ export default defineRailway((ctx) => {
       source,
       build: {
         builder: "DOCKERFILE",
-        dockerfilePath: `services/${packageName}/Dockerfile`,
+        dockerfilePath: `apps/${packageName}/Dockerfile`,
         watchPatterns: [
-          `services/${packageName}/**`,
+          `apps/${packageName}/**`,
           "packages/**",
           "pyproject.toml",
           "uv.lock",
-          ".railway/**",
+          "infra/railway/**",
         ],
       },
       ...config,

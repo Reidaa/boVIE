@@ -5,11 +5,14 @@ description = "Job discovery and notification services"
 requires-python = ">=3.13"
 dependencies = []
 
+[tool.turbo]
+name = "bovie-python"
+
 [tool.uv]
 package = false
 
 [tool.uv.workspace]
-members = ["services/*", "packages/*"]
+members = ["apps/*", "packages/*"]
 
 [tool.uv.sources]
 bovie-business-france = { workspace = true }

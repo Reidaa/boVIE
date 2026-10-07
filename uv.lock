@@ -61,7 +61,7 @@ wheels = [
 [[package]]
 name = "bovie-broker-setup"
 version = "0.4.0"
-source = { editable = "services/broker-setup" }
+source = { editable = "apps/broker-setup" }
 dependencies = [
     { name = "bovie-messaging" },
     { name = "bovie-runtime" },
@@ -80,7 +80,7 @@ requires-dist = [
 [[package]]
 name = "bovie-business-france"
 version = "0.4.0"
-source = { editable = "services/business-france" }
+source = { editable = "apps/business-france" }
 dependencies = [
     { name = "bovie-contracts" },
     { name = "bovie-database" },
@@ -143,7 +143,7 @@ requires-dist = [
 [[package]]
 name = "bovie-discord-delivery"
 version = "0.4.0"
-source = { editable = "services/discord-delivery" }
+source = { editable = "apps/discord-delivery" }
 dependencies = [
     { name = "bovie-contracts" },
     { name = "bovie-database" },
@@ -181,7 +181,7 @@ requires-dist = [{ name = "nats-py", specifier = ">=2.10,<3" }]
 [[package]]
 name = "bovie-notification-intake"
 version = "0.4.0"
-source = { editable = "services/notification-intake" }
+source = { editable = "apps/notification-intake" }
 dependencies = [
     { name = "bovie-contracts" },
     { name = "bovie-database" },
@@ -229,7 +229,7 @@ requires-dist = [
 [[package]]
 name = "bovie-outbox-relay"
 version = "0.4.0"
-source = { editable = "services/outbox-relay" }
+source = { editable = "apps/outbox-relay" }
 dependencies = [
     { name = "bovie-contracts" },
     { name = "bovie-database" },
@@ -317,7 +317,7 @@ dev = [
 [[package]]
 name = "bovie-wttj"
 version = "0.4.0"
-source = { editable = "services/wttj" }
+source = { editable = "apps/wttj" }
 dependencies = [
     { name = "bovie-contracts" },
     { name = "bovie-database" },

@@ -1,8 +1,16 @@
 import { spawnSync } from "node:child_process";
+import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { credentials, missingCredentials } from "./secrets.ts";
 
-const cli = fileURLToPath(new URL("node_modules/.bin/railway", import.meta.url));
+// npm workspaces hoist the CLI to the repository root unless a version conflict keeps it local.
+const cli = (() => {
+  const found = ["node_modules/.bin/railway", "../../node_modules/.bin/railway"]
+    .map((path) => fileURLToPath(new URL(path, import.meta.url)))
+    .find((path) => existsSync(path));
+  if (!found) throw new Error("Railway CLI not found. Run npm ci at the repository root.");
+  return found;
+})();
 function read(args: string[]) {
   const result = spawnSync(cli, args, { encoding: "utf8" });
   if (result.status !== 0)
