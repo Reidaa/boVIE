@@ -3,17 +3,24 @@
 Collectors publish an event and wait for the broker acknowledgment before
 recording the offer here. A crash in between republishes the same event ID on
 the next run, and consumers drop the duplicate.
+
+A scraper usually breaks silently: the source returns an empty result instead
+of an error. Each checkpoint records when its scan last returned results, and
+`require_recent_results` fails the run once that is older than MAX_SILENCE.
 """
 
 from collections.abc import Iterable
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from mysql_common import UTCDateTime
 from offer_events import OfferEvent
-from sqlalchemy import JSON, Integer, String, update
+from sqlalchemy import JSON, Integer, String, select, update
 from sqlalchemy.dialects.mysql import insert
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
+
+# Collectors run every 2 hours, so this is 6 runs in a row without results.
+MAX_SILENCE = timedelta(hours=12)
 
 TABLE_OPTIONS = {
     "mysql_engine": "InnoDB",
@@ -42,6 +49,11 @@ class Checkpoint(CollectorStoreBase):
     __table_args__ = TABLE_OPTIONS
     scan: Mapped[str] = mapped_column(String(64), primary_key=True)
     offset: Mapped[int] = mapped_column(Integer)
+    results_seen_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
+
+
+class SourceSilent(RuntimeError):
+    """The source returned no results for too long; its API may have changed."""
 
 
 def seen(engine: Engine, source_offer_id: str) -> bool:
@@ -82,5 +94,25 @@ def record_page(
                 .where(Offer.source_offer_id.in_(identities))
                 .values(last_seen_at=now)
             )
-        stmt = insert(Checkpoint).values(scan=scan, offset=offset)
-        session.execute(stmt.on_duplicate_key_update(offset=stmt.inserted.offset))
+        stmt = insert(Checkpoint).values(
+            scan=scan, offset=offset, results_seen_at=now if identities else None
+        )
+        changes = {"offset": stmt.inserted.offset}
+        if identities:
+            changes["results_seen_at"] = stmt.inserted.results_seen_at
+        session.execute(stmt.on_duplicate_key_update(**changes))
+
+
+def require_recent_results(engine: Engine, scan: str) -> None:
+    """Raise SourceSilent unless the scan returned results within MAX_SILENCE.
+
+    Call at the end of each run, after the last `record_page`.
+    """
+    with Session(engine) as session:
+        seen_at = session.scalar(
+            select(Checkpoint.results_seen_at).where(Checkpoint.scan == scan)
+        )
+    if seen_at is None:
+        raise SourceSilent("The source has not returned any results yet")
+    if datetime.now(UTC) - seen_at > MAX_SILENCE:
+        raise SourceSilent(f"The source has returned no results since {seen_at}")

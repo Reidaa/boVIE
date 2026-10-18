@@ -143,6 +143,7 @@ def test_all_contract_types_are_collected_by_default(monkeypatch, contract):
     recorded = []
     monkeypatch.setattr(worker, "seen", lambda engine, identity: False)
     monkeypatch.setattr(worker, "record_page", lambda *args: None)
+    monkeypatch.setattr(worker, "require_recent_results", lambda *args: None)
 
     def handler(request):
         if request.url.path.endswith("/public/jobs"):
@@ -178,6 +179,7 @@ def test_optional_filters_and_publication_status(monkeypatch):
     fetched = []
     monkeypatch.setattr(worker, "seen", lambda engine, identity: identity == "seen")
     monkeypatch.setattr(worker, "record_page", lambda *args: None)
+    monkeypatch.setattr(worker, "require_recent_results", lambda *args: None)
 
     def handler(request):
         if request.url.path.endswith("/public/jobs"):
@@ -232,6 +234,7 @@ def test_unfiltered_collection_still_rejects_unpublished_jobs(monkeypatch):
     recorded = []
     monkeypatch.setattr(worker, "seen", lambda engine, identity: False)
     monkeypatch.setattr(worker, "record_page", lambda *args: None)
+    monkeypatch.setattr(worker, "require_recent_results", lambda *args: None)
 
     def handler(request):
         if request.url.path.endswith("/public/jobs"):
@@ -251,3 +254,19 @@ def test_unfiltered_collection_still_rejects_unpublished_jobs(monkeypatch):
     ) as client:
         worker.collect(Mock(spec=Engine), client, recorded.append)
     assert recorded == []
+
+
+def test_wttj_run_without_results_fails(collector_db):
+    from collector_store import SourceSilent
+    from collector_wttj.main import collect
+
+    def handler(request):
+        return httpx.Response(
+            200, json={"data": [], "metadata": {"page": 1, "page_count": 1}}
+        )
+
+    with httpx.Client(
+        base_url="https://example.invalid", transport=httpx.MockTransport(handler)
+    ) as client:
+        with pytest.raises(SourceSilent):
+            collect(collector_db, client, lambda event: None)

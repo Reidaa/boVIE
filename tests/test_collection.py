@@ -1,7 +1,10 @@
+from datetime import UTC, datetime, timedelta
+
 import pytest
 from collector_business_france.job.models.job import Job
 from collector_business_france.job.models.search import SearchParameters
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
+from sqlalchemy.orm import Session
 
 
 def job(identity):
@@ -86,3 +89,33 @@ def test_business_france_preserves_display_fields():
     assert event.source_offer_id == "1"
     assert event.offer.country == "Canada"
     assert len(event.offer.fields) == 14
+
+
+def test_source_without_results_for_too_long_fails_the_run(collector_db, monkeypatch):
+    from collector_business_france import main
+    from collector_store import MAX_SILENCE, Checkpoint, SourceSilent
+
+    results = [1]
+    monkeypatch.setattr(main, "search_id", lambda params: list(results))
+    monkeypatch.setattr(main, "get_from_id", job)
+    main.task(SearchParameters(limit=1), collector_db, lambda event: None)
+    results.clear()
+    # A short gap is normal; the run succeeds.
+    main.task(SearchParameters(limit=1), collector_db, lambda event: None)
+    with Session(collector_db) as session, session.begin():
+        session.execute(
+            update(Checkpoint).values(
+                results_seen_at=datetime.now(UTC) - MAX_SILENCE - timedelta(minutes=1)
+            )
+        )
+    with pytest.raises(SourceSilent):
+        main.task(SearchParameters(limit=1), collector_db, lambda event: None)
+
+
+def test_first_run_without_results_fails(collector_db, monkeypatch):
+    from collector_business_france import main
+    from collector_store import SourceSilent
+
+    monkeypatch.setattr(main, "search_id", lambda params: [])
+    with pytest.raises(SourceSilent):
+        main.task(SearchParameters(limit=1), collector_db, lambda event: None)

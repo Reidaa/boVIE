@@ -7,7 +7,7 @@ from urllib.parse import quote
 import click
 import httpx
 from cli_common import EnvironmentCommand
-from collector_store import record_page, seen
+from collector_store import record_page, require_recent_results, seen
 from loguru import logger
 from mysql_common import make_engine
 from mysql_common.env import load_env
@@ -127,6 +127,7 @@ def collect(
             )
         if inspected >= limit or not result.data or page >= result.metadata.page_count:
             break
+    require_recent_results(engine, scan)
 
 
 @click.command(cls=EnvironmentCommand)
