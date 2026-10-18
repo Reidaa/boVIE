@@ -36,6 +36,8 @@ updates:
       interval: weekly
     groups:
       images:
+        # Without this, each directory gets its own grouped PR.
+        group-by: dependency-name
         update-types: [minor, patch]
 
   - package-ecosystem: docker-compose
