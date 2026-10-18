@@ -1,9 +1,12 @@
 import asyncio
 from datetime import UTC, datetime, timedelta
+from types import SimpleNamespace
+from unittest.mock import Mock
 
 import httpx
 import pytest
 from sqlalchemy import select, update
+from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 
 from tests.test_storage import event
@@ -60,3 +63,30 @@ def test_discord_outage_then_success(discord_db):
         assert deliver_one(discord_db, client, "https://discord.invalid/webhook")
         assert not deliver_one(discord_db, client, "https://discord.invalid/webhook")
     assert len(requests) == 2
+
+
+@pytest.mark.parametrize(
+    ("deliveries", "delay"), [(1, 30), (2, 60), (5, 480), (8, 3600), (50, 3600)]
+)
+def test_failed_messages_back_off_up_to_an_hour(deliveries, delay):
+    from discord_intake.main import retry_delay
+
+    assert retry_delay(deliveries) == delay
+
+
+def test_failed_message_is_retained_with_backoff():
+    from discord_intake.main import handle
+
+    class Message:
+        subject = "offers.wttj.v1"
+        data = b'{"version": 1}'
+        metadata = SimpleNamespace(num_delivered=3, sequence=SimpleNamespace(stream=42))
+        delays = []
+
+        async def nak(self, delay=None):
+            self.delays.append(delay)
+
+    message = Message()
+    # An invalid event never reaches the database, so no engine is needed.
+    assert asyncio.run(handle(Mock(spec=Engine), message)) is False
+    assert message.delays == [120]
