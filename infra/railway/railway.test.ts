@@ -72,6 +72,10 @@ test("secrets stay with their owner and staging delivery starts stopped", () => 
   assert.equal(delivery.source?.type, deliveryEnabled ? "github" : undefined);
   if (!deliveryEnabled) assert.equal(delivery.source?.repo, undefined);
   assert.equal(byName.get("discord-sender")!.variables!.NATS_PASSWORD, undefined);
+  // An apply deletes undeclared variables, so a key set in Railway must be declared.
+  assert.deepEqual(byName.get("collector-business-france")!.variables!.BUSINESS_FRANCE_API_KEY, {
+    type: "preserve",
+  });
 });
 
 test("stateful services require persistent mounts", () => {
