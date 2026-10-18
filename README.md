@@ -2,7 +2,7 @@
 
 Discover jobs from Welcome to the Jungle and VIE/VIA opportunities from
 Business France, then deliver new offers to Discord. WTTJ accepts all contract
-types by default. Python 3.13+, SQLAlchemy 2, MySQL 8.4, and NATS JetStream are required.
+types by default. Python 3.15+, SQLAlchemy 2, MySQL 8.4, and NATS JetStream are required.
 
 This repository is a [Turborepo](https://turborepo.dev) monorepo. Python code is a
 [uv workspace](https://docs.astral.sh/uv/concepts/projects/workspaces/) that Turborepo
@@ -52,7 +52,7 @@ and cannot access collector databases. Collectors can run on different hosts.
 
 ## Local setup
 
-Install Python 3.13+, uv, and Node.js 22.18+ (`mise install` provides all of them).
+Install Python 3.15+, uv, and Node.js 22.18+ (`mise install` provides all of them).
 
 ```sh
 uv sync --all-packages

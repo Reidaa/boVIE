@@ -2,7 +2,7 @@
 name = "bovie-workspace"
 version = "0.4.0"
 description = "Job offer collectors and Discord delivery"
-requires-python = ">=3.13"
+requires-python = ">=3.15"
 dependencies = []
 
 [tool.turbo]
