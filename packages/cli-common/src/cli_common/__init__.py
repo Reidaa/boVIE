@@ -8,10 +8,21 @@ from dotenv import load_dotenv
 from loguru import logger
 
 
-def configure_logging():
+def configure_logging(debug: bool = False):
+    """Send errors to stderr and everything else to stdout.
+
+    Railway shows every stderr line as an error, so normal logs must not use it.
+    """
     load_dotenv(".env", override=False)
+    error = logger.level("ERROR").no
     logger.remove()
-    logger.add(sys.stderr, diagnose=False)
+    logger.add(
+        sys.stdout,
+        level="DEBUG" if debug else "INFO",
+        filter=lambda record: record["level"].no < error,
+        diagnose=False,
+    )
+    logger.add(sys.stderr, level=error, diagnose=False)
 
 
 def log_failure(error: Exception, operation: str):

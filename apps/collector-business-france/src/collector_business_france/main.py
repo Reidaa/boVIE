@@ -5,11 +5,10 @@ Bovie - A tool to discover VIE/VIA opportunities from Business France
 
 import hashlib
 import json
-import sys
 from collections.abc import Callable
 
 import click
-from cli_common import EnvironmentCommand
+from cli_common import EnvironmentCommand, configure_logging
 from collector_store import record_page, require_recent_results, seen
 from loguru import logger
 from mysql_common import make_engine
@@ -138,8 +137,7 @@ def cli(
     country: tuple[str],
     specialization: tuple[str],
 ):
-    logger.remove()
-    logger.add(sys.stderr, level="DEBUG" if debug else "INFO", diagnose=False)
+    configure_logging(debug)
 
     config = configFromParams(
         limit=limit,

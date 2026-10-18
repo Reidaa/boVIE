@@ -1,12 +1,11 @@
 import hashlib
 import json
-import sys
 from collections.abc import Callable
 from urllib.parse import quote
 
 import click
 import httpx
-from cli_common import EnvironmentCommand
+from cli_common import EnvironmentCommand, configure_logging
 from collector_store import record_page, require_recent_results, seen
 from loguru import logger
 from mysql_common import make_engine
@@ -165,8 +164,7 @@ def main(
     contracts: tuple[str, ...],
 ):
     """Discover published jobs of any contract type on Welcome to the Jungle."""
-    logger.remove()
-    logger.add(sys.stderr, diagnose=False)
+    configure_logging()
     engine = make_engine(load_env().database_url)
     try:
         with (
