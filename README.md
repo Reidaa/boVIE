@@ -186,7 +186,10 @@ separate administrator account and must run before the collectors or `discord-in
   never has. A broken source usually returns an empty list instead of an error.
 - `tests/contracts/offer_event_v1/` holds frozen published events. Every schema
   change must still parse them and derive the same event IDs; a change that cannot
-  needs a new subject version.
+  needs a new subject version. The test only checks that new code reads old
+  events. `OfferEvent` rejects unknown top-level fields, so a new field also needs
+  its consumers deployed before the collectors. Otherwise the old consumer retries
+  the new events until it is updated.
 - Delivery claims last 120 seconds. Transactions release locks before
   network calls; expired claims can be reclaimed. Completion and retry updates
   check the claim token and its unexpired lease. Database time governs leases.

@@ -105,7 +105,10 @@ the cheaper choice.
   service's code.
 - NATS permissions limit each collector to its own subject (`tests/test_nats_permissions.py`).
 - `tests/test_offer_contract.py` parses frozen `v1` messages from `tests/contracts/` and checks
-  that their event IDs do not change. A change that fails it needs a new subject version.
+  that their event IDs do not change. A change that fails it needs a new subject version. The
+  test does not check that old consumers read new messages: `OfferEvent` rejects unknown
+  top-level fields, so a new field needs its consumers deployed before its producers. Deploy
+  order is a manual review item.
 - A collector run fails when its scan has returned no results for 12 hours (`MAX_SILENCE` in
   `collector_store`). Scrapers usually break this way: the source answers with an empty list,
   not an error. A failed run is visible in Railway.
