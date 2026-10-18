@@ -10,6 +10,10 @@ from nats_client import CONSUMER, STREAM, connect, subject
 from offer_events import OfferEvent
 from sqlalchemy.engine import Engine
 
+# A failing message is retried until it succeeds. JetStream keeps it, so a fix
+# deployed later still delivers it. The delay doubles from 30 s up to this cap.
+MAX_RETRY_DELAY = 3600
+
 
 async def receive_message(engine: Engine, message):
     event = OfferEvent.model_validate_json(message.data)
@@ -17,6 +21,26 @@ async def receive_message(engine: Engine, message):
         raise ValueError("Event source does not match its NATS subject")
     await asyncio.to_thread(accept, engine, event)
     await message.ack_sync(timeout=10)
+
+
+def retry_delay(deliveries: int) -> int:
+    return min(30 * 2 ** (deliveries - 1), MAX_RETRY_DELAY)
+
+
+async def handle(engine: Engine, message) -> bool:
+    """Process one message; on failure, log it and schedule its next delivery."""
+    try:
+        await receive_message(engine, message)
+    except Exception as error:
+        deliveries = message.metadata.num_delivered
+        log_failure(
+            error,
+            f"Discord intake of stream message {message.metadata.sequence.stream} "
+            f"(delivery {deliveries})",
+        )
+        await message.nak(delay=retry_delay(deliveries))
+        return False
+    return True
 
 
 @click.command()
@@ -43,15 +67,8 @@ def main(once: bool):
                         break
                     continue
                 for message in messages:
-                    try:
-                        await receive_message(engine, message)
-                    except Exception as error:
-                        log_failure(error, "Discord intake")
-                        await message.nak(delay=30)
-                        if once:
-                            raise click.ClickException(
-                                "Ingestion failed; message retained"
-                            ) from None
+                    if not await handle(engine, message) and once:
+                        raise click.ClickException("Ingestion failed; message retained")
         finally:
             await nc.close()
 

@@ -50,6 +50,10 @@ checkpoints in its own database; the offers table records what it has already
 published. `discord-intake` and `discord-sender` share the `discord` database
 and cannot access collector databases. Collectors can run on different hosts.
 
+[ADR 0001](docs/adr/0001-service-based-services-with-one-offer-stream.md) records why
+the system uses coarse services that share one offer stream, and the rules for adding
+sources and consumers.
+
 ## Local setup
 
 Install Python 3.15+, uv, and Node.js 22.18+ (`mise install` provides all of them).
@@ -175,7 +179,17 @@ separate administrator account and must run before the collectors or `discord-in
 - `discord-intake` commits its inbox and pending delivery in one transaction, then
   acknowledges NATS. Lost acknowledgments cause safe redelivery. Invalid events
   are logged without their payload and retried, so operators can investigate
-  without silently discarding them.
+  without silently discarding them. Each retry of a failing message waits twice
+  as long as the previous one, from 30 seconds up to one hour. The log names the
+  message's stream sequence and delivery count.
+- A collector run fails when its scan has returned no results for 12 hours, or
+  never has. A broken source usually returns an empty list instead of an error.
+- `tests/contracts/offer_event_v1/` holds frozen published events. Every schema
+  change must still parse them and derive the same event IDs; a change that cannot
+  needs a new subject version. The test only checks that new code reads old
+  events. `OfferEvent` rejects unknown top-level fields, so a new field also needs
+  its consumers deployed before the collectors. Otherwise the old consumer retries
+  the new events until it is updated.
 - Delivery claims last 120 seconds. Transactions release locks before
   network calls; expired claims can be reclaimed. Completion and retry updates
   check the claim token and its unexpired lease. Database time governs leases.

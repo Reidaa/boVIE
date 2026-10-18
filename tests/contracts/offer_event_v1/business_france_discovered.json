@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "type": "discovered",
+  "source": "business_france",
+  "source_offer_id": "236512",
+  "offer": {
+    "title": "VIE - Ingénieur logiciel",
+    "organization": "Example SA",
+    "country": "CANADA",
+    "city": "Montréal",
+    "url": "https://mon-vie-via.businessfrance.fr/offres/236512",
+    "fields": [
+      {
+        "name": "Durée",
+        "value": "12 mois",
+        "inline": true
+      },
+      {
+        "name": "Indemnité",
+        "value": "3 100 €",
+        "inline": false
+      }
+    ]
+  },
+  "event_id": "9c66d147-e5e7-5529-a09a-a7d43142fe7c",
+  "observed_at": "2026-10-18T22:16:00Z"
+}
