@@ -139,7 +139,7 @@ def cli(
     specialization: tuple[str],
 ):
     logger.remove()
-    logger.add(sys.stdout, level="DEBUG" if debug else "INFO", diagnose=False)
+    logger.add(sys.stderr, level="DEBUG" if debug else "INFO", diagnose=False)
 
     config = configFromParams(
         limit=limit,
