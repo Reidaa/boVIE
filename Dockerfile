@@ -1,4 +1,4 @@
-FROM ghcr.io/astral-sh/uv:python3.13-bookworm-slim AS workspace
+FROM ghcr.io/astral-sh/uv:python3.15-trixie-slim AS workspace
 WORKDIR /app
 COPY pyproject.toml uv.lock ./
 COPY packages ./packages
@@ -19,7 +19,7 @@ RUN uv sync --frozen --no-dev --no-editable --package bovie-discord-sender
 FROM workspace AS build-nats-setup
 RUN uv sync --frozen --no-dev --no-editable --package bovie-nats-setup
 
-FROM python:3.13-slim-bookworm AS runtime
+FROM python:3.15-slim-trixie AS runtime
 WORKDIR /app
 ENV PATH="/app/.venv/bin:$PATH"
 

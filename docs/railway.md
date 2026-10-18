@@ -6,7 +6,7 @@ After this branch merges, change the source branch in that file to `main`.
 The configuration refuses to target production. Production still has the legacy
 app and Postgres database and requires a separate migration plan.
 
-Install Node.js 22.18 or later and Python 3.13 or later for local development.
+Install Node.js 22.18 or later and Python 3.15 or later for local development.
 The Railway tooling is the `bovie-railway` npm workspace in `infra/railway/`.
 It shares the root `package-lock.json`. Application images contain Python packages only.
 

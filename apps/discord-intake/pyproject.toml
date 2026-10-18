@@ -1,7 +1,7 @@
 [project]
 name = "bovie-discord-intake"
 version = "0.4.0"
-requires-python = ">=3.13"
+requires-python = ">=3.15"
 description = "BoVIE discord-intake"
 dependencies = [
     "click>=8.1.8",
