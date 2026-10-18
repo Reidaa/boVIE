@@ -29,6 +29,26 @@ six application or broker services, and one NATS volume.
 The deployment uses private networking and creates no public domains or database proxies.
 Do not use this configuration to replace an existing production environment.
 
+## Production today
+
+The production environment still runs the legacy app from `main`.
+Merging the new layout into `main` breaks it: the `bovie.main` module no longer exists,
+and the new services accept MySQL URLs only.
+Migrate or disconnect production before that merge.
+This is the production configuration that `.railway/railway.ts` on `main` described:
+
+| Resource | Configuration |
+| --- | --- |
+| `Postgres-jNxP` | Image `ghcr.io/railwayapp-templates/postgres-ssl:17`, output `DATABASE_URL`, mounted at `/var/lib/postgresql/data` |
+| `postgres-jnxp-volume` | 50,000 MB, online resize, usage alerts at 80, 95 and 100 percent |
+| `bovie` | GitHub `Reidaa/boVIE`, Railpack build `uv sync --frozen --no-dev`, start `python3 -m bovie.main` |
+| `bovie` schedule | Cron `12 */2 * * *`, restart policy `NEVER`, one replica |
+| `bovie` variables | `BOVIE_DEBUG`, `BOVIE_LIMIT`, `BOVIE_REGION`, `BOVIE_SPECIALIZATION`, `DISCORD_WEBHOOK_URL`, and `DATABASE_URL` from Postgres |
+
+All production resources run in `europe-west4-drams3a`.
+The legacy app also reads an optional `BOVIE_API_KEY`.
+The new Business France collector reads the same value from `BUSINESS_FRANCE_API_KEY`.
+
 ## Services and storage
 
 | Service | Role | Start command |
@@ -62,7 +82,9 @@ Retain an alphabetic prefix when rotating NATS passwords.
 
 The collectors run `collector-store-migrate --wait-timeout 180` before deployment.
 `discord-intake` runs `discord-store-migrate --wait-timeout 180`.
-The Business France collector reads the current public API key from the official offers page before calling its search API.
+The Business France collector uses `BUSINESS_FRANCE_API_KEY` when it is set in Railway.
+Otherwise it reads the public API key from the official offers page.
+After a 401 response, it reads the page again and retries once.
 These commands wait for database connectivity before applying migrations.
 Migration failures stop the deployment and are not retried as connection failures.
 Workers retry while their database or broker is starting.

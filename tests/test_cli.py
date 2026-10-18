@@ -103,3 +103,26 @@ def test_wttj_cli_defaults_and_optional_contract_filters(tmp_path, monkeypatch):
     assert result.exit_code == 0, result.output
     assert observed[-1]["contracts"] == ("freelance",)
     assert observed[-1]["countries"] == ("CA",)
+
+
+def test_business_france_failure_is_logged_on_stderr(monkeypatch):
+    from collector_business_france import main
+
+    monkeypatch.setenv("DATABASE_URL", "mysql+pymysql://u:p@localhost/source")
+
+    class Engine:
+        def dispose(self):
+            pass
+
+    def fail(params, engine, publish):
+        raise RuntimeError("source down")
+
+    monkeypatch.setattr(main, "make_engine", lambda url: Engine())
+    monkeypatch.setattr(main, "Publisher", Publisher)
+    monkeypatch.setattr(main, "task", fail)
+    result = CliRunner().invoke(main.cli)
+    assert result.exit_code != 0
+    # Railway marks stderr lines as errors, so only the failure belongs there.
+    assert "| INFO     |" in result.stdout and "Starting" in result.stdout
+    assert "| ERROR    |" in result.stderr and "source down" in result.stderr
+    assert "| ERROR    |" not in result.stdout

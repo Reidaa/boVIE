@@ -105,6 +105,9 @@ Business France accepts `--geozone`/`-g`, `--country`/`-c`,
 `--specialization`/`-s`, `--limit`, and `--debug`. Filters are repeatable;
 `BUSINESS_FRANCE_REGION`, `BUSINESS_FRANCE_COUNTRY`, `BUSINESS_FRANCE_SPECIALIZATION`, `BUSINESS_FRANCE_LIMIT`, and
 `BUSINESS_FRANCE_DEBUG` also work. The limit bounds search results inspected per run.
+The collector reads the public API key from the Business France offers page.
+Set `BUSINESS_FRANCE_API_KEY` to use another key first. After a 401 response,
+the collector reads the key from the page and retries once.
 
 WTTJ accepts `WTTJ_QUERY`, `WTTJ_CONTRACTS`, `WTTJ_LIMIT`, and `WTTJ_MAX_PAGES`.
 An empty query includes all titles. An empty contract filter accepts all contract types,

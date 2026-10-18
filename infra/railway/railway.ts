@@ -89,6 +89,8 @@ export default defineRailway((ctx) => {
       ...businessFranceDatabase,
       ...broker("collector-business-france", "NATS_COLLECTOR_BUSINESS_FRANCE_PASSWORD"),
       BUSINESS_FRANCE_LIMIT: "25",
+      // Optional; set in Railway when needed.
+      BUSINESS_FRANCE_API_KEY: preserve(),
     },
   });
   const wttj = app("collector-wttj", "collector-wttj", {

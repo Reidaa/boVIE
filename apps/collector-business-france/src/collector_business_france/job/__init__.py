@@ -1,6 +1,6 @@
 import json
+import os
 import re
-from functools import lru_cache
 
 import httpx
 from loguru import logger
@@ -13,8 +13,8 @@ PUBLIC_OFFERS_URL = "https://mon-vie-via.businessfrance.fr/offres"
 CLIENT = httpx.Client(base_url=URL, timeout=10)
 
 
-@lru_cache(maxsize=1)
 def public_api_key() -> str:
+    """Read the key that the public offers page sends to the API."""
     response = CLIENT.get(PUBLIC_OFFERS_URL)
     response.raise_for_status()
     match = re.search(r'API_KEY:"((?:[^"\\]|\\.)*)"', response.text)
@@ -23,10 +23,33 @@ def public_api_key() -> str:
     return json.loads(f'"{match.group(1)}"')
 
 
+# The key in use: set by the first request, replaced after a 401.
+_api_key: str | None = None
+
+
+def _request(method: str, url: str, **kwargs) -> httpx.Response:
+    """Send with the current key; after a 401, read the key from the site and retry once.
+
+    BUSINESS_FRANCE_API_KEY, if set, is the first key. The site can rotate its
+    key while a run is paging through results.
+    """
+    global _api_key
+    if _api_key is None:
+        _api_key = os.environ.get("BUSINESS_FRANCE_API_KEY") or public_api_key()
+    response = CLIENT.request(method, url, headers={"X-API-KEY": _api_key}, **kwargs)
+    if response.status_code == httpx.codes.UNAUTHORIZED:
+        logger.info("Refreshing the Business France API key")
+        _api_key = public_api_key()
+        response = CLIENT.request(
+            method, url, headers={"X-API-KEY": _api_key}, **kwargs
+        )
+    return response
+
+
 def get_from_id(id: int) -> Job | None:
     url = f"/details/{id}"
     try:
-        r = CLIENT.get(url, headers={"X-API-KEY": public_api_key()})
+        r = _request("GET", url)
         r.raise_for_status()
     except httpx.HTTPError:
         logger.exception("Failed to fetch Business France offer {}", id)
@@ -45,7 +68,7 @@ def search_id(params: SearchParameters) -> list[int]:
     logger.debug(f"Searching offers with parameters: {p}")
 
     try:
-        r = CLIENT.post(url, json=p, headers={"X-API-KEY": public_api_key()})
+        r = _request("POST", url, json=p)
         r.raise_for_status()
     except httpx.HTTPError:
         logger.exception("Failed to search Business France offers")
