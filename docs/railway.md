@@ -1,19 +1,22 @@
-# Deploy to Railway staging
+# Deploy to Railway
 
-The configuration in `infra/railway/railway.ts` defines the staging environment in the
-`boVIE` Railway project. It deploys from `Reidaa/boVIE`, branch `feat/wttf`.
-After this branch merges, change the source branch in that file to `main`.
-The configuration refuses to target production. Production still has the legacy
-app and Postgres database and requires a separate migration plan.
+`.railway/railway.ts` defines the `production` environment of the `boVIE` Railway project.
+It refuses any other environment. Production deploys `Reidaa/boVIE`, branch `main`.
+Railway deploys a commit only after every GitHub workflow for that commit passes.
+
+Railway creates a temporary PR environment for each pull request and deletes it when the
+pull request closes. A PR environment copies production and deploys the pull request branch.
+It gets fresh databases and its own broker. It does not post to Discord: Railway does not copy
+the sealed `DISCORD_WEBHOOK_URL`, so `discord-sender` logs a warning and exits.
 
 Install Node.js 22.18 or later and Python 3.15 or later for local development.
-The Railway tooling is the `bovie-railway` npm workspace in `infra/railway/`.
+The Railway tooling is the `bovie-railway` npm workspace in `.railway/`.
 It shares the root `package-lock.json`. Application images contain Python packages only.
 
 ```sh
 npm ci
 npx railway login
-npx railway link --project boVIE --environment staging
+npx railway link --project boVIE
 npx turbo run lint format:check check test --filter=bovie-railway
 npm run railway:plan
 npm run railway:apply
@@ -22,32 +25,12 @@ npm run railway:apply
 The Turborepo tasks run Oxlint, Oxfmt, TypeScript, and the Railway configuration tests.
 Run `npx turbo run format --filter=bovie-railway` to format the TypeScript files.
 
-For a new project, first create the project and an empty staging environment in Railway.
-The plan must target `staging`. A new environment gets three Railway MySQL databases,
-six application or broker services, and one NATS volume.
-`apply` displays the plan before confirmation.
+`railway:plan` links the directory to production and saves the change set
+to `railway-plan.json` at the repository root.
+`railway:apply` applies exactly that file after confirmation and then deletes it.
+The apply fails if production or `.railway/` changed after the plan; plan again.
+The file can hold generated passwords and is ignored by Git.
 The deployment uses private networking and creates no public domains or database proxies.
-Do not use this configuration to replace an existing production environment.
-
-## Production today
-
-The production environment still runs the legacy app from `main`.
-Merging the new layout into `main` breaks it: the `bovie.main` module no longer exists,
-and the new services accept MySQL URLs only.
-Migrate or disconnect production before that merge.
-This is the production configuration that `.railway/railway.ts` on `main` described:
-
-| Resource | Configuration |
-| --- | --- |
-| `Postgres-jNxP` | Image `ghcr.io/railwayapp-templates/postgres-ssl:17`, output `DATABASE_URL`, mounted at `/var/lib/postgresql/data` |
-| `postgres-jnxp-volume` | 50,000 MB, online resize, usage alerts at 80, 95 and 100 percent |
-| `bovie` | GitHub `Reidaa/boVIE`, Railpack build `uv sync --frozen --no-dev`, start `python3 -m bovie.main` |
-| `bovie` schedule | Cron `12 */2 * * *`, restart policy `NEVER`, one replica |
-| `bovie` variables | `BOVIE_DEBUG`, `BOVIE_LIMIT`, `BOVIE_REGION`, `BOVIE_SPECIALIZATION`, `DISCORD_WEBHOOK_URL`, and `DATABASE_URL` from Postgres |
-
-All production resources run in `europe-west4-drams3a`.
-The legacy app also reads an optional `BOVIE_API_KEY`.
-The new Business France collector reads the same value from `BUSINESS_FRANCE_API_KEY`.
 
 ## Services and storage
 
@@ -61,7 +44,7 @@ The new Business France collector reads the same value from `BUSINESS_FRANCE_API
 | `collector-wttj` | Collect and publish at minute 22, every two hours UTC | `collector-wttj` |
 | `nats-setup` | Create the stream and consumer, then exit | `nats-setup` |
 | `discord-intake` | Read offers and queue Discord messages | `discord-intake` |
-| `discord-sender` | Post queued messages to Discord, initially stopped | `discord-sender` |
+| `discord-sender` | Post queued messages to Discord | `discord-sender` |
 
 Every application or broker service uses the repository root as its build context and has an explicit Dockerfile path.
 Each application image installs only its workspace package and dependencies.
@@ -70,10 +53,12 @@ NATS stores JetStream data on `nats-jetstream`, mounted at `/data`.
 NATS requires its volume mount before starting.
 All services run in `europe-west4-drams3a`.
 
-The plan and apply scripts generate missing NATS passwords with Node.js cryptographic randomness.
-They pass new values to the configuration through the local process environment.
+The plan script generates missing NATS passwords with Node.js cryptographic randomness.
+It passes new values to the configuration through the local process environment.
 Existing values, including sealed variables, are preserved on later applies.
-Use these npm scripts for the first deployment so NATS credentials are initialized.
+Create a new environment with the npm scripts so NATS credentials are initialized.
+For a new environment, set `DISCORD_WEBHOOK_URL` in the shell that runs `railway:plan`.
+The configuration stores it as a sealed variable. Keep the value out of this repository.
 Railway provisions MySQL connection variables. Each worker references only its database's `MYSQL_URL`.
 Each app references only its own NATS password.
 The database library accepts Railway's `mysql://` URL and uses PyMySQL.
@@ -90,25 +75,23 @@ Migration failures stop the deployment and are not retried as connection failure
 Workers retry while their database or broker is starting.
 `nats-setup` exits successfully after provisioning and runs again when redeployed.
 
-## Enable staging Discord delivery
-
-`discord-sender` starts as an empty service without a source connection.
-Railway requires at least one replica, so zero replicas cannot stop a service.
-Collection and `discord-intake` can run while `discord-sender` is stopped.
-Queued messages stay in the `discord` database until `discord-sender` starts.
-Create a webhook for a staging Discord channel and set `DISCORD_WEBHOOK_URL`
-on the `discord-sender` service in Railway. Keep the value out of this repository.
-
-Change `deliveryEnabled` from `false` to `true` in `infra/railway/railway.ts`.
-The apply connects the service to GitHub and starts its first deployment.
-Run the checks, plan, and apply commands again.
-Starting delivery sends all pending staging discoveries, including older queued offers.
-
 ## Updates and checks
 
-Push changes to the configured branch to trigger Railway builds for affected services.
-Run `npm run railway:plan` after changing infrastructure configuration.
-Apply the reviewed plan to update the service configuration.
+Merge to `main` to trigger Railway builds for affected services.
+Railway does not read `.railway/` during deploys. Only a plan and apply change the configuration.
+
+Change the configuration through a pull request to `main`:
+
+1. The `Railway plan` workflow plans production and comments the diff on the pull request.
+2. A reviewer reads the diff. Merging is the approval.
+3. The `Railway apply` workflow applies that saved plan.
+
+The apply fails if production or `.railway/` changed after the plan. Push a new commit to plan again.
+The workflow refuses deletions. To delete a resource, run `npm run railway:plan` and
+`npm run railway:apply` locally. Then rerun the `Railway plan` workflow, check that it shows
+no changes, and merge.
+A failed workflow on `main` also blocks that commit's deployment.
+The workflows read the `RAILWAY_TOKEN` repository secret, a project token for production.
 
 ```sh
 npx railway status
@@ -118,7 +101,7 @@ npm run railway:plan
 ```
 
 Collectors and broker setup finish after successful runs. That exit is expected.
-`discord-intake` must stay running. `discord-sender` must remain stopped until its webhook is configured.
+`discord-intake` and `discord-sender` must stay running in production.
 A repeated plan after deployment must show no changes.
 
 The configuration follows Railway's [Infrastructure as Code guide](https://docs.railway.com/infrastructure-as-code)

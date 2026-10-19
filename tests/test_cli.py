@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import pytest
 from click.testing import CliRunner
 from dotenv import dotenv_values
 
@@ -126,3 +127,16 @@ def test_business_france_failure_is_logged_on_stderr(monkeypatch):
     assert "| INFO     |" in result.stdout and "Starting" in result.stdout
     assert "| ERROR    |" in result.stderr and "source down" in result.stderr
     assert "| ERROR    |" not in result.stdout
+
+
+def test_sender_without_webhook_turns_delivery_off(tmp_path, monkeypatch):
+    # Railway does not copy the sealed webhook into PR environments.
+    from discord_sender import main
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delenv("DISCORD_WEBHOOK_URL", raising=False)
+    monkeypatch.setattr(main, "make_engine", lambda url: pytest.fail("no delivery"))
+    result = CliRunner().invoke(main.main)
+
+    assert result.exit_code == 0
+    assert "Discord delivery is off" in result.stdout

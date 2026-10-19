@@ -9,25 +9,25 @@ import {
   type ServiceConfigInput,
 } from "railway/iac";
 
-export const deliveryEnabled: boolean = false;
-
 const region = "europe-west4-drams3a";
 const bootstrap: Record<string, Record<string, string>> = JSON.parse(
   process.env.BOVIE_RAILWAY_BOOTSTRAP_SECRETS ?? "{}",
 );
 const secret = (owner: string, key: string) => bootstrap[owner]?.[key] ?? preserve();
+// Railway does not copy sealed values into PR environments.
+const sealed = (owner: string, key: string) => {
+  const value = bootstrap[owner]?.[key];
+  return value === undefined ? preserve() : { value, isSealed: true };
+};
 
 export default defineRailway((ctx) => {
-  if (ctx.environment !== "staging") {
-    throw new Error(
-      "This deployment targets staging. Review the existing production resources before promoting it.",
-    );
+  // Railway copies production into a temporary environment for each pull request.
+  if (ctx.environment !== "production") {
+    throw new Error("This configuration manages only production.");
   }
-  const source = github("Reidaa/boVIE", { branch: "feat/wttf", rootDirectory: "/" });
-  const persistent = {
-    multiRegionConfig: { [region]: { numReplicas: 1 } },
-    restartPolicyMaxRetries: 100,
-  };
+  // Railway deploys a commit on main only after its GitHub checks pass.
+  const source = github("Reidaa/boVIE", { branch: "main", checkSuites: true, rootDirectory: "/" });
+  const replicas = { [region]: 1 };
   const app = (name: string, packageName: string, config: ServiceConfigInput) =>
     service(name, {
       source,
@@ -39,12 +39,12 @@ export default defineRailway((ctx) => {
           "packages/**",
           "pyproject.toml",
           "uv.lock",
-          "infra/railway/**",
+          ".railway/**",
         ],
       },
+      replicas,
       ...config,
       deploy: {
-        ...persistent,
         ...config.deploy,
         restartPolicyMaxRetries: config.deploy?.restartPolicyType === "NEVER" ? undefined : 100,
       },
@@ -61,7 +61,8 @@ export default defineRailway((ctx) => {
       dockerfilePath: "deploy/railway/nats/Dockerfile",
       watchPatterns: ["deploy/railway/nats/**", "deploy/nats.conf"],
     },
-    deploy: { ...persistent, requiredMountPath: "/data" },
+    replicas,
+    deploy: { requiredMountPath: "/data", restartPolicyMaxRetries: 100 },
     volumeMounts: { "/data": natsJetstream },
     env: {
       NATS_SETUP_PASSWORD: secret("nats", "NATS_SETUP_PASSWORD"),
@@ -73,10 +74,10 @@ export default defineRailway((ctx) => {
       NATS_DISCORD_INTAKE_PASSWORD: secret("nats", "NATS_DISCORD_INTAKE_PASSWORD"),
     },
   });
-  const broker = (user: string, password: string) => ({
+  const broker = (user: string, password: keyof typeof nats.env) => ({
     NATS_URL: "nats://${{nats.RAILWAY_PRIVATE_DOMAIN}}:4222",
     NATS_USER: user,
-    NATS_PASSWORD: `\${{nats.${password}}}`,
+    NATS_PASSWORD: nats.env[password],
   });
   const businessFranceDatabase = { DATABASE_URL: businessFranceDb.env.MYSQL_URL };
   const wttjDatabase = { DATABASE_URL: wttjDb.env.MYSQL_URL };
@@ -89,6 +90,7 @@ export default defineRailway((ctx) => {
       ...businessFranceDatabase,
       ...broker("collector-business-france", "NATS_COLLECTOR_BUSINESS_FRANCE_PASSWORD"),
       BUSINESS_FRANCE_LIMIT: "25",
+      BUSINESS_FRANCE_REGION: "asie et pacifique,amerique latine,amerique du nord",
       // Optional; set in Railway when needed.
       BUSINESS_FRANCE_API_KEY: preserve(),
     },
@@ -117,10 +119,10 @@ export default defineRailway((ctx) => {
   });
   const delivery = app("discord-sender", "discord-sender", {
     start: "discord-sender",
-    source: deliveryEnabled ? source : undefined,
     env: {
       ...discordDatabase,
-      DISCORD_WEBHOOK_URL: secret("discord-sender", "DISCORD_WEBHOOK_URL"),
+      // PR environments run without it, so only production posts to Discord.
+      DISCORD_WEBHOOK_URL: sealed("discord-sender", "DISCORD_WEBHOOK_URL"),
     },
   });
   return project(ctx.projectName ?? "boVIE", {

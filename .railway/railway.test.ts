@@ -3,10 +3,14 @@ import { test } from "node:test";
 import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { createRailwayContext, project, type DatabaseNode, type ServiceNode } from "railway/iac";
-import configuration, { deliveryEnabled } from "./railway.ts";
+// The plan script passes generated or supplied secrets for resources that lack them.
+process.env.BOVIE_RAILWAY_BOOTSTRAP_SECRETS = JSON.stringify({
+  "discord-sender": { DISCORD_WEBHOOK_URL: "https://discord.example/webhook" },
+});
+const { default: configuration } = await import("./railway.ts");
 
 const spec = await configuration(
-  createRailwayContext({ environment: "staging", projectName: "boVIE" }),
+  createRailwayContext({ environment: "production", projectName: "boVIE" }),
   project,
 );
 const resources = spec.resources!.flat();
@@ -17,13 +21,27 @@ const databases = resources.filter(
   (resource): resource is DatabaseNode => resource.type === "database",
 );
 const byName = new Map(services.map((service) => [service.name, service]));
-const root = fileURLToPath(new URL("../../", import.meta.url));
+const root = fileURLToPath(new URL("../", import.meta.url));
 
-test("configuration cannot accidentally replace production", async () => {
+test("configuration targets only production", async () => {
   await assert.rejects(
-    async () => configuration(createRailwayContext({ environment: "production" }), project),
-    /targets staging/,
+    async () => configuration(createRailwayContext({ environment: "staging" }), project),
+    /only production/,
   );
+});
+
+test("services deploy main after CI passes", () => {
+  for (const service of services) {
+    assert.equal(service.source?.branch, "main");
+    assert.equal(service.source?.checkSuites, true);
+  }
+});
+
+test("the Discord webhook is sealed so PR environments cannot post", () => {
+  assert.deepEqual(byName.get("discord-sender")!.variables!.DISCORD_WEBHOOK_URL, {
+    type: "raw",
+    value: { value: "https://discord.example/webhook", isSealed: true },
+  });
 });
 
 test("every service has an explicit build, command, and private deployment", () => {
@@ -54,13 +72,14 @@ test("every service has an explicit build, command, and private deployment", () 
     // Collectors publish their own events, using only their source's broker account.
     assert.deepEqual(service.variables!.NATS_USER, { type: "literal", value: user });
     assert.deepEqual(service.variables!.NATS_PASSWORD, {
-      type: "literal",
-      value: `\${{nats.${password}}}`,
+      type: "reference",
+      resource: "service.nats",
+      output: password,
     });
   }
 });
 
-test("secrets stay with their owner and staging delivery starts stopped", () => {
+test("secrets stay with their owner", () => {
   for (const service of services) {
     const variables = service.variables ?? {};
     assert.equal(variables.MYSQL_ROOT_PASSWORD, undefined);
@@ -68,9 +87,6 @@ test("secrets stay with their owner and staging delivery starts stopped", () => 
     for (const key of Object.keys(variables)) assert.ok(!key.endsWith("DATABASE_PASSWORD"));
   }
   assert.equal(byName.get("nats-setup")!.variables!.DATABASE_URL, undefined);
-  const delivery = byName.get("discord-sender")!;
-  assert.equal(delivery.source?.type, deliveryEnabled ? "github" : undefined);
-  if (!deliveryEnabled) assert.equal(delivery.source?.repo, undefined);
   assert.equal(byName.get("discord-sender")!.variables!.NATS_PASSWORD, undefined);
   // An apply deletes undeclared variables, so a key set in Railway must be declared.
   assert.deepEqual(byName.get("collector-business-france")!.variables!.BUSINESS_FRANCE_API_KEY, {
