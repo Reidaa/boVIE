@@ -11,8 +11,10 @@ const cli = (() => {
   if (!found) throw new Error("Railway CLI not found. Run npm ci at the repository root.");
   return found;
 })();
+// The CLI pins `.railway/` relative to its working directory, so every call runs from the root.
+const root = fileURLToPath(new URL("..", import.meta.url));
 function read(args: string[]) {
-  const result = spawnSync(cli, args, { encoding: "utf8" });
+  const result = spawnSync(cli, args, { cwd: root, encoding: "utf8" });
   if (result.status !== 0)
     throw new Error(
       `Railway ${args.slice(0, 2).join(" ")} failed. Check login and project linkage.`,
@@ -22,11 +24,9 @@ function read(args: string[]) {
 
 // `plan` saves the reviewed change set; `apply` lands exactly that file and never re-plans.
 // The file can hold generated passwords. It stays outside .railway/, whose tree the plan pins.
-const root = fileURLToPath(new URL("..", import.meta.url));
 const savedPlan = `${root}railway-plan.json`;
 const run = (args: string[], env: NodeJS.ProcessEnv = {}) =>
   spawnSync(cli, args, {
-    // The CLI pins `.railway/` relative to its working directory.
     cwd: root,
     stdio: "inherit",
     env: { ...process.env, _: cli, ...env },
