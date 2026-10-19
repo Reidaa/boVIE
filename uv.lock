@@ -47,7 +47,6 @@ version = "4.15.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "idna" },
-    { name = "typing-extensions", marker = "python_full_version < '3.15'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/a9/d2/f4d173e22df740bc37b1db102b386ba719b66e95b0f0d751f556b387e6d2/anyio-4.15.1.tar.gz", hash = "sha256:9f28306018cbd6d329e64a36d58256edff76dd996fe423bc957326e578b82a94", size = 276966, upload-time = "2026-09-05T10:42:39.44Z" }
 wheels = [
@@ -165,7 +164,6 @@ dependencies = [
     { name = "bovie-nats-client" },
     { name = "bovie-offer-events" },
     { name = "click" },
-    { name = "loguru" },
     { name = "nats-py" },
     { name = "sqlalchemy" },
 ]
@@ -178,7 +176,6 @@ requires-dist = [
     { name = "bovie-nats-client", editable = "packages/nats-client" },
     { name = "bovie-offer-events", editable = "packages/offer-events" },
     { name = "click", specifier = ">=8.1.8" },
-    { name = "loguru", specifier = ">=0.7.3" },
     { name = "nats-py", specifier = ">=2.10,<3" },
     { name = "sqlalchemy", specifier = ">=2.0,<2.1" },
 ]
