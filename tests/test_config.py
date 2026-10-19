@@ -17,7 +17,6 @@ def test_config_from_params():
 
     assert config.search.limit == limit
     assert len(specializations) == len(list(config.search.specializations))
-    assert 0 == len(list(config.search.regions))
     assert 3 == len(list(config.search.countries))
 
 

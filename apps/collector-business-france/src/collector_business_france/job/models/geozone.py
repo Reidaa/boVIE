@@ -76,11 +76,6 @@ def get_zone_names() -> List[str]:
     return [zone.name.lower() for zone in ZONES]
 
 
-def get_zone_ids() -> List[str]:
-    """Return the list of geographic zone IDs."""
-    return [zone.id for zone in ZONES]
-
-
 def get_zone_id_from_name(name: str) -> str | None:
     """Return the GeographicZone object matching the given name, or None if not found."""
     name_norm = name.strip().lower()

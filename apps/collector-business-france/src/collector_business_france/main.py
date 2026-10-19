@@ -18,6 +18,7 @@ from offer_events import OfferDetails, OfferEvent
 from pydantic import HttpUrl
 from sqlalchemy.engine import Engine
 
+from .choice import Choice
 from .config import configFromParams
 from .display import display_fields
 from .job import get_from_id, search_id
@@ -26,7 +27,6 @@ from .job.models.geozone import get_zone_names
 from .job.models.job import Job
 from .job.models.search import SearchParameters
 from .job.models.specialization import get_specialization_names
-from .t import Choice
 
 DEFAULT_OFFER_LIMIT = 25
 
@@ -148,7 +148,6 @@ def cli(
     params: SearchParameters = SearchParameters(
         limit=config.search.limit,
         specializationsIds=list(config.search.specializations),
-        geographicZones=list(config.search.regions),
         countriesIds=list(config.search.countries),
     )
 

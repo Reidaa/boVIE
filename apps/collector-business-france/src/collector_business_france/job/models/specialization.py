@@ -167,11 +167,6 @@ def get_specialization_names() -> List[str]:
     return [spec.specialization_label_en.lower() for spec in SPECIALIZATIONS]
 
 
-def get_specialization_ids() -> List[str]:
-    """Return the list of specialization IDs."""
-    return [spec.id for spec in SPECIALIZATIONS]
-
-
 def get_specialization_id_from_name(name: str) -> str | None:
     """Return the Specialization object matching the given name, or None if not found."""
     name_norm = name.strip().lower()
