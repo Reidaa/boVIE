@@ -1,4 +1,7 @@
-from bovie.job.models.geozone import get_zone_id_from_name, get_zone_ids, get_zone_names
+from collector_business_france.job.models.geozone import (
+    get_zone_id_from_name,
+    get_zone_names,
+)
 
 
 def test_get_zone_names():
@@ -14,14 +17,6 @@ def test_get_zone_names():
     ]
 
     result = get_zone_names()
-
-    assert sorted(result) == sorted(expected)
-
-
-def test_get_zone_ids():
-    expected = ["1", "2", "3", "4", "5", "6", "7", "8"]
-
-    result = get_zone_ids()
 
     assert sorted(result) == sorted(expected)
 

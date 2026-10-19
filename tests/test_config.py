@@ -1,6 +1,5 @@
 import pytest
-
-from bovie.config import configFromParams
+from collector_business_france.config import configFromParams
 
 
 def test_config_from_params():
@@ -18,7 +17,6 @@ def test_config_from_params():
 
     assert config.search.limit == limit
     assert len(specializations) == len(list(config.search.specializations))
-    assert 0 == len(list(config.search.regions))
     assert 3 == len(list(config.search.countries))
 
 
@@ -80,3 +78,19 @@ def test_config_from_params_invalid_limit():
             specializations=specializations,
             countries=countries,
         )
+
+
+def test_search_ids_are_sorted():
+    # The collector hashes the search into its checkpoint key. Set order changes
+    # with each process's hash seed, so unsorted IDs give a new key on each run.
+    config = configFromParams(
+        limit=10,
+        regions=["Europe Occidentale", "Asie et Pacifique"],
+        specializations=["Information Systems", "Business", "Marketing Communication"],
+        countries=[],
+    )
+
+    countries = list(config.search.countries)
+    specializations = list(config.search.specializations)
+    assert countries == sorted(countries)
+    assert specializations == sorted(specializations)

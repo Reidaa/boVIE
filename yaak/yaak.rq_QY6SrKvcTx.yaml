@@ -1,0 +1,41 @@
+type: http_request
+model: http_request
+id: rq_QY6SrKvcTx
+createdAt: 2026-07-08T15:25:40.170176
+updatedAt: 2026-07-08T15:26:22.772979
+workspaceId: wk_8og6wf4QXb
+folderId: fl_gnRsKs3nsB
+authentication: {}
+authenticationType: null
+body: {}
+bodyType: null
+description: ''
+headers:
+- enabled: true
+  name: User-Agent
+  value: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36
+  id: DCRK4xixeT
+- enabled: true
+  name: ''
+  value: ''
+  id: rSvCaS2Sug
+method: GET
+name: ''
+sortPriority: -1783382601123.0
+url: https://www.welcometothejungle.com/fr/companies/sekoia/jobs/back-end-engineer
+urlParameters: []
+settingSendCookies:
+  enabled: false
+  value: true
+settingStoreCookies:
+  enabled: false
+  value: true
+settingValidateCertificates:
+  enabled: false
+  value: true
+settingFollowRedirects:
+  enabled: false
+  value: true
+settingRequestTimeout:
+  enabled: false
+  value: 0

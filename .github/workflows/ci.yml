@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 env:
-  PYTHON_VERSION: 3.14
+  PYTHON_VERSION: "3.15"
   PRE_COMMIT_HOME: ${{ github.workspace }}/.cache/pre-commit
 
 jobs:
@@ -18,7 +18,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout repository
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: Install uv
         uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
@@ -33,7 +33,7 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Install dependencies
-        run: uv sync --all-extras
+        run: uv sync --all-packages
 
       - name: Install pip
         run: uv pip install pip
@@ -42,7 +42,7 @@ jobs:
         run: echo "$(pwd)/.venv/bin" >> $GITHUB_PATH
 
       - name: Cache pre-commit
-        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
         with:
           path: ${{ env.PRE_COMMIT_HOME }}
           key: pre-commit-${{ runner.os }}-py${{ env.PYTHON_VERSION }}-${{ hashFiles('.pre-commit-config.yaml') }}
@@ -50,13 +50,27 @@ jobs:
             pre-commit-${{ runner.os }}-py${{ env.PYTHON_VERSION }}-
 
       - name: Run pre-commit
-        run: uv run pre-commit run --all-files --show-diff-on-failure
+        run: uv run --all-packages pre-commit run --all-files --show-diff-on-failure
 
   tests:
     name: Tests
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: bovie-test-only
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 --silent"
+          --health-interval=5s --health-timeout=5s --health-retries=30
+    env:
+      MYSQL_TEST_ADMIN_URL: mysql+pymysql://root:bovie-test-only@127.0.0.1:3306/mysql
+      NATS_TEST_URL: nats://127.0.0.1:4222
+      NATS_AUTH_TEST_URL: nats://127.0.0.1:4223
 
     steps:
       - name: Checkout repository
@@ -74,8 +88,55 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Sync dependencies
-        run: uv sync --all-extras
+      - name: Set up Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: package-lock.json
 
-      - name: Run tests
-        run: uv run pytest
+      - name: Cache Turborepo
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
+        with:
+          path: .turbo/cache
+          key: turbo-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            turbo-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          uv sync --all-packages
+
+      - name: Start test brokers
+        run: |
+          docker run -d --name bovie-test-nats -p 127.0.0.1:4222:4222 nats:2.11-alpine --jetstream
+          docker create --name bovie-test-nats-auth -p 127.0.0.1:4223:4222 -e NATS_SETUP_PASSWORD=local-nats-setup -e NATS_COLLECTOR_BUSINESS_FRANCE_PASSWORD=local-nats-collector-business-france -e NATS_COLLECTOR_WTTJ_PASSWORD=local-nats-collector-wttj -e NATS_DISCORD_INTAKE_PASSWORD=local-nats-discord-intake nats:2.11-alpine --config /tmp/nats.conf
+          docker cp deploy/nats.conf bovie-test-nats-auth:/tmp/nats.conf
+          docker start bovie-test-nats-auth
+
+      - name: Lint, typecheck, test, and verify built artifacts
+        run: npx turbo run lint format:check check test verify:packages
+
+  images:
+    name: Build ${{ matrix.dockerfile }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      # Railway builds these Dockerfiles from the repository root.
+      matrix:
+        dockerfile:
+          - apps/collector-business-france/Dockerfile
+          - apps/collector-wttj/Dockerfile
+          - apps/discord-intake/Dockerfile
+          - apps/discord-sender/Dockerfile
+          - apps/nats-setup/Dockerfile
+          - deploy/railway/nats/Dockerfile
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Build image
+        run: docker build --file ${{ matrix.dockerfile }} .
