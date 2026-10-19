@@ -65,10 +65,12 @@ def parseSearch(
             raise ValueError(f"Invalid country: {country}")
         countrieIds.add(country_id)
 
+    # Sorted, not set order: the collector hashes the search into its checkpoint
+    # key, and set order changes with each process's hash seed.
     return SearchConfig(
         limit=limit,
-        specializations=specializationsIds,
-        countries=countrieIds,
+        specializations=sorted(specializationsIds),
+        countries=sorted(countrieIds),
     )
 
 

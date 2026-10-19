@@ -78,3 +78,19 @@ def test_config_from_params_invalid_limit():
             specializations=specializations,
             countries=countries,
         )
+
+
+def test_search_ids_are_sorted():
+    # The collector hashes the search into its checkpoint key. Set order changes
+    # with each process's hash seed, so unsorted IDs give a new key on each run.
+    config = configFromParams(
+        limit=10,
+        regions=["Europe Occidentale", "Asie et Pacifique"],
+        specializations=["Information Systems", "Business", "Marketing Communication"],
+        countries=[],
+    )
+
+    countries = list(config.search.countries)
+    specializations = list(config.search.specializations)
+    assert countries == sorted(countries)
+    assert specializations == sorted(specializations)

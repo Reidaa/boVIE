@@ -68,7 +68,7 @@ def task(
                 continue
             job = get_from_id(identity)
             if job is None:
-                raise RuntimeError(f"Unable to fetch offer {identity}")
+                continue
             events.append(normalize(job))
         offset += len(ids)
         # Publish before recording: an unrecorded offer is published again next run.

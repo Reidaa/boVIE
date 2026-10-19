@@ -56,4 +56,9 @@ def display_fields(job: Job) -> list[DisplayField]:
         dict(name=":label: Category(ies)", value=categories),
     ]
 
-    return [DisplayField.model_validate(field) for field in fields if field["value"]]
+    # The event contract caps values at 1024 characters, like Discord's embed fields.
+    return [
+        DisplayField(name=field["name"], value=field["value"][:1024])
+        for field in fields
+        if field["value"]
+    ]

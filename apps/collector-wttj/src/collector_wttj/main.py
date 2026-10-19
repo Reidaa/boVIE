@@ -101,6 +101,10 @@ def collect(
             response = client.get(
                 f"/api/v3/organizations/{quote(hit.organization.slug, safe='')}/jobs/{quote(hit.slug, safe='')}"
             )
+            if response.status_code in (httpx.codes.NOT_FOUND, httpx.codes.GONE):
+                # The offer was removed after the search listed it.
+                logger.warning("WTTJ offer {} is gone; skipping it", hit.reference)
+                continue
             response.raise_for_status()
             job = DetailResponse.model_validate(response.json()).job
             if job.wttj_reference != hit.reference:

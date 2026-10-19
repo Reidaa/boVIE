@@ -82,6 +82,20 @@ def test_failed_publish_leaves_page_unrecorded(collector_db, monkeypatch):
         assert conn.scalar(select(func.count()).select_from(Offer)) == 2
 
 
+def test_offer_removed_before_its_details_are_read_is_skipped(
+    collector_db, monkeypatch
+):
+    from collector_business_france import main
+
+    monkeypatch.setattr(main, "search_id", lambda params: [1, 2])
+    monkeypatch.setattr(
+        main, "get_from_id", lambda identity: None if identity == 1 else job(identity)
+    )
+    published = []
+    main.task(SearchParameters(limit=2), collector_db, published.append)
+    assert [event.source_offer_id for event in published] == ["2"]
+
+
 def test_business_france_preserves_display_fields():
     from collector_business_france.main import normalize
 
@@ -89,6 +103,15 @@ def test_business_france_preserves_display_fields():
     assert event.source_offer_id == "1"
     assert event.offer.country == "Canada"
     assert len(event.offer.fields) == 14
+
+
+def test_business_france_long_display_values_are_truncated():
+    # One oversized value must not reject the whole offer, or its page.
+    from collector_business_france.main import normalize
+
+    long = job(1).model_copy(update={"contactEmail": "x" * 2000})
+    event = normalize(long)
+    assert max(len(field.value) for field in event.offer.fields) == 1024
 
 
 def test_source_without_results_for_too_long_fails_the_run(collector_db, monkeypatch):

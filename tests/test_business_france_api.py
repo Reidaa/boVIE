@@ -110,3 +110,17 @@ def test_a_second_unauthorized_response_fails_the_run(client):
     client(handler)
     with pytest.raises(httpx.HTTPStatusError):
         job.search_id(SearchParameters())
+
+
+@pytest.mark.parametrize("status", [404, 410])
+def test_offer_removed_before_its_details_are_read_is_none(client, status):
+    client(lambda request: httpx.Response(status))
+    job._api_key = "key"
+    assert job.get_from_id(9) is None
+
+
+def test_other_detail_failures_fail_the_run(client):
+    client(lambda request: httpx.Response(503))
+    job._api_key = "key"
+    with pytest.raises(httpx.HTTPStatusError):
+        job.get_from_id(9)

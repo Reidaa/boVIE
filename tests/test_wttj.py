@@ -124,6 +124,31 @@ def test_wttj_failed_detail_does_not_commit_page(collector_db):
         assert conn.scalar(select(func.count()).select_from(Checkpoint)) == 0
 
 
+def test_wttj_offer_removed_before_its_details_are_read_is_skipped(collector_db):
+    from collector_wttj.main import collect
+
+    published = []
+
+    def handler(request):
+        if request.url.path.endswith("/public/jobs"):
+            return httpx.Response(
+                200,
+                json={
+                    "data": [hit("first"), hit("second")],
+                    "metadata": {"page": 1, "page_count": 1},
+                },
+            )
+        if request.url.path.endswith("first"):
+            return httpx.Response(404)
+        return httpx.Response(200, json=detail("second"))
+
+    with httpx.Client(
+        base_url="https://example.invalid", transport=httpx.MockTransport(handler)
+    ) as client:
+        collect(collector_db, client, published.append)
+    assert [event.source_offer_id for event in published] == ["second"]
+
+
 @pytest.mark.parametrize(
     "contract",
     [

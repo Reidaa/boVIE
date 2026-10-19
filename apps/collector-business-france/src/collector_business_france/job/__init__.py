@@ -47,9 +47,13 @@ def _request(method: str, url: str, **kwargs) -> httpx.Response:
 
 
 def get_from_id(id: int) -> Job | None:
+    """Return the offer, or None when it was removed after the search listed it."""
     url = f"/details/{id}"
     try:
         r = _request("GET", url)
+        if r.status_code in (httpx.codes.NOT_FOUND, httpx.codes.GONE):
+            logger.warning("Business France offer {} is gone; skipping it", id)
+            return None
         r.raise_for_status()
     except httpx.HTTPError:
         logger.exception("Failed to fetch Business France offer {}", id)
