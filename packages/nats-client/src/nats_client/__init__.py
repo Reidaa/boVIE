@@ -23,8 +23,6 @@ async def connect():
         inbox_prefix=f"_INBOX.{user}" if user else "_INBOX",
         password=os.environ.get("NATS_PASSWORD"),
         connect_timeout=5,
-        max_reconnect_attempts=3,
-        reconnect_time_wait=1,
     )
 
 
