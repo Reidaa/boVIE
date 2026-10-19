@@ -38,7 +38,7 @@ services:
     <<: *app
     build:
       context: .
-      target: collector-business-france
+      dockerfile: apps/collector-business-france/Dockerfile
     image: bovie-collector-business-france:local
     command: [collector-store-migrate]
     environment:
@@ -50,7 +50,7 @@ services:
     <<: *app
     build:
       context: .
-      target: collector-wttj
+      dockerfile: apps/collector-wttj/Dockerfile
     image: bovie-collector-wttj:local
     command: [collector-store-migrate]
     environment:
@@ -62,7 +62,7 @@ services:
     <<: *app
     build:
       context: .
-      target: discord-intake
+      dockerfile: apps/discord-intake/Dockerfile
     image: bovie-discord-intake:local
     command: [discord-store-migrate]
     environment:
@@ -74,7 +74,7 @@ services:
     <<: *app
     build:
       context: .
-      target: nats-setup
+      dockerfile: apps/nats-setup/Dockerfile
     image: bovie-nats-setup:local
     command: [nats-setup]
     environment:
@@ -88,7 +88,7 @@ services:
     <<: *app
     build:
       context: .
-      target: collector-business-france
+      dockerfile: apps/collector-business-france/Dockerfile
     image: bovie-collector-business-france:local
     command: [collector-business-france]
     environment:
@@ -108,7 +108,7 @@ services:
     <<: *app
     build:
       context: .
-      target: collector-wttj
+      dockerfile: apps/collector-wttj/Dockerfile
     image: bovie-collector-wttj:local
     command: [collector-wttj]
     environment:
@@ -128,7 +128,7 @@ services:
     <<: *app
     build:
       context: .
-      target: discord-intake
+      dockerfile: apps/discord-intake/Dockerfile
     image: bovie-discord-intake:local
     command: [discord-intake]
     restart: unless-stopped
@@ -145,7 +145,7 @@ services:
     <<: *app
     build:
       context: .
-      target: discord-sender
+      dockerfile: apps/discord-sender/Dockerfile
     image: bovie-discord-sender:local
     command: [discord-sender]
     restart: unless-stopped

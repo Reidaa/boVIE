@@ -29,7 +29,6 @@ updates:
 
   - package-ecosystem: docker
     directories:
-      - /
       - /apps/*
       - /deploy/railway/*
     schedule:
