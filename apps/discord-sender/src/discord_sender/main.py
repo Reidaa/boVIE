@@ -4,6 +4,7 @@ import os
 import click
 import httpx
 from cli_common import configure_logging, log_failure
+from loguru import logger
 from mysql_common import make_engine
 from mysql_common.env import load_env
 
@@ -19,7 +20,10 @@ def main(once: bool):
     configure_logging()
     webhook = os.environ.get("DISCORD_WEBHOOK_URL")
     if not webhook:
-        raise click.ClickException("Set DISCORD_WEBHOOK_URL for the delivery process")
+        # PR environments have no webhook: Railway does not copy sealed variables.
+        # Messages stay queued, and exiting cleanly stops Railway from restarting.
+        logger.warning("DISCORD_WEBHOOK_URL is not set; Discord delivery is off")
+        return
     engine = make_engine(load_env().database_url)
 
     async def run():

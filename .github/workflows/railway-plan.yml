@@ -1,5 +1,5 @@
-# Plans .railway/ changes for each environment and comments the diffs on the pull request.
-# The apply workflow lands these exact plans after the merge.
+# Plans .railway/ changes for production and comments the diff on the pull request.
+# The apply workflow lands this exact plan after the merge.
 name: Railway plan
 
 on:
@@ -10,7 +10,7 @@ on:
 permissions:
   contents: read
   pull-requests: write
-  # Lets the Railway GitHub App post the plan comments.
+  # Lets the Railway GitHub App post the plan comment.
   id-token: write
 
 jobs:
@@ -18,20 +18,14 @@ jobs:
     # Fork pull requests get no secrets.
     if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        environment: [staging, production]
     steps:
       - name: Checkout repository
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
-      - name: Plan Railway ${{ matrix.environment }}
+      - name: Plan Railway production
         uses: railwayapp/config@9e17d413dbe219f19d62538d9c06b5dbb5e9abf8 # v1.2.0
         with:
           command: plan
-          # Each token is scoped to one environment, which selects the target.
-          railway-token: ${{ matrix.environment == 'production' && secrets.RAILWAY_TOKEN_PRODUCTION || secrets.RAILWAY_TOKEN_STAGING }}
+          # A project token scoped to the production environment.
+          railway-token: ${{ secrets.RAILWAY_TOKEN }}
           cli-version: "5.59.0"
-          artifact-name: railway-plan-${{ matrix.environment }}
-          plan-path: railway-plan-${{ matrix.environment }}.json

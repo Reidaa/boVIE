@@ -205,4 +205,4 @@ node_modules/
 .railway/config.json
 .railway/*.local.json
 # Saved Railway plans can contain generated passwords.
-railway-plan*.json
+railway-plan.json

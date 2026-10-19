@@ -218,9 +218,9 @@ retention before deleting history. Back up all databases and the broker volume.
 
 ## Deployment and validation
 
-`.railway/railway.ts` defines the Railway staging and production environments. Each gets
-three Railway MySQL databases, the focused services, private connections, NATS storage,
-and collector schedules. Both deploy `main`; only production posts to Discord.
+`.railway/railway.ts` defines the Railway production environment: three Railway MySQL
+databases, the focused services, private connections, NATS storage, and collector schedules.
+It deploys `main`. Railway creates a temporary copy for each pull request; copies do not post to Discord.
 Use the [Railway deployment guide](docs/railway.md) for the initial deployment and updates.
 
 Docker builds use the repository root as context. Select the service directory name

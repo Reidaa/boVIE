@@ -14,13 +14,17 @@ const bootstrap: Record<string, Record<string, string>> = JSON.parse(
   process.env.BOVIE_RAILWAY_BOOTSTRAP_SECRETS ?? "{}",
 );
 const secret = (owner: string, key: string) => bootstrap[owner]?.[key] ?? preserve();
+// Railway does not copy sealed values into PR environments.
+const sealed = (owner: string, key: string) => {
+  const value = bootstrap[owner]?.[key];
+  return value === undefined ? preserve() : { value, isSealed: true };
+};
 
 export default defineRailway((ctx) => {
-  // Staging mirrors production, except that only production posts to Discord.
-  if (ctx.environment !== "staging" && ctx.environment !== "production") {
-    throw new Error("This configuration manages only staging and production.");
+  // Railway copies production into a temporary environment for each pull request.
+  if (ctx.environment !== "production") {
+    throw new Error("This configuration manages only production.");
   }
-  const deliveryEnabled = ctx.environment === "production";
   // Railway deploys a commit on main only after its GitHub checks pass.
   const source = github("Reidaa/boVIE", { branch: "main", checkSuites: true, rootDirectory: "/" });
   const replicas = { [region]: 1 };
@@ -115,10 +119,10 @@ export default defineRailway((ctx) => {
   });
   const delivery = app("discord-sender", "discord-sender", {
     start: "discord-sender",
-    source: deliveryEnabled ? source : undefined,
     env: {
       ...discordDatabase,
-      DISCORD_WEBHOOK_URL: secret("discord-sender", "DISCORD_WEBHOOK_URL"),
+      // PR environments run without it, so only production posts to Discord.
+      DISCORD_WEBHOOK_URL: sealed("discord-sender", "DISCORD_WEBHOOK_URL"),
     },
   });
   return project(ctx.projectName ?? "boVIE", {

@@ -3,54 +3,45 @@ import { test } from "node:test";
 import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { createRailwayContext, project, type DatabaseNode, type ServiceNode } from "railway/iac";
-import configuration from "./railway.ts";
+// The plan script passes generated or supplied secrets for resources that lack them.
+process.env.BOVIE_RAILWAY_BOOTSTRAP_SECRETS = JSON.stringify({
+  "discord-sender": { DISCORD_WEBHOOK_URL: "https://discord.example/webhook" },
+});
+const { default: configuration } = await import("./railway.ts");
 
-async function environment(name: string) {
-  const spec = await configuration(
-    createRailwayContext({ environment: name, projectName: "boVIE" }),
-    project,
-  );
-  const resources = spec.resources!.flat();
-  const services = resources.filter(
-    (resource): resource is ServiceNode => resource.type === "service",
-  );
-  return {
-    services,
-    databases: resources.filter(
-      (resource): resource is DatabaseNode => resource.type === "database",
-    ),
-    byName: new Map(services.map((service) => [service.name, service])),
-  };
-}
-const staging = await environment("staging");
-const production = await environment("production");
-const { services, databases, byName } = staging;
+const spec = await configuration(
+  createRailwayContext({ environment: "production", projectName: "boVIE" }),
+  project,
+);
+const resources = spec.resources!.flat();
+const services = resources.filter(
+  (resource): resource is ServiceNode => resource.type === "service",
+);
+const databases = resources.filter(
+  (resource): resource is DatabaseNode => resource.type === "database",
+);
+const byName = new Map(services.map((service) => [service.name, service]));
 const root = fileURLToPath(new URL("../", import.meta.url));
 
-test("configuration targets only staging and production", async () => {
+test("configuration targets only production", async () => {
   await assert.rejects(
-    async () => configuration(createRailwayContext({ environment: "preview" }), project),
-    /staging and production/,
+    async () => configuration(createRailwayContext({ environment: "staging" }), project),
+    /only production/,
   );
 });
 
-test("both environments deploy main after CI passes", () => {
-  for (const { services } of [staging, production]) {
-    for (const service of services) {
-      if (!service.source) continue;
-      assert.equal(service.source.branch, "main");
-      assert.equal(service.source.checkSuites, true);
-    }
+test("services deploy main after CI passes", () => {
+  for (const service of services) {
+    assert.equal(service.source?.branch, "main");
+    assert.equal(service.source?.checkSuites, true);
   }
 });
 
-test("staging mirrors production except Discord delivery", () => {
-  const strip = ({ services }: typeof staging) =>
-    services.map((service) => (service.name === "discord-sender" ? service.name : service));
-  assert.deepEqual(strip(staging), strip(production));
-  // Only production has a real webhook; staging queues messages but never sends them.
-  assert.equal(staging.byName.get("discord-sender")!.source, undefined);
-  assert.equal(production.byName.get("discord-sender")!.source?.type, "github");
+test("the Discord webhook is sealed so PR environments cannot post", () => {
+  assert.deepEqual(byName.get("discord-sender")!.variables!.DISCORD_WEBHOOK_URL, {
+    type: "raw",
+    value: { value: "https://discord.example/webhook", isSealed: true },
+  });
 });
 
 test("every service has an explicit build, command, and private deployment", () => {

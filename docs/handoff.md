@@ -41,8 +41,8 @@ Production deployments still need separate credentials, TLS, backups, and a brok
 The Compose passwords are local development examples.
 Use the [README](../README.md) for commands and the [WTTJ request contract](wttj-api.md) for observed API behavior.
 
-Railway staging and production use `.railway/railway.ts` with three native MySQL
-services and explicit Dockerfiles for application and broker services.
+Railway production uses `.railway/railway.ts` with three native MySQL services and
+explicit Dockerfiles for application and broker services. Pull requests get temporary copies.
 See [Railway deployment](railway.md).
 Migration commands accept `--wait-timeout` for initial database startup.
 Only connection attempts are retried. A failed schema migration stops deployment.

@@ -20,9 +20,8 @@ function read(args: string[]) {
   return JSON.parse(result.stdout);
 }
 
-// `plan <environment>` saves the reviewed change set; `apply` lands exactly that file and
-// never re-plans. The file pins its environment and can hold generated passwords.
-// It stays outside .railway/, whose tree the plan pins.
+// `plan` saves the reviewed change set; `apply` lands exactly that file and never re-plans.
+// The file can hold generated passwords. It stays outside .railway/, whose tree the plan pins.
 const root = fileURLToPath(new URL("..", import.meta.url));
 const savedPlan = `${root}railway-plan.json`;
 const run = (args: string[], env: NodeJS.ProcessEnv = {}) =>
@@ -33,15 +32,16 @@ const run = (args: string[], env: NodeJS.ProcessEnv = {}) =>
     env: { ...process.env, _: cli, ...env },
   }).status ?? 1;
 
-const [action, environment, ...extra] = process.argv.slice(2);
+const [action, ...extra] = process.argv.slice(2);
 if (action === "apply") {
-  const status = run(["config", "apply", "--plan", savedPlan, ...process.argv.slice(3)]);
+  const status = run(["config", "apply", "--plan", savedPlan, ...extra]);
   if (status === 0) rmSync(savedPlan);
   process.exit(status);
 }
-if (action !== "plan" || !environment) throw new Error("Expected plan <environment> or apply.");
+if (action !== "plan") throw new Error("Expected plan or apply.");
 // Config commands have no environment option; they use the directory's linked environment.
-if (run(["environment", "link", environment]) !== 0) process.exit(1);
+// PR environments are copies that Railway manages; this configuration targets production.
+if (run(["environment", "link", "production"]) !== 0) process.exit(1);
 const services: { name: string }[] = read(["service", "list", "--json"]);
 const bootstrap: Record<string, Record<string, string>> = {};
 for (const owner of Object.keys(credentials) as (keyof typeof credentials)[]) {
@@ -53,9 +53,9 @@ for (const owner of Object.keys(credentials) as (keyof typeof credentials)[]) {
 const deliveryVariables = services.some((service) => service.name === "discord-sender")
   ? read(["variable", "list", "--service", "discord-sender", "--json"])
   : {};
-if (!Object.hasOwn(deliveryVariables, "DISCORD_WEBHOOK_URL")) {
-  // A new environment takes its webhook from the shell that runs the plan.
-  bootstrap["discord-sender"] = { DISCORD_WEBHOOK_URL: process.env.DISCORD_WEBHOOK_URL ?? "" };
+// A new webhook comes from the shell that runs the plan; Railway then keeps it sealed.
+if (!Object.hasOwn(deliveryVariables, "DISCORD_WEBHOOK_URL") && process.env.DISCORD_WEBHOOK_URL) {
+  bootstrap["discord-sender"] = { DISCORD_WEBHOOK_URL: process.env.DISCORD_WEBHOOK_URL };
 }
 process.exit(
   run(["config", "plan", "--out", savedPlan, ...extra], {
