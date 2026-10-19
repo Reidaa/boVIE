@@ -89,7 +89,7 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Set up Node
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: "24"
           cache: npm
@@ -117,3 +117,26 @@ jobs:
 
       - name: Lint, typecheck, test, and verify built artifacts
         run: npx turbo run lint format:check check test verify:packages
+
+  images:
+    name: Build ${{ matrix.dockerfile }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      # Railway builds these Dockerfiles from the repository root.
+      matrix:
+        dockerfile:
+          - apps/collector-business-france/Dockerfile
+          - apps/collector-wttj/Dockerfile
+          - apps/discord-intake/Dockerfile
+          - apps/discord-sender/Dockerfile
+          - apps/nats-setup/Dockerfile
+          - deploy/railway/nats/Dockerfile
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Build image
+        run: docker build --file ${{ matrix.dockerfile }} .
