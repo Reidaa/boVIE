@@ -13,7 +13,7 @@ npm workspace. Both share one task graph and cache.
 | --- | --- | --- |
 | `apps/` | Deployable services, one package and Docker target each | uv |
 | `packages/` | Shared Python libraries | uv |
-| `infra/railway/` | Railway infrastructure as code | npm, TypeScript |
+| `.railway/` | Railway infrastructure as code | npm, TypeScript |
 | `deploy/` | Broker and database configuration used by Compose and Railway | — |
 | `tests/` | Cross-package Python test suite | pytest |
 
@@ -218,10 +218,10 @@ retention before deleting history. Back up all databases and the broker volume.
 
 ## Deployment and validation
 
-Railway staging is defined in `infra/railway/railway.ts`. It creates three Railway MySQL
-databases, the focused services, private connections, NATS storage, and collector schedules.
+`.railway/railway.ts` defines the Railway staging and production environments. Each gets
+three Railway MySQL databases, the focused services, private connections, NATS storage,
+and collector schedules. Both deploy `main`; only production posts to Discord.
 Use the [Railway deployment guide](docs/railway.md) for the initial deployment and updates.
-Discord delivery starts without a source connection until you configure a staging webhook.
 
 Docker builds use the repository root as context. Select the service directory name
 as the target, for example `docker build --target collector-wttj -t bovie-collector-wttj .`.

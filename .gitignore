@@ -202,6 +202,7 @@ pyrightconfig.json
 # JavaScript tooling, Turborepo cache, and local Railway CLI state
 node_modules/
 .turbo/
-infra/railway/config.json
-infra/railway/*.local.json
-infra/railway/plan*.json
+.railway/config.json
+.railway/*.local.json
+# Saved Railway plans can contain generated passwords.
+railway-plan*.json

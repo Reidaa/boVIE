@@ -3,7 +3,7 @@
   "private": true,
   "packageManager": "npm@11.19.1",
   "workspaces": [
-    "infra/*"
+    ".railway"
   ],
   "scripts": {
     "build": "turbo run build",

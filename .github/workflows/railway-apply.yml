@@ -1,0 +1,39 @@
+# Applies the plans that the merged pull request reviewed. It never re-plans:
+# if an environment or .railway/ changed since its plan, that run fails.
+# Railway waits for this workflow before it deploys the commit.
+name: Railway apply
+
+on:
+  push:
+    branches: [main]
+    paths: [".railway/**"]
+
+permissions:
+  contents: read
+  actions: read
+  # Finds the merged pull request and its saved plans.
+  pull-requests: read
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        environment: [staging, production]
+    concurrency:
+      group: railway-apply-${{ matrix.environment }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Apply Railway ${{ matrix.environment }} plan
+        uses: railwayapp/config@9e17d413dbe219f19d62538d9c06b5dbb5e9abf8 # v1.2.0
+        with:
+          command: apply
+          railway-token: ${{ matrix.environment == 'production' && secrets.RAILWAY_TOKEN_PRODUCTION || secrets.RAILWAY_TOKEN_STAGING }}
+          cli-version: "5.59.0"
+          artifact-name: railway-plan-${{ matrix.environment }}
+          plan-path: railway-plan-${{ matrix.environment }}.json
+          # Deletions need a person; see docs/railway.md.
+          confirm-destructive: "false"
