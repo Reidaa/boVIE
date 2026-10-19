@@ -2,7 +2,7 @@
 
 The project collects general job offers from WTTJ and VIE/VIA offers from Business France.
 The uv workspace separates five deployable services from six shared libraries.
-Each service declares its own dependencies and has a dedicated Docker target.
+Each service declares its own dependencies and has its own Dockerfile.
 The root project installs development tools only.
 
 | Library | Owns | Used by |
@@ -37,8 +37,7 @@ The API requires the `job_title` parameter even when its value is empty.
 Only published job details enter storage. Optional contract filters apply to search and detail responses.
 The scan remains bounded by public search results, `--limit`, and `--max-pages`.
 
-Production deployments still need separate credentials, TLS, backups, and a broker availability plan.
-The Compose passwords are local development examples.
+The Compose passwords are local development examples. Railway generates its own credentials.
 Use the [README](../README.md) for commands and the [WTTJ request contract](wttj-api.md) for observed API behavior.
 
 Railway production uses `.railway/railway.ts` with three native MySQL services and

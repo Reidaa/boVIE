@@ -223,10 +223,9 @@ databases, the focused services, private connections, NATS storage, and collecto
 It deploys `main`. Railway creates a temporary copy for each pull request; copies do not post to Discord.
 Use the [Railway deployment guide](docs/railway.md) for the initial deployment and updates.
 
-Docker builds use the repository root as context. Select the service directory name
-as the target, for example `docker build --target collector-wttj -t bovie-collector-wttj .`.
+Each service has a Dockerfile in its `apps/` directory. Docker builds use the repository
+root as context, for example `docker build -f apps/collector-wttj/Dockerfile -t bovie-collector-wttj .`.
 Each final image contains only that service and its installed dependencies.
-The default Docker target is the Business France collector.
 
 ```sh
 npx turbo run lint format:check check test verify:packages
@@ -262,5 +261,4 @@ database grants, lost acknowledgments, and both complete source flows.
 separate disposable broker running `deploy/nats.conf` with its documented local
 passwords. CI runs this check too.
 
-Implementation details and remaining deployment decisions are in the
-[handover notes](docs/handoff.md).
+Service boundaries and delivery guarantees are in [service ownership](docs/services.md).
