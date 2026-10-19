@@ -1,6 +1,6 @@
 from urllib.parse import urlparse
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, field_validator
 
 from collector_business_france.job.models.specialization import Specialization
 
@@ -12,53 +12,27 @@ BUSINESS_FRANCE_HOSTS = {
 
 
 class Job(BaseModel):
+    """The Business France offer fields that the collector reads.
+
+    Pydantic ignores the other API fields, so their changes cannot fail a run.
+    """
+
     activitySectorN1: str | None
-    activitySectorN1Id: int
-    activitySectorN2: str | None
-    activitySectorN3: str | None
-    activitySectorOfferId: int
-    ca: str | None
-    candidateCounter: int
     cityAffectation: str
-    cityAffectationId: int
     cityName: str | None
-    cityNameEn: str
     contactEmail: str | None
     contactName: str | None
-    countryId: str
     countryName: str
-    countryNameEn: str
     creationDate: str
-    durationBroadcast: int | float
-    effectif: int
     id: int
-    idMotifDesactivationOffre: int
-    idNomenclatureSecteur: str | None
     indemnite: int | float
-    levelStudyIds: str | None
-    missionDescription: str | None = Field(repr=False)
     missionDuration: int
     missionEndDate: str
-    missionProfile: str | None
     missionStartDate: str
     missionTitle: str
-    missionType: str
-    missionTypeEn: str
-    organizationCountryCounter: str | None
-    organizationExpertise: str | None
-    organizationId: int
     organizationName: str
-    organizationPathImage: str | None
-    organizationPresentation: str | None
-    organizationUrlImage: str | None
-    pathImage: str | None
-    reference: str | None
     specializations: list[Specialization] | None
-    startBroadcastDate: str
-    viewCounter: int
-    externalJobId: str | None
     contactURL: str | None = None
-    dateCandidature: str | None
 
     @property
     def external_application_url(self) -> str | None:
