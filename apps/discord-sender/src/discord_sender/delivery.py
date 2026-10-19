@@ -2,6 +2,7 @@
 
 import httpx
 from discord_store import Delivery
+from loguru import logger
 from mysql_common.queue import claim, finish, retry_later
 from offer_events import OfferEvent
 from sqlalchemy.engine import Engine
@@ -44,8 +45,10 @@ def deliver_one(engine: Engine, client: httpx.Client, webhook: str) -> bool:
     if work is None:
         return False
     try:
+        # wait=true makes Discord confirm the message was saved before it answers.
         response = client.post(
             webhook,
+            params={"wait": "true"},
             json=discord_payload(
                 OfferEvent.model_validate(work.payload),
             ),
@@ -54,5 +57,9 @@ def deliver_one(engine: Engine, client: httpx.Client, webhook: str) -> bool:
     except Exception:
         retry_later(engine, Delivery, work)
         raise
-    finish(engine, Delivery, work)
+    if not finish(engine, Delivery, work):
+        logger.warning(
+            "Delivery {} was sent after its lease expired; Discord may show it twice",
+            work.event_id,
+        )
     return True

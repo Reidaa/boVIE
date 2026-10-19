@@ -90,3 +90,42 @@ def test_failed_message_is_retained_with_backoff():
     # An invalid event never reaches the database, so no engine is needed.
     assert asyncio.run(handle(Mock(spec=Engine), message)) is False
     assert message.delays == [120]
+
+
+def test_delivery_waits_for_discord_to_save_the_message(discord_db):
+    # Without wait=true, Discord can answer 204 for a message it did not save.
+    from discord_sender.delivery import deliver_one
+    from discord_store import accept
+
+    accept(discord_db, event())
+    requests = []
+
+    def handler(request):
+        requests.append(request)
+        return httpx.Response(200, json={"id": "1"})
+
+    with httpx.Client(transport=httpx.MockTransport(handler)) as client:
+        assert deliver_one(discord_db, client, "https://discord.invalid/webhook")
+    assert requests[0].url.params["wait"] == "true"
+
+
+def test_lost_lease_after_sending_is_logged(discord_db, monkeypatch):
+    # Another worker owns the delivery now, so Discord may get the message twice.
+    from discord_sender import delivery
+    from discord_store import accept
+    from loguru import logger
+
+    accept(discord_db, event())
+    monkeypatch.setattr(delivery, "finish", lambda *args: False)
+    messages = []
+    sink = logger.add(messages.append, level="WARNING")
+    try:
+        with httpx.Client(
+            transport=httpx.MockTransport(lambda request: httpx.Response(200))
+        ) as client:
+            assert delivery.deliver_one(
+                discord_db, client, "https://discord.invalid/webhook"
+            )
+    finally:
+        logger.remove(sink)
+    assert any("lease" in message for message in messages)
