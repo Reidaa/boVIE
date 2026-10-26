@@ -17,7 +17,7 @@
     "railway:apply": "npm --workspace bovie-railway run apply"
   },
   "devDependencies": {
-    "turbo": "2.11.3"
+    "turbo": "2.11.10"
   },
   "allowScripts": {
     "@railway/cli@5.59.0": true,
