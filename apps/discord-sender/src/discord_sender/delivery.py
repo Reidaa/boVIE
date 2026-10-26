@@ -1,5 +1,7 @@
 """Render and send queued Discord messages."""
 
+import time
+
 import httpx
 from discord_store import Delivery
 from loguru import logger
@@ -53,10 +55,21 @@ def deliver_one(engine: Engine, client: httpx.Client, webhook: str) -> bool:
                 OfferEvent.model_validate(work.payload),
             ),
         )
-        response.raise_for_status()
     except Exception:
         retry_later(engine, Delivery, work)
         raise
+    if response.status_code == 429:
+        # Wait as long as Discord asks; sending sooner only extends the limit.
+        wait = float(response.headers.get("Retry-After", 1))
+        retry_later(engine, Delivery, work, delay_seconds=wait)
+        logger.warning("Discord answered HTTP 429; waiting {} s", wait)
+        time.sleep(wait)
+        return True
+    if response.is_error:
+        # Log only the status: the exception message contains the webhook URL.
+        logger.warning("Discord answered HTTP {}", response.status_code)
+        retry_later(engine, Delivery, work)
+        response.raise_for_status()
     if not finish(engine, Delivery, work):
         logger.warning(
             "Delivery {} was sent after its lease expired; Discord may show it twice",
