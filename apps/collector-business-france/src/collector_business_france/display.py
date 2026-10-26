@@ -9,7 +9,7 @@ from collector_business_france.job.models.job import Job
 def display_fields(job: Job) -> list[DisplayField]:
     start: str = isoparse(job.missionStartDate).strftime("%d/%m/%Y")
     end: str = isoparse(job.missionEndDate).strftime("%d/%m/%Y")
-    categories: str = (
+    specializations: str = (
         ", ".join([s.specialization_label for s in job.specializations])
         if job.specializations
         else "N/A"
@@ -53,7 +53,7 @@ def display_fields(job: Job) -> list[DisplayField]:
             value=f"[Voir offre](https://mon-vie-via.businessfrance.fr/offres/{job.id})",
         ),
         dict(name=":outbox_tray: Application", value=application_value),
-        dict(name=":label: Category(ies)", value=categories),
+        dict(name=":label: Specialization(s)", value=specializations),
     ]
 
     # The event contract caps values at 1024 characters, like Discord's embed fields.

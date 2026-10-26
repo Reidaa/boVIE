@@ -3,7 +3,7 @@ from collector_business_france.job.models.job import Job
 from collector_business_france.job.models.specialization import Specialization
 
 
-def test_job_embed_displays_job_categories():
+def test_job_embed_displays_job_specializations():
     job = Job.model_construct(
         id=123,
         missionTitle="Software Engineer",
@@ -38,7 +38,7 @@ def test_job_embed_displays_job_categories():
 
     assert {
         "inline": True,
-        "name": ":label: Category(ies)",
+        "name": ":label: Specialization(s)",
         "value": "SYSTEMES ET LOGICIELS INFORMATIQUES, MARKETING - COMMUNICATION",
     } in embed["fields"]
     assert {
