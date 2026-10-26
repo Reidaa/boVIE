@@ -1,9 +1,9 @@
-from bovie.discord.model import JobEmbed
-from bovie.job.models.job import Job
-from bovie.job.models.specialization import Specialization
+from collector_business_france.display import display_fields
+from collector_business_france.job.models.job import Job
+from collector_business_france.job.models.specialization import Specialization
 
 
-def test_job_embed_displays_job_categories():
+def test_job_embed_displays_job_specializations():
     job = Job.model_construct(
         id=123,
         missionTitle="Software Engineer",
@@ -34,11 +34,11 @@ def test_job_embed_displays_job_categories():
         ],
     )
 
-    embed = JobEmbed(job).to_dict()
+    embed = {"fields": [field.model_dump() for field in display_fields(job)]}
 
     assert {
         "inline": True,
-        "name": ":label: Category(ies)",
+        "name": ":label: Specialization(s)",
         "value": "SYSTEMES ET LOGICIELS INFORMATIQUES, MARKETING - COMMUNICATION",
     } in embed["fields"]
     assert {
@@ -68,7 +68,7 @@ def test_job_embed_displays_external_application_link():
         contactURL=application_url,
     )
 
-    embed = JobEmbed(job).to_dict()
+    embed = {"fields": [field.model_dump() for field in display_fields(job)]}
 
     assert {
         "inline": True,

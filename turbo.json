@@ -1,0 +1,42 @@
+{
+  "$schema": "https://turborepo.dev/schema.json",
+  "ui": "stream",
+  "futureFlags": {
+    "experimentalPythonWorkspaces": true,
+    "experimentalTaskCommand": true
+  },
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "command": ["uv", "build", "--out-dir", "dist"],
+      "outputs": ["dist/**"]
+    },
+    "bovie-railway#build": {},
+    "lint": {},
+    "bovie-python#lint": {
+      "command": ["uv", "run", "--frozen", "ruff", "check", "apps", "packages", "tests", "scripts"]
+    },
+    "format": {
+      "cache": false
+    },
+    "bovie-python#format": {
+      "cache": false,
+      "command": ["uv", "run", "--frozen", "ruff", "format", "apps", "packages", "tests", "scripts"]
+    },
+    "format:check": {},
+    "bovie-python#format:check": {
+      "command": ["uv", "run", "--frozen", "ruff", "format", "--check", "apps", "packages", "tests", "scripts"]
+    },
+    "check": {},
+    "bovie-python#check": {
+      "command": ["uv", "run", "--frozen", "ty", "check"]
+    },
+    "test": {
+      "env": ["MYSQL_TEST_ADMIN_URL", "NATS_TEST_URL", "NATS_AUTH_TEST_URL"]
+    },
+    "bovie-python#verify:packages": {
+      "dependsOn": ["^build"],
+      "command": ["uv", "run", "--frozen", "python", "scripts/check_packages.py", "apps", "packages"]
+    }
+  }
+}

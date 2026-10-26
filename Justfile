@@ -1,63 +1,60 @@
 SHELL := "/bin/sh"
 
-TARGET := "bovie"
+PACKAGE := "collector_business_france"
 
-REPOSITORY := "reidaa"
-DOCKERFILE := "Dockerfile"
-DOCKERTAG := "latest"
-
-PACKAGE := "bovie"
+TURBO := "npx turbo run"
 
 i:
-	uv sync
+	uv sync --all-packages
+	npm install
 
 upgrade:
 	uv lock --upgrade
-	uv sync
+	uv sync --all-packages
 
 fmt:
-    uv run ruff format
-    uv run ruff check --fix --extend-select=I
+	{{TURBO}} format
 
 lint:
-	uv run ruff check src tests
-
-lint-fix:
-	uv run ruff check --fix src tests
+	{{TURBO}} lint format:check
 
 typecheck:
-	uv run ty check
+	{{TURBO}} check
 
 test:
-	uv run pytest
+	{{TURBO}} test
 
-cov:
-	uv run pytest --cov={{PACKAGE}} --cov-report=term-missing
-
-cov-html:
-	uv run pytest --cov={{PACKAGE}} --cov-report=html
-	xdg-open htmlcov/index.html || open htmlcov/index.html || true
-
-check: lint typecheck test
+check:
+	{{TURBO}} lint format:check check test
 
 clean:
 	find . -name "__pycache__" -type d -exec rm -rf {} +
 	find . -name "*.pyc" -delete
-	rm -rf .pytest_cache
-	rm -rf htmlcov
-	rm -rf dist build
+	rm -rf .pytest_cache .turbo dist build apps/*/dist packages/*/dist
 
 run:
-	uv run python -m {{PACKAGE}}.main
+	uv run --all-packages python -m {{PACKAGE}}.main
 
 run-help:
-	uv run python -m {{PACKAGE}}.main --help
+	uv run --all-packages python -m {{PACKAGE}}.main --help
 
 up:
-	docker compose up -d
+	docker compose up -d --wait mysql nats
+
+migrate store="collector-store":
+	uv run --all-packages {{store}}-migrate
+
+build:
+	{{TURBO}} build
+
+verify-packages:
+	{{TURBO}} verify:packages
+
+workers:
+	docker compose --profile workers up --build -d discord-intake discord-sender
 
 down:
 	docker compose down
 
 pre-commit:
-    uv run pre-commit run --all-files
+	uv run --all-packages pre-commit run --all-files

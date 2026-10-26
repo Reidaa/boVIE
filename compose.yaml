@@ -1,23 +1,160 @@
+x-app: &app
+  profiles: [workers]
+
 services:
-  postgres:
-    image: "postgres:17-alpine"
-    ports:
-      - "5432:5432"
+  mysql:
+    image: mysql:8.4
+    ports: ["127.0.0.1:3306:3306"]
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: database
-    # volumes:
-    #     - 'postgres:/var/lib/postgresql/data'
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-local-root-only}
+    volumes:
+      - mysql:/var/lib/mysql
+      - ./deploy/mysql-init.sql:/docker-entrypoint-initdb.d/01-domains.sql:ro
     healthcheck:
-      test:
-        - CMD
-        - pg_isready
-        - "-U"
-        - "postgres"
-      retries: 3
+      test: [CMD-SHELL, 'MYSQL_PWD="$$MYSQL_ROOT_PASSWORD" mysql -h 127.0.0.1 -u root -e "SELECT 1"']
+      interval: 5s
       timeout: 5s
+      retries: 30
+
+  nats:
+    image: nats:2.11-alpine
+    command: ["--config", "/etc/nats/nats.conf"]
+    ports: ["127.0.0.1:4222:4222"]
+    environment:
+      NATS_SETUP_PASSWORD: ${NATS_SETUP_PASSWORD:-local-nats-setup}
+      NATS_COLLECTOR_BUSINESS_FRANCE_PASSWORD: ${NATS_COLLECTOR_BUSINESS_FRANCE_PASSWORD:-local-nats-collector-business-france}
+      NATS_COLLECTOR_WTTJ_PASSWORD: ${NATS_COLLECTOR_WTTJ_PASSWORD:-local-nats-collector-wttj}
+      NATS_DISCORD_INTAKE_PASSWORD: ${NATS_DISCORD_INTAKE_PASSWORD:-local-nats-discord-intake}
+    volumes:
+      - nats:/data/jetstream
+      - ./deploy/nats.conf:/etc/nats/nats.conf:ro
+    healthcheck:
+      test: [CMD, wget, -q, -O, /dev/null, "http://127.0.0.1:8222/healthz?js-enabled-only=true"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  migrate-collector-business-france:
+    <<: *app
+    build:
+      context: .
+      dockerfile: apps/collector-business-france/Dockerfile
+    image: bovie-collector-business-france:local
+    command: [collector-store-migrate]
+    environment:
+      DATABASE_URL: mysql+pymysql://collector_business_france:local-collector-business-france-only@mysql/collector_business_france
+    depends_on:
+      mysql: {condition: service_healthy}
+
+  migrate-collector-wttj:
+    <<: *app
+    build:
+      context: .
+      dockerfile: apps/collector-wttj/Dockerfile
+    image: bovie-collector-wttj:local
+    command: [collector-store-migrate]
+    environment:
+      DATABASE_URL: mysql+pymysql://collector_wttj:local-collector-wttj-only@mysql/collector_wttj
+    depends_on:
+      mysql: {condition: service_healthy}
+
+  migrate-discord:
+    <<: *app
+    build:
+      context: .
+      dockerfile: apps/discord-intake/Dockerfile
+    image: bovie-discord-intake:local
+    command: [discord-store-migrate]
+    environment:
+      DATABASE_URL: mysql+pymysql://discord:local-discord-only@mysql/discord
+    depends_on:
+      mysql: {condition: service_healthy}
+
+  nats-setup:
+    <<: *app
+    build:
+      context: .
+      dockerfile: apps/nats-setup/Dockerfile
+    image: bovie-nats-setup:local
+    command: [nats-setup]
+    environment:
+      NATS_URL: nats://nats:4222
+      NATS_USER: nats-setup
+      NATS_PASSWORD: ${NATS_SETUP_PASSWORD:-local-nats-setup}
+    depends_on:
+      nats: {condition: service_healthy}
+
+  collector-business-france:
+    <<: *app
+    build:
+      context: .
+      dockerfile: apps/collector-business-france/Dockerfile
+    image: bovie-collector-business-france:local
+    command: [collector-business-france]
+    environment:
+      DATABASE_URL: mysql+pymysql://collector_business_france:local-collector-business-france-only@mysql/collector_business_france
+      BUSINESS_FRANCE_LIMIT: ${BUSINESS_FRANCE_LIMIT:-25}
+      BUSINESS_FRANCE_REGION: ${BUSINESS_FRANCE_REGION:-}
+      BUSINESS_FRANCE_COUNTRY: ${BUSINESS_FRANCE_COUNTRY:-}
+      BUSINESS_FRANCE_SPECIALIZATION: ${BUSINESS_FRANCE_SPECIALIZATION:-}
+      NATS_URL: nats://nats:4222
+      NATS_USER: collector-business-france
+      NATS_PASSWORD: ${NATS_COLLECTOR_BUSINESS_FRANCE_PASSWORD:-local-nats-collector-business-france}
+    depends_on:
+      migrate-collector-business-france: {condition: service_completed_successfully}
+      nats-setup: {condition: service_completed_successfully}
+
+  collector-wttj:
+    <<: *app
+    build:
+      context: .
+      dockerfile: apps/collector-wttj/Dockerfile
+    image: bovie-collector-wttj:local
+    command: [collector-wttj]
+    environment:
+      DATABASE_URL: mysql+pymysql://collector_wttj:local-collector-wttj-only@mysql/collector_wttj
+      WTTJ_QUERY: ${WTTJ_QUERY:-}
+      WTTJ_CONTRACTS: ${WTTJ_CONTRACTS:-}
+      WTTJ_LIMIT: ${WTTJ_LIMIT:-50}
+      WTTJ_MAX_PAGES: ${WTTJ_MAX_PAGES:-5}
+      NATS_URL: nats://nats:4222
+      NATS_USER: collector-wttj
+      NATS_PASSWORD: ${NATS_COLLECTOR_WTTJ_PASSWORD:-local-nats-collector-wttj}
+    depends_on:
+      migrate-collector-wttj: {condition: service_completed_successfully}
+      nats-setup: {condition: service_completed_successfully}
+
+  discord-intake:
+    <<: *app
+    build:
+      context: .
+      dockerfile: apps/discord-intake/Dockerfile
+    image: bovie-discord-intake:local
+    command: [discord-intake]
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: mysql+pymysql://discord:local-discord-only@mysql/discord
+      NATS_URL: nats://nats:4222
+      NATS_USER: discord-intake
+      NATS_PASSWORD: ${NATS_DISCORD_INTAKE_PASSWORD:-local-nats-discord-intake}
+    depends_on:
+      migrate-discord: {condition: service_completed_successfully}
+      nats-setup: {condition: service_completed_successfully}
+
+  discord-sender:
+    <<: *app
+    build:
+      context: .
+      dockerfile: apps/discord-sender/Dockerfile
+    image: bovie-discord-sender:local
+    command: [discord-sender]
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: mysql+pymysql://discord:local-discord-only@mysql/discord
+      DISCORD_WEBHOOK_URL: ${DISCORD_WEBHOOK_URL:-}
+    depends_on:
+      migrate-discord: {condition: service_completed_successfully}
 
 volumes:
-  postgres:
-    driver: local
+  mysql:
+  nats:

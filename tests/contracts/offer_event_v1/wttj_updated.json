@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "type": "updated",
+  "source": "wttj",
+  "source_offer_id": "WTTJ-ABC123",
+  "offer": {
+    "title": "Senior Backend Engineer",
+    "organization": "Example",
+    "country": "FR",
+    "city": "Paris",
+    "url": "https://www.welcometothejungle.com/fr/companies/example/jobs/backend-engineer",
+    "fields": [
+      {
+        "name": "Contrat",
+        "value": "full_time",
+        "inline": true
+      }
+    ]
+  },
+  "event_id": "6a67d980-e95e-5a10-bccb-1ccecf15292a",
+  "observed_at": "2026-10-18T22:16:00Z"
+}

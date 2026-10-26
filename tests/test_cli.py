@@ -1,0 +1,142 @@
+from pathlib import Path
+
+import pytest
+from click.testing import CliRunner
+from dotenv import dotenv_values
+
+
+class Publisher:
+    """Stands in for the broker connection the collectors open."""
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc_info):
+        pass
+
+    def publish(self, event):
+        raise AssertionError("CLI tests replace collection")
+
+
+def test_cli_loads_dotenv_before_resolving_options(tmp_path, monkeypatch):
+    from collector_business_france import main
+
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / ".env").write_text(
+        "BUSINESS_FRANCE_LIMIT=7\nDATABASE_URL=mysql+pymysql://u:p@localhost/source\n"
+    )
+    monkeypatch.delenv("BUSINESS_FRANCE_LIMIT", raising=False)
+    monkeypatch.delenv("DATABASE_URL", raising=False)
+    observed = []
+
+    class Engine:
+        def dispose(self):
+            pass
+
+    monkeypatch.setattr(main, "make_engine", lambda url: Engine())
+    monkeypatch.setattr(main, "Publisher", Publisher)
+    monkeypatch.setattr(
+        main, "task", lambda params, engine, publish: observed.append(params.limit)
+    )
+    result = CliRunner().invoke(main.cli)
+    assert result.exit_code == 0, result.output
+    assert observed == [7]
+
+
+def test_example_environment_is_accepted(monkeypatch):
+    from collector_business_france import main
+
+    values = dotenv_values(Path(__file__).parents[1] / ".env.example")
+    for name, value in values.items():
+        if value is not None:
+            monkeypatch.setenv(name, value)
+
+    class Engine:
+        def dispose(self):
+            pass
+
+    observed = []
+    monkeypatch.setattr(main, "make_engine", lambda url: Engine())
+    monkeypatch.setattr(main, "Publisher", Publisher)
+    monkeypatch.setattr(
+        main, "task", lambda params, engine, publish: observed.append(params)
+    )
+    result = CliRunner().invoke(main.cli)
+    assert result.exit_code == 0, result.output
+    assert observed[0].limit == 25
+    assert observed[0].countriesIds
+
+
+def test_wttj_cli_defaults_and_optional_contract_filters(tmp_path, monkeypatch):
+    from collector_wttj import main
+
+    monkeypatch.chdir(tmp_path)
+    for name in ("WTTJ_QUERY", "WTTJ_CONTRACTS", "WTTJ_LIMIT", "WTTJ_MAX_PAGES"):
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setenv("DATABASE_URL", "mysql+pymysql://u:p@localhost/source")
+    observed = []
+
+    class Engine:
+        def dispose(self):
+            pass
+
+    monkeypatch.setattr(main, "make_engine", lambda url: Engine())
+    monkeypatch.setattr(main, "Publisher", Publisher)
+    monkeypatch.setattr(
+        main,
+        "collect",
+        lambda engine, client, publish, **kwargs: observed.append(kwargs),
+    )
+    result = CliRunner().invoke(main.main)
+    assert result.exit_code == 0, result.output
+    assert observed[-1]["query"] == ""
+    assert observed[-1]["contracts"] == ()
+    (tmp_path / ".env").write_text(
+        "WTTJ_QUERY=engineer\nWTTJ_CONTRACTS=full_time internship\n"
+    )
+    result = CliRunner().invoke(main.main)
+    assert result.exit_code == 0, result.output
+    assert observed[-1]["query"] == "engineer"
+    assert observed[-1]["contracts"] == ("full_time", "internship")
+    result = CliRunner().invoke(
+        main.main, ["--contract", "FREELANCE", "--country", "ca"]
+    )
+    assert result.exit_code == 0, result.output
+    assert observed[-1]["contracts"] == ("freelance",)
+    assert observed[-1]["countries"] == ("CA",)
+
+
+def test_business_france_failure_is_logged_on_stderr(monkeypatch):
+    from collector_business_france import main
+
+    monkeypatch.setenv("DATABASE_URL", "mysql+pymysql://u:p@localhost/source")
+
+    class Engine:
+        def dispose(self):
+            pass
+
+    def fail(params, engine, publish):
+        raise RuntimeError("source down")
+
+    monkeypatch.setattr(main, "make_engine", lambda url: Engine())
+    monkeypatch.setattr(main, "Publisher", Publisher)
+    monkeypatch.setattr(main, "task", fail)
+    result = CliRunner().invoke(main.cli)
+    assert result.exit_code != 0
+    # Railway marks stderr lines as errors, so only the failure belongs there.
+    assert "| INFO     |" in result.stdout and "Starting" in result.stdout
+    assert "| ERROR    |" in result.stderr and "source down" in result.stderr
+    assert "| ERROR    |" not in result.stdout
+
+
+def test_sender_without_webhook_turns_delivery_off(tmp_path, monkeypatch):
+    # Railway does not copy the sealed webhook into PR environments.
+    from discord_sender import main
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delenv("DISCORD_WEBHOOK_URL", raising=False)
+    monkeypatch.setattr(main, "make_engine", lambda url: pytest.fail("no delivery"))
+    result = CliRunner().invoke(main.main)
+
+    assert result.exit_code == 0
+    assert "Discord delivery is off" in result.stdout
