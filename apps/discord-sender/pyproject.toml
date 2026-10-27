@@ -7,7 +7,7 @@ dependencies = [
     "click>=8.1.8",
     "loguru>=0.7.3",
     "httpx>=0.28.1",
-    "sqlalchemy>=2.0,<2.1",
+    "sqlalchemy>=2.1,<2.2",
     "bovie-offer-events",
     "bovie-mysql-common",
     "bovie-discord-store",
@@ -21,5 +21,5 @@ discord-sender = "discord_sender.main:main"
 module-name = "discord_sender"
 
 [build-system]
-requires = ["uv_build>=0.9.13,<0.10.0"]
+requires = ["uv_build>=0.13.6,<0.14.0"]
 build-backend = "uv_build"
