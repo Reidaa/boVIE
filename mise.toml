@@ -1,5 +1,4 @@
 # Tool versions for local development and CI. Run `mise install` to get them.
-# Exact versions keep CI reproducible; Renovate updates them.
 [tools]
 python = "3.15"
 uv = "0.13"
