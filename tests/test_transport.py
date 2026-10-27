@@ -162,7 +162,8 @@ def test_rate_limited_delivery_waits_for_discord(discord_db, monkeypatch):
         assert row.available_at >= datetime.now(UTC) + timedelta(seconds=5)
 
 
-def test_rejected_delivery_logs_the_status_without_the_webhook(discord_db):
+@pytest.mark.parametrize("status", [400, 302])
+def test_rejected_delivery_logs_the_status_without_the_webhook(discord_db, status):
     # Exception messages contain the webhook URL, so failures log only the status.
     from discord_sender.delivery import deliver_one
     from discord_store import accept
@@ -173,11 +174,11 @@ def test_rejected_delivery_logs_the_status_without_the_webhook(discord_db):
     sink = logger.add(messages.append, level="WARNING")
     try:
         with httpx.Client(
-            transport=httpx.MockTransport(lambda request: httpx.Response(400))
+            transport=httpx.MockTransport(lambda request: httpx.Response(status))
         ) as client:
             with pytest.raises(httpx.HTTPStatusError):
                 deliver_one(discord_db, client, "https://discord.invalid/webhook")
     finally:
         logger.remove(sink)
-    assert any("HTTP 400" in message for message in messages)
+    assert any(f"HTTP {status}" in message for message in messages)
     assert not any("discord.invalid" in message for message in messages)

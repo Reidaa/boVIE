@@ -65,7 +65,7 @@ def deliver_one(engine: Engine, client: httpx.Client, webhook: str) -> bool:
         logger.warning("Discord answered HTTP 429; waiting {} s", wait)
         time.sleep(wait)
         return True
-    if response.is_error:
+    if not response.is_success:
         # Log only the status: the exception message contains the webhook URL.
         logger.warning("Discord answered HTTP {}", response.status_code)
         retry_later(engine, Delivery, work)
