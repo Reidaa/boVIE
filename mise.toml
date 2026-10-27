@@ -1,5 +1,6 @@
+# Tool versions for local development and CI. Run `mise install` to get them.
 [tools]
 python = "3.15"
 uv = "0.13"
-node = "24"
-just = "latest"
+node = "26"
+just = "1.59.0"
