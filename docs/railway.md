@@ -10,20 +10,20 @@ It gets fresh databases and its own broker. It does not post to Discord: Railway
 the sealed `DISCORD_WEBHOOK_URL`, so `discord-sender` logs a warning and exits.
 
 Install Node.js 22.18 or later and Python 3.15 or later for local development.
-The Railway tooling is the `bovie-railway` npm workspace in `.railway/`.
-It shares the root `package-lock.json`. Application images contain Python packages only.
+The Railway tooling is the `bovie-railway` pnpm workspace in `.railway/`.
+It shares the root `pnpm-lock.yaml`. Application images contain Python packages only.
 
 ```sh
-npm ci
-npx railway login
-npx railway link --project boVIE
-npx turbo run lint format:check check test --filter=bovie-railway
-npm run railway:plan
-npm run railway:apply
+pnpm install
+pnpm railway login
+pnpm railway link --project boVIE
+pnpm exec turbo run lint format:check check test --filter=bovie-railway
+pnpm railway:plan
+pnpm railway:apply
 ```
 
 The Turborepo tasks run Oxlint, Oxfmt, TypeScript, and the Railway configuration tests.
-Run `npx turbo run format --filter=bovie-railway` to format the TypeScript files.
+Run `pnpm exec turbo run format --filter=bovie-railway` to format the TypeScript files.
 
 `railway:plan` links the directory to production and saves the change set
 to `railway-plan.json` at the repository root.
@@ -56,7 +56,7 @@ All services run in `europe-west4-drams3a`.
 The plan script generates missing NATS passwords with Node.js cryptographic randomness.
 It passes new values to the configuration through the local process environment.
 Existing values, including sealed variables, are preserved on later applies.
-Create a new environment with the npm scripts so NATS credentials are initialized.
+Create a new environment with the pnpm scripts so NATS credentials are initialized.
 For a new environment, set `DISCORD_WEBHOOK_URL` in the shell that runs `railway:plan`.
 The configuration stores it as a sealed variable. Keep the value out of this repository.
 Railway provisions MySQL connection variables. Each worker references only its database's `MYSQL_URL`.
@@ -87,17 +87,17 @@ Change the configuration through a pull request to `main`:
 3. The `Railway apply` workflow applies that saved plan.
 
 The apply fails if production or `.railway/` changed after the plan. Push a new commit to plan again.
-The workflow refuses deletions. To delete a resource, run `npm run railway:plan` and
-`npm run railway:apply` locally. Then rerun the `Railway plan` workflow, check that it shows
+The workflow refuses deletions. To delete a resource, run `pnpm railway:plan` and
+`pnpm railway:apply` locally. Then rerun the `Railway plan` workflow, check that it shows
 no changes, and merge.
 A failed workflow on `main` also blocks that commit's deployment.
 The workflows read the `RAILWAY_TOKEN` repository secret, a project token for production.
 
 ```sh
-npx railway status
-npx railway logs --service collector-business-france --lines 50
-npx railway logs --service discord-intake --lines 50
-npm run railway:plan
+pnpm railway status
+pnpm railway logs --service collector-business-france --lines 50
+pnpm railway logs --service discord-intake --lines 50
+pnpm railway:plan
 ```
 
 Collectors and broker setup finish after successful runs. That exit is expected.

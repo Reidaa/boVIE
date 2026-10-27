@@ -2,11 +2,11 @@ SHELL := "/bin/sh"
 
 PACKAGE := "collector_business_france"
 
-TURBO := "npx turbo run"
+TURBO := "pnpm exec turbo run"
 
 i:
 	uv sync --all-packages
-	npm install
+	pnpm install
 
 upgrade:
 	uv lock --upgrade
