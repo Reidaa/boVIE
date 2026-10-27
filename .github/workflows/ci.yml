@@ -91,13 +91,17 @@ jobs:
           restore-keys: |
             uv-${{ runner.os }}-
 
-      - name: Cache npm
+      - name: Find pnpm store
+        id: pnpm-store
+        run: echo "path=$(pnpm store path)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache pnpm
         uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
         with:
-          path: ~/.npm
-          key: npm-${{ runner.os }}-${{ hashFiles('mise.toml', 'package-lock.json') }}
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: pnpm-${{ runner.os }}-${{ hashFiles('mise.toml', 'pnpm-lock.yaml') }}
           restore-keys: |
-            npm-${{ runner.os }}-
+            pnpm-${{ runner.os }}-
 
       - name: Cache Turborepo
         uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
@@ -109,7 +113,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          npm ci
+          pnpm install --frozen-lockfile
           uv sync --all-packages
 
       - name: Start test brokers
@@ -120,7 +124,7 @@ jobs:
           docker start bovie-test-nats-auth
 
       - name: Lint, typecheck, test, and verify built artifacts
-        run: npx turbo run lint format:check check test verify:packages
+        run: pnpm exec turbo run lint format:check check test verify:packages
 
   images:
     name: Build ${{ matrix.dockerfile }}

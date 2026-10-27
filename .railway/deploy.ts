@@ -3,13 +3,12 @@ import { existsSync, rmSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { credentials, missingCredentials } from "./secrets.ts";
 
-// npm workspaces hoist the CLI to the repository root unless a version conflict keeps it local.
+// pnpm links the CLI into this package's own node_modules/.bin.
 const cli = (() => {
-  const found = ["node_modules/.bin/railway", "../node_modules/.bin/railway"]
-    .map((path) => fileURLToPath(new URL(path, import.meta.url)))
-    .find((path) => existsSync(path));
-  if (!found) throw new Error("Railway CLI not found. Run npm ci at the repository root.");
-  return found;
+  const path = fileURLToPath(new URL("node_modules/.bin/railway", import.meta.url));
+  if (!existsSync(path))
+    throw new Error("Railway CLI not found. Run pnpm install at the repository root.");
+  return path;
 })();
 // The CLI pins `.railway/` relative to its working directory, so every call runs from the root.
 const root = fileURLToPath(new URL("..", import.meta.url));

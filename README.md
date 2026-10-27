@@ -6,14 +6,14 @@ types by default. Python 3.15+, SQLAlchemy 2, MySQL 8.4, and NATS JetStream are 
 
 This repository is a [Turborepo](https://turborepo.dev) monorepo. Python code is a
 [uv workspace](https://docs.astral.sh/uv/concepts/projects/workspaces/) that Turborepo
-reads natively (experimental `experimentalPythonWorkspaces`); TypeScript tooling is an
-npm workspace. Both share one task graph and cache.
+reads natively (experimental `experimentalPythonWorkspaces`); TypeScript tooling is a
+pnpm workspace. Both share one task graph and cache.
 
 | Directory | Contents | Toolchain |
 | --- | --- | --- |
 | `apps/` | Deployable services, one package and Docker target each | uv |
 | `packages/` | Shared Python libraries | uv |
-| `.railway/` | Railway infrastructure as code | npm, TypeScript |
+| `.railway/` | Railway infrastructure as code | pnpm, TypeScript |
 | `deploy/` | Broker and database configuration used by Compose and Railway | — |
 | `tests/` | Cross-package Python test suite | pytest |
 
@@ -21,7 +21,7 @@ Each deployable service has its own package, dependencies, command, and Docker t
 An app's directory, command, Docker target, Compose and Railway service, and NATS
 account share one name. Its database uses the same name with underscores.
 The root contains development tools and one lockfile per toolchain (`uv.lock`,
-`package-lock.json`). Services do not import other services. Tests enforce declared
+`pnpm-lock.yaml`). Services do not import other services. Tests enforce declared
 imports and install each service independently.
 
 | App in `apps/` | Responsibility | Database | NATS access |
@@ -56,11 +56,11 @@ sources and consumers.
 
 ## Local setup
 
-Install Python 3.15+, uv, and Node.js 22.18+ (`mise install` provides all of them).
+Install Python 3.15+, uv, Node.js 22.18+, and pnpm (`mise install` provides all of them).
 
 ```sh
 uv sync --all-packages
-npm ci
+pnpm install
 cp .env.example .env
 docker compose up -d --wait mysql nats
 docker compose --profile workers build
@@ -228,7 +228,7 @@ root as context, for example `docker build -f apps/collector-wttj/Dockerfile -t 
 Each final image contains only that service and its installed dependencies.
 
 ```sh
-npx turbo run lint format:check check test verify:packages
+pnpm exec turbo run lint format:check check test verify:packages
 ```
 
 | Task | Python (`bovie-python` root and members) | TypeScript (`bovie-railway`) |
@@ -240,7 +240,7 @@ npx turbo run lint format:check check test verify:packages
 | `build` | `uv build` into each member's `dist/` | — |
 | `verify:packages` | Installs each app's wheel alone with `scripts/check_packages.py` | — |
 
-Use `--filter`, for example `npx turbo run build --filter=bovie-collector-wttj`, to run one package
+Use `--filter`, for example `pnpm exec turbo run build --filter=bovie-collector-wttj`, to run one package
 and its dependencies. The `Justfile` recipes call the same tasks.
 
 To include integration tests, point these **test-only** variables at disposable
@@ -249,7 +249,7 @@ the NATS test creates and deletes its test stream. Never point them at productio
 
 ```sh
 MYSQL_TEST_ADMIN_URL='mysql+pymysql://root:test-password@127.0.0.1:33077/mysql' \
-NATS_TEST_URL='nats://127.0.0.1:42277' npx turbo run test
+NATS_TEST_URL='nats://127.0.0.1:42277' pnpm exec turbo run test
 ```
 
 Without these variables, integration tests report skips. CI supplies real
