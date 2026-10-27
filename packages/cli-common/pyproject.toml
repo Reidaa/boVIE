@@ -13,5 +13,5 @@ dependencies = [
 module-name = "cli_common"
 
 [build-system]
-requires = ["uv_build>=0.9.13,<0.10.0"]
+requires = ["uv_build>=0.13.6,<0.14.0"]
 build-backend = "uv_build"
