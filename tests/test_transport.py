@@ -129,3 +129,56 @@ def test_lost_lease_after_sending_is_logged(discord_db, monkeypatch):
     finally:
         logger.remove(sink)
     assert any("lease" in message for message in messages)
+
+
+def test_rate_limited_delivery_waits_for_discord(discord_db, monkeypatch):
+    # Discord answers 429 with Retry-After; sending sooner only extends the limit.
+    from discord_sender import delivery
+    from discord_store import Delivery, accept
+    from loguru import logger
+
+    discovered = event()
+    accept(discord_db, discovered)
+    waits = []
+    monkeypatch.setattr(delivery.time, "sleep", waits.append)
+    messages = []
+    sink = logger.add(messages.append, level="WARNING")
+    try:
+        with httpx.Client(
+            transport=httpx.MockTransport(
+                lambda request: httpx.Response(429, headers={"Retry-After": "7"})
+            )
+        ) as client:
+            assert delivery.deliver_one(
+                discord_db, client, "https://discord.invalid/webhook"
+            )
+    finally:
+        logger.remove(sink)
+    assert waits == [7.0]
+    assert any("429" in message for message in messages)
+    with Session(discord_db) as session:
+        row = session.get(Delivery, str(discovered.event_id))
+        assert row is not None and row.completed_at is None
+        assert row.available_at >= datetime.now(UTC) + timedelta(seconds=5)
+
+
+@pytest.mark.parametrize("status", [400, 302])
+def test_rejected_delivery_logs_the_status_without_the_webhook(discord_db, status):
+    # Exception messages contain the webhook URL, so failures log only the status.
+    from discord_sender.delivery import deliver_one
+    from discord_store import accept
+    from loguru import logger
+
+    accept(discord_db, event())
+    messages = []
+    sink = logger.add(messages.append, level="WARNING")
+    try:
+        with httpx.Client(
+            transport=httpx.MockTransport(lambda request: httpx.Response(status))
+        ) as client:
+            with pytest.raises(httpx.HTTPStatusError):
+                deliver_one(discord_db, client, "https://discord.invalid/webhook")
+    finally:
+        logger.remove(sink)
+    assert any(f"HTTP {status}" in message for message in messages)
+    assert not any("discord.invalid" in message for message in messages)
