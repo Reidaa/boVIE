@@ -7,7 +7,8 @@ on:
     branches: [main]
 
 env:
-  PYTHON_VERSION: "3.15"
+  # uv must use the Python that mise installed, not download its own.
+  UV_PYTHON_DOWNLOADS: never
   PRE_COMMIT_HOME: ${{ github.workspace }}/.cache/pre-commit
 
 jobs:
@@ -20,17 +21,18 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
+      - name: Install tools from mise.toml
+        uses: jdx/mise-action@82a612c5ab8bcda7cc5db6b7e81a8e7584c3dc6e # v5.2.3
         with:
-          version: latest
-          enable-cache: true
-          cache-dependency-glob: "uv.lock"
+          version: 2026.10.20
 
-      - name: Install Python
-        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+      - name: Cache uv
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
+          path: ~/.cache/uv
+          key: uv-${{ runner.os }}-${{ hashFiles('mise.toml', 'uv.lock') }}
+          restore-keys: |
+            uv-${{ runner.os }}-
 
       - name: Install dependencies
         run: uv sync --all-packages
@@ -45,9 +47,9 @@ jobs:
         uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
         with:
           path: ${{ env.PRE_COMMIT_HOME }}
-          key: pre-commit-${{ runner.os }}-py${{ env.PYTHON_VERSION }}-${{ hashFiles('.pre-commit-config.yaml') }}
+          key: pre-commit-${{ runner.os }}-${{ hashFiles('mise.toml', '.pre-commit-config.yaml') }}
           restore-keys: |
-            pre-commit-${{ runner.os }}-py${{ env.PYTHON_VERSION }}-
+            pre-commit-${{ runner.os }}-
 
       - name: Run pre-commit
         run: uv run --all-packages pre-commit run --all-files --show-diff-on-failure
@@ -76,24 +78,26 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
-      - name: Install uv with caching
-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
+      - name: Install tools from mise.toml
+        uses: jdx/mise-action@82a612c5ab8bcda7cc5db6b7e81a8e7584c3dc6e # v5.2.3
         with:
-          version: "latest"
-          enable-cache: true
-          cache-dependency-glob: "uv.lock"
+          version: 2026.10.20
 
-      - name: Set up Python
-        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+      - name: Cache uv
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
+          path: ~/.cache/uv
+          key: uv-${{ runner.os }}-${{ hashFiles('mise.toml', 'uv.lock') }}
+          restore-keys: |
+            uv-${{ runner.os }}-
 
-      - name: Set up Node
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+      - name: Cache npm
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
         with:
-          node-version: "24"
-          cache: npm
-          cache-dependency-path: package-lock.json
+          path: ~/.npm
+          key: npm-${{ runner.os }}-${{ hashFiles('mise.toml', 'package-lock.json') }}
+          restore-keys: |
+            npm-${{ runner.os }}-
 
       - name: Cache Turborepo
         uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
