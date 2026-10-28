@@ -7,6 +7,7 @@ members = [
     "bovie-cli-common",
     "bovie-collector-business-france",
     "bovie-collector-store",
+    "bovie-collector-workday",
     "bovie-collector-wttj",
     "bovie-discord-intake",
     "bovie-discord-sender",
@@ -119,6 +120,37 @@ requires-dist = [
     { name = "bovie-mysql-common", editable = "packages/mysql-common" },
     { name = "bovie-offer-events", editable = "packages/offer-events" },
     { name = "click", specifier = ">=8.1.8" },
+    { name = "sqlalchemy", specifier = ">=2.1,<2.2" },
+]
+
+[[package]]
+name = "bovie-collector-workday"
+version = "0.4.0"
+source = { editable = "apps/collector-workday" }
+dependencies = [
+    { name = "bovie-cli-common" },
+    { name = "bovie-collector-store" },
+    { name = "bovie-mysql-common" },
+    { name = "bovie-nats-client" },
+    { name = "bovie-offer-events" },
+    { name = "click" },
+    { name = "httpx" },
+    { name = "loguru" },
+    { name = "pydantic" },
+    { name = "sqlalchemy" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "bovie-cli-common", editable = "packages/cli-common" },
+    { name = "bovie-collector-store", editable = "packages/collector-store" },
+    { name = "bovie-mysql-common", editable = "packages/mysql-common" },
+    { name = "bovie-nats-client", editable = "packages/nats-client" },
+    { name = "bovie-offer-events", editable = "packages/offer-events" },
+    { name = "click", specifier = ">=8.1.8" },
+    { name = "httpx", specifier = ">=0.28.1" },
+    { name = "loguru", specifier = ">=0.7.3" },
+    { name = "pydantic", specifier = ">=2.11.3" },
     { name = "sqlalchemy", specifier = ">=2.1,<2.2" },
 ]
 
