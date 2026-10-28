@@ -69,8 +69,8 @@ Bad:
 - Three new deployables on Railway (`catalog-intake`, `catalog-api` and the webapp) and one
   new database (`mysql-catalog`).
 - The repository gets its first Node service. CI must build and test it.
-- Few offers close until collectors publish `closed`. The list defaults to offers first seen in
-  the last 30 days.
+- Few offers close until collectors publish `closed` (issue #62). The list defaults to offers
+  first seen in the last 30 days.
 - A contract filter waits for a structured field in `OfferEvent`.
 
 ## Compliance
