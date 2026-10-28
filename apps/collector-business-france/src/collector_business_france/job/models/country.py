@@ -1,5 +1,4 @@
 import json
-from typing import List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -1447,7 +1446,7 @@ COUNTRIES_DATA_JSON = """
 ]
 """.replace("//", "#")
 
-COUNTRIES: List[Country] = [Country(**item) for item in json.loads(COUNTRIES_DATA_JSON)]
+COUNTRIES: list[Country] = [Country(**item) for item in json.loads(COUNTRIES_DATA_JSON)]
 
 
 def get_countries_id_by_geographic_zone(zone_id: int | str) -> list[str]:
@@ -1468,7 +1467,7 @@ def get_country_ids() -> list[str]:
     return [c.country_id for c in COUNTRIES]
 
 
-def get_country_code_from_name(country_name: str) -> Optional[str]:
+def get_country_code_from_name(country_name: str) -> str | None:
     """Return the country code for a given country name (case insensitive)."""
     name_lower = country_name.lower()
     for country in COUNTRIES:

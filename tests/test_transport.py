@@ -81,7 +81,9 @@ def test_failed_message_is_retained_with_backoff():
         subject = "offers.wttj.v1"
         data = b'{"version": 1}'
         metadata = SimpleNamespace(num_delivered=3, sequence=SimpleNamespace(stream=42))
-        delays = []
+
+        def __init__(self):
+            self.delays = []
 
         async def nak(self, delay=None):
             self.delays.append(delay)
@@ -173,11 +175,13 @@ def test_rejected_delivery_logs_the_status_without_the_webhook(discord_db, statu
     messages = []
     sink = logger.add(messages.append, level="WARNING")
     try:
-        with httpx.Client(
-            transport=httpx.MockTransport(lambda request: httpx.Response(status))
-        ) as client:
-            with pytest.raises(httpx.HTTPStatusError):
-                deliver_one(discord_db, client, "https://discord.invalid/webhook")
+        with (
+            httpx.Client(
+                transport=httpx.MockTransport(lambda request: httpx.Response(status))
+            ) as client,
+            pytest.raises(httpx.HTTPStatusError),
+        ):
+            deliver_one(discord_db, client, "https://discord.invalid/webhook")
     finally:
         logger.remove(sink)
     assert any(f"HTTP {status}" in message for message in messages)

@@ -113,11 +113,13 @@ def test_wttj_failed_detail_does_not_commit_page(collector_db):
             return httpx.Response(503)
         return httpx.Response(200, json=detail("first"))
 
-    with httpx.Client(
-        base_url="https://example.invalid", transport=httpx.MockTransport(handler)
-    ) as client:
-        with pytest.raises(httpx.HTTPStatusError):
-            collect(collector_db, client, published.append)
+    with (
+        httpx.Client(
+            base_url="https://example.invalid", transport=httpx.MockTransport(handler)
+        ) as client,
+        pytest.raises(httpx.HTTPStatusError),
+    ):
+        collect(collector_db, client, published.append)
     assert published == []
     with collector_db.connect() as conn:
         assert conn.scalar(select(func.count()).select_from(Offer)) == 0
@@ -290,8 +292,10 @@ def test_wttj_run_without_results_fails(collector_db):
             200, json={"data": [], "metadata": {"page": 1, "page_count": 1}}
         )
 
-    with httpx.Client(
-        base_url="https://example.invalid", transport=httpx.MockTransport(handler)
-    ) as client:
-        with pytest.raises(SourceSilent):
-            collect(collector_db, client, lambda event: None)
+    with (
+        httpx.Client(
+            base_url="https://example.invalid", transport=httpx.MockTransport(handler)
+        ) as client,
+        pytest.raises(SourceSilent),
+    ):
+        collect(collector_db, client, lambda event: None)

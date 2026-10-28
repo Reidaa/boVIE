@@ -1,5 +1,4 @@
 import json
-from typing import List
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -66,12 +65,12 @@ GEO_DATA_JSON = """
 }
 """
 
-ZONES: List[GeographicZone] = [
+ZONES: list[GeographicZone] = [
     GeographicZone(**item) for item in json.loads(GEO_DATA_JSON)["result"]
 ]
 
 
-def get_zone_names() -> List[str]:
+def get_zone_names() -> list[str]:
     """Return the list of geographic zone names."""
     return [zone.name.lower() for zone in ZONES]
 

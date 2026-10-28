@@ -33,7 +33,7 @@ def main(once: bool):
                     processed = await asyncio.to_thread(
                         deliver_one, engine, client, webhook
                     )
-                except Exception as error:
+                except Exception as error:  # noqa: BLE001 - logged; work stays pending
                     log_failure(error, "Discord delivery")
                     if once:
                         raise click.ClickException(
