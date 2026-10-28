@@ -1,5 +1,6 @@
 import hashlib
 import json
+import re
 from collections.abc import Callable
 from urllib.parse import quote
 
@@ -18,9 +19,30 @@ from sqlalchemy.engine import Engine
 from collector_wttj.core.search import DetailResponse, JobDetail, SearchResponse
 
 API_URL = "https://api.welcometothejungle.com"
+PLACEHOLDER_TITLE = re.compile(r"\$\d+")
 
 
-def normalize(job: JobDetail) -> OfferEvent:
+def job_title(job: JobDetail) -> str | None:
+    """Return the offer title, or None when WTTJ gives no usable title.
+
+    WTTJ sometimes returns a "$1" placeholder as the name. The slug then still
+    holds the title before the first "_", e.g. "network-security-specialist_milan_ND_wZVZKeo".
+    """
+    title = job.name.strip()
+    if not PLACEHOLDER_TITLE.fullmatch(title):
+        return title[:256]
+    title = job.slug.split("_", 1)[0].replace("-", " ").strip()
+    if not title:
+        return None
+    logger.warning(
+        "WTTJ offer {} has placeholder title {!r}; using its slug",
+        job.wttj_reference,
+        job.name,
+    )
+    return (title[0].upper() + title[1:])[:256]
+
+
+def normalize(job: JobDetail, title: str) -> OfferEvent:
     fields = [
         DisplayField(name="Entreprise", value=job.organization.name[:1024]),
         DisplayField(
@@ -53,7 +75,7 @@ def normalize(job: JobDetail) -> OfferEvent:
         source="wttj",
         source_offer_id=job.wttj_reference,
         offer=OfferDetails(
-            title=job.name.strip()[:256],
+            title=title,
             organization=job.organization.name,
             country=office.country_code if office else "N/A",
             city=office.city if office else "N/A",
@@ -119,7 +141,13 @@ def collect(
                 office.country_code in countries for office in job.offices
             ):
                 continue
-            events.append(normalize(job))
+            title = job_title(job)
+            if title is None:
+                logger.warning(
+                    "WTTJ offer {} has no usable title; skipping it", hit.reference
+                )
+                continue
+            events.append(normalize(job, title))
         # Publish before recording: an unrecorded offer is published again next run.
         for event in events:
             publish(event)

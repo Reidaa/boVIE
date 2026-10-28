@@ -299,3 +299,38 @@ def test_wttj_run_without_results_fails(collector_db):
         pytest.raises(SourceSilent),
     ):
         collect(collector_db, client, lambda event: None)
+
+
+def test_placeholder_title_is_derived_from_slug_or_skipped(monkeypatch):
+    import collector_wttj.main as worker
+
+    recorded = []
+    monkeypatch.setattr(worker, "seen", lambda engine, identity: False)
+    monkeypatch.setattr(worker, "record_page", lambda *args: None)
+    monkeypatch.setattr(worker, "require_recent_results", lambda *args: None)
+
+    def handler(request):
+        if request.url.path.endswith("/public/jobs"):
+            return httpx.Response(
+                200,
+                json={
+                    "data": [hit("derived"), hit("unusable")],
+                    "metadata": {"page": 1, "page_count": 1},
+                },
+            )
+        identity = request.url.path.rsplit("/", 1)[-1]
+        job = detail(identity)
+        job["job"]["name"] = " $1 "
+        job["job"]["slug"] = (
+            "network-security-implementation-specialist_milan_ND_wZVZKeo"
+            if identity == "derived"
+            else "_milan_ND_wZVZKeo"
+        )
+        return httpx.Response(200, json=job)
+
+    with httpx.Client(
+        base_url="https://example.invalid", transport=httpx.MockTransport(handler)
+    ) as client:
+        worker.collect(Mock(spec=Engine), client, recorded.append)
+    assert [event.source_offer_id for event in recorded] == ["derived"]
+    assert recorded[0].offer.title == "Network security implementation specialist"
