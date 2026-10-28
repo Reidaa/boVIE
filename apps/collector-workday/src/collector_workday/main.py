@@ -4,7 +4,6 @@ import hashlib
 import json
 import time
 from collections.abc import Callable, Sequence
-from importlib.resources import files
 
 import click
 import httpx
@@ -15,7 +14,7 @@ from mysql_common import make_engine
 from mysql_common.env import load_env
 from nats_client import Publisher
 from offer_events import DisplayField, OfferDetails, OfferEvent
-from pydantic import HttpUrl, TypeAdapter, ValidationError
+from pydantic import HttpUrl, TypeAdapter
 from sqlalchemy.engine import Engine
 
 from collector_workday.api import Board, DetailResponse, JobDetail, SearchResponse
@@ -29,10 +28,11 @@ class CollectionFailed(RuntimeError):
 
 
 def load_boards(text: str) -> list[Board]:
-    """Parse a JSON list of boards; empty text selects the bundled boards.json."""
-    if not text.strip():
-        text = (files("collector_workday") / "boards.json").read_text()
-    return TypeAdapter(list[Board]).validate_json(text)
+    """Parse the JSON list of boards from WORKDAY_BOARDS; it must not be empty."""
+    boards = TypeAdapter(list[Board]).validate_json(text) if text.strip() else []
+    if not boards:
+        raise ValueError("WORKDAY_BOARDS must be a JSON list of at least one board")
+    return boards
 
 
 def normalize(board: Board, external_path: str, job: JobDetail) -> OfferEvent:
@@ -177,7 +177,7 @@ def collect(
     "boards_json",
     default="",
     envvar="WORKDAY_BOARDS",
-    help="JSON list of boards; empty uses the bundled boards.json.",
+    help="Required JSON list of boards to collect.",
 )
 @click.option(
     "--limit",
@@ -189,9 +189,10 @@ def collect(
 def main(boards_json: str, limit: int):
     """Discover new jobs on the configured Workday career sites."""
     configure_logging()
+    # Fail on configuration before connecting to MySQL or NATS.
     try:
         boards = load_boards(boards_json)
-    except ValidationError as error:
+    except ValueError as error:
         raise click.BadParameter(str(error), param_hint="WORKDAY_BOARDS") from error
     engine = make_engine(load_env().database_url)
     try:

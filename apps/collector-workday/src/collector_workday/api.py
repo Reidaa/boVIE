@@ -13,7 +13,7 @@ class WorkdayModel(BaseModel):
 
 
 class Board(WorkdayModel):
-    """One company career site, e.g. https://sanofi.wd3.myworkdayjobs.com/SanofiCareers.
+    """One company career site, e.g. https://example.wd1.myworkdayjobs.com/Careers.
 
     `search_text` and `applied_facets` are sent unchanged in the job list request;
     empty values collect every job on the board.

@@ -125,10 +125,10 @@ The collector searches the public v3 API, follows its pages, and fetches job det
 WTTJ public search is not a complete feed of every job. Query and page limits still
 bound each run, even without contract restrictions. See the [request contract](docs/wttj-api.md).
 
-Workday reads its boards from `WORKDAY_BOARDS`, a JSON list. When it is empty, the
-collector uses the bundled
-[`boards.json`](apps/collector-workday/src/collector_workday/boards.json). To add a
-board, add its public career site URL and company name. `searchText` and
+Workday reads its boards from `WORKDAY_BOARDS`, a JSON list. The variable is required:
+the collector exits before it connects to MySQL or NATS when it is missing or empty.
+In production, it is set on the Railway `collector-workday` service. Each board has its
+public career site URL and company name. `searchText` and
 `appliedFacets` are optional and go unchanged into Workday's job list request.
 Empty values collect every job. `WORKDAY_LIMIT` (default 40) bounds the postings
 inspected per board and run. The collector waits one second before each request.
@@ -137,7 +137,7 @@ A failed board does not stop the others, but it fails the run.
 ```sh
 DATABASE_URL='mysql+pymysql://collector_workday:local-collector-workday-only@127.0.0.1/collector_workday' NATS_USER=collector-workday NATS_PASSWORD=local-nats-collector-workday \
   uv run --package bovie-collector-workday collector-workday \
-  --boards '[{"url": "https://sanofi.wd3.myworkdayjobs.com/SanofiCareers", "company": "Sanofi", "searchText": "data"}]'
+  --boards '[{"url": "https://example.wd1.myworkdayjobs.com/Careers", "company": "Example", "searchText": "data"}]'
 ```
 
 Read facet ids from the `facets` of a job list response. See the
