@@ -6,14 +6,12 @@ types by default. Python 3.15+, SQLAlchemy 2, MySQL 8.4, and NATS JetStream are 
 
 This repository is a [Turborepo](https://turborepo.dev) monorepo. Python code is a
 [uv workspace](https://docs.astral.sh/uv/concepts/projects/workspaces/) that Turborepo
-reads natively (experimental `experimentalPythonWorkspaces`); TypeScript tooling is a
-pnpm workspace. Both share one task graph and cache.
+reads natively (experimental `experimentalPythonWorkspaces`). pnpm installs Turborepo.
 
 | Directory | Contents | Toolchain |
 | --- | --- | --- |
 | `apps/` | Deployable services, one package and Docker target each | uv |
 | `packages/` | Shared Python libraries | uv |
-| `.railway/` | Railway infrastructure as code | pnpm, TypeScript |
 | `deploy/` | Broker and database configuration used by Compose and Railway | — |
 | `tests/` | Cross-package Python test suite | pytest |
 
@@ -56,7 +54,7 @@ sources and consumers.
 
 ## Local setup
 
-Install Python 3.15+, uv, Node.js 22.18+, and pnpm (`mise install` provides all of them).
+Install Python 3.15+, uv, Node.js, and pnpm (`mise install` provides all of them).
 
 ```sh
 uv sync --all-packages
@@ -218,9 +216,8 @@ retention before deleting history. Back up all databases and the broker volume.
 
 ## Deployment and validation
 
-`.railway/railway.ts` defines the Railway production environment: three Railway MySQL
-databases, the focused services, private connections, NATS storage, and collector schedules.
-It deploys `main`. Railway creates a temporary copy for each pull request; copies do not post to Discord.
+Railway production has three Railway MySQL databases, the focused services, private
+connections, NATS storage, and collector schedules. It deploys `main`. Railway creates a temporary copy for each pull request; copies do not post to Discord.
 Use the [Railway deployment guide](docs/railway.md) for the initial deployment and updates.
 
 Each service has a Dockerfile in its `apps/` directory. Docker builds use the repository
@@ -231,14 +228,14 @@ Each final image contains only that service and its installed dependencies.
 pnpm exec turbo run lint format:check check test verify:packages
 ```
 
-| Task | Python (`bovie-python` root and members) | TypeScript (`bovie-railway`) |
-| --- | --- | --- |
-| `lint` | Ruff check | Oxlint |
-| `format`, `format:check` | Ruff format | Oxfmt |
-| `check` | ty | `tsc --noEmit` |
-| `test` | pytest over `tests/` | Node test runner |
-| `build` | `uv build` into each member's `dist/` | — |
-| `verify:packages` | Installs each app's wheel alone with `scripts/check_packages.py` | — |
+| Task | Python (`bovie-python` root and members) |
+| --- | --- |
+| `lint` | Ruff check |
+| `format`, `format:check` | Ruff format |
+| `check` | ty |
+| `test` | pytest over `tests/` |
+| `build` | `uv build` into each member's `dist/` |
+| `verify:packages` | Installs each app's wheel alone with `scripts/check_packages.py` |
 
 Use `--filter`, for example `pnpm exec turbo run build --filter=bovie-collector-wttj`, to run one package
 and its dependencies. The `Justfile` recipes call the same tasks.

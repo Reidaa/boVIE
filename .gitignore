@@ -199,10 +199,6 @@ pyrightconfig.json
 
 # End of https://www.toptal.com/developers/gitignore/api/python,visualstudiocode
 
-# JavaScript tooling, Turborepo cache, and local Railway CLI state
+# JavaScript tooling and Turborepo cache
 node_modules/
 .turbo/
-.railway/config.json
-.railway/*.local.json
-# Saved Railway plans can contain generated passwords.
-railway-plan.json

@@ -1,7 +1,0 @@
-packages:
-  - .railway
-
-# Packages allowed to run install scripts. pnpm skips all others.
-allowBuilds:
-  "@railway/cli": true
-  esbuild: true
