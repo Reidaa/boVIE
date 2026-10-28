@@ -40,7 +40,7 @@ The scan remains bounded by public search results, `--limit`, and `--max-pages`.
 The Compose passwords are local development examples. Railway generates its own credentials.
 Use the [README](../README.md) for commands and the [WTTJ request contract](wttj-api.md) for observed API behavior.
 
-Railway production uses `.railway/railway.ts` with three native MySQL services and
+Railway production uses three native MySQL services and
 explicit Dockerfiles for application and broker services. Pull requests get temporary copies.
 See [Railway deployment](railway.md).
 Migration commands accept `--wait-timeout` for initial database startup.

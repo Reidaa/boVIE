@@ -9,10 +9,7 @@
     "format:check": "turbo run format:check",
     "lint": "turbo run lint",
     "test": "turbo run test",
-    "verify": "turbo run lint format:check check test verify:packages",
-    "railway:plan": "pnpm --filter bovie-railway run plan",
-    "railway:apply": "pnpm --filter bovie-railway run apply",
-    "railway": ".railway/node_modules/.bin/railway"
+    "verify": "turbo run lint format:check check test verify:packages"
   },
   "devDependencies": {
     "turbo": "2.11.10"

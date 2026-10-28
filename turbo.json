@@ -11,7 +11,6 @@
       "command": ["uv", "build", "--out-dir", "dist"],
       "outputs": ["dist/**"]
     },
-    "bovie-railway#build": {},
     "lint": {},
     "bovie-python#lint": {
       "command": ["uv", "run", "--frozen", "ruff", "check", "apps", "packages", "tests", "scripts"]
