@@ -28,32 +28,32 @@ def display_fields(job: Job) -> list[DisplayField]:
     )
 
     fields = [
-        dict(name=":hot_springs: Entreprise", value=job.organizationName),
-        dict(name=":satellite_orbital: Posté le", value=posted),
-        dict(name=":calendar: Durée", value=f"{job.missionDuration} mois"),
-        dict(
-            name=":gear: Secteur",
-            value=job.activitySectorN1 if job.activitySectorN1 else "N/A",
-        ),
-        dict(name=":world_map: Pays", value=job.countryName),
-        dict(name=":cityscape: Ville", value=job.cityName if job.cityName else "N/A"),
-        dict(name=":money_with_wings: Salaire", value=f"{job.indemnite}e"),
-        dict(name=":person_running: Début", value=start),
-        dict(name=":checkered_flag: Fin", value=end),
-        dict(
-            name=":e_mail: Email",
-            value=job.contactEmail if job.contactEmail else "N/A",
-        ),
-        dict(
-            name=":person_bald: Contact",
-            value=job.contactName if job.contactName else "N/A",
-        ),
-        dict(
-            name=":globe_with_meridians: Business France",
-            value=f"[Voir offre](https://mon-vie-via.businessfrance.fr/offres/{job.id})",
-        ),
-        dict(name=":outbox_tray: Application", value=application_value),
-        dict(name=":label: Specialization(s)", value=specializations),
+        {"name": ":hot_springs: Entreprise", "value": job.organizationName},
+        {"name": ":satellite_orbital: Posté le", "value": posted},
+        {"name": ":calendar: Durée", "value": f"{job.missionDuration} mois"},
+        {
+            "name": ":gear: Secteur",
+            "value": job.activitySectorN1 if job.activitySectorN1 else "N/A",
+        },
+        {"name": ":world_map: Pays", "value": job.countryName},
+        {"name": ":cityscape: Ville", "value": job.cityName if job.cityName else "N/A"},
+        {"name": ":money_with_wings: Salaire", "value": f"{job.indemnite}e"},
+        {"name": ":person_running: Début", "value": start},
+        {"name": ":checkered_flag: Fin", "value": end},
+        {
+            "name": ":e_mail: Email",
+            "value": job.contactEmail if job.contactEmail else "N/A",
+        },
+        {
+            "name": ":person_bald: Contact",
+            "value": job.contactName if job.contactName else "N/A",
+        },
+        {
+            "name": ":globe_with_meridians: Business France",
+            "value": f"[Voir offre](https://mon-vie-via.businessfrance.fr/offres/{job.id})",
+        },
+        {"name": ":outbox_tray: Application", "value": application_value},
+        {"name": ":label: Specialization(s)", "value": specializations},
     ]
 
     # The event contract caps values at 1024 characters, like Discord's embed fields.

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Bovie - A tool to discover VIE/VIA opportunities from Business France
 """

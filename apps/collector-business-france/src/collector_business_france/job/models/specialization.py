@@ -1,5 +1,4 @@
 import json
-from typing import List
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -157,12 +156,12 @@ DATA_JSON = """
 }
 """
 
-SPECIALIZATIONS: List[Specialization] = [
+SPECIALIZATIONS: list[Specialization] = [
     Specialization(**item) for item in json.loads(DATA_JSON)["specializations"]
 ]
 
 
-def get_specialization_names() -> List[str]:
+def get_specialization_names() -> list[str]:
     """Return the list of specialization names."""
     return [spec.specialization_label_en.lower() for spec in SPECIALIZATIONS]
 

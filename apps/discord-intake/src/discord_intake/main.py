@@ -31,7 +31,7 @@ async def handle(engine: Engine, message) -> bool:
     """Process one message; on failure, log it and schedule its next delivery."""
     try:
         await receive_message(engine, message)
-    except Exception as error:
+    except Exception as error:  # noqa: BLE001 - any failure is logged and retried
         deliveries = message.metadata.num_delivered
         log_failure(
             error,

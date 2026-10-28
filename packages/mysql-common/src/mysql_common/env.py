@@ -5,6 +5,7 @@ import os
 from dotenv import load_dotenv
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from sqlalchemy.engine import URL, make_url
+from sqlalchemy.exc import ArgumentError
 
 
 class Env(BaseModel):
@@ -16,7 +17,8 @@ class Env(BaseModel):
     def validate_mysql(cls, value: str) -> str:
         try:
             url = make_url(value)
-        except Exception:
+        # ArgumentError: unparsable URL. ValueError: non-numeric port.
+        except ArgumentError, ValueError:
             raise ValueError("DATABASE_URL must be a MySQL SQLAlchemy URL") from None
         if url.drivername not in {"mysql", "mysql+pymysql"} or not all(
             (url.host, url.username, url.database)

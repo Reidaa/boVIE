@@ -3,6 +3,7 @@
 import asyncio
 import os
 import threading
+from typing import Self
 
 import nats
 from offer_events import OfferEvent
@@ -38,7 +39,7 @@ class Publisher:
         self._loop = asyncio.new_event_loop()
         self._thread = threading.Thread(target=self._loop.run_forever, daemon=True)
 
-    def __enter__(self) -> "Publisher":
+    def __enter__(self) -> Self:
         self._thread.start()
         try:
             self._nc = self._run(connect())
