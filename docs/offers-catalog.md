@@ -31,7 +31,8 @@ user. It owns duplicate removal. The webapp calls it synchronously. Discord deli
 
 ## Webapp layout
 
-The chosen layout is a classic job board:
+The chosen layout is a classic job board. [The static mock](offers-catalog-mock.html) shows it
+with sample data.
 
 - **List page.** A search box at the top. A filter sidebar on the left: kind with an offer count
   for each kind, country, and first seen. Offers show as cards: title, company, place, kind and
@@ -59,9 +60,9 @@ A later layer can add a manual "not a duplicate" override if a wrong merge happe
 
 1. The catalog sets `closed_at` on a `closed` event. A group is closed when all its sources are closed.
 2. The list hides closed groups. The detail page returns 200 with a closed banner and `noindex`.
-3. Follow-up issue: collectors publish `closed` when an offer is missing from a full scan for a
-   set time. They already have `last_seen_at`. Until then, few offers close, so the list defaults
-   to "first seen in the last 30 days".
+3. Collectors publish `closed` when an offer leaves its source (issue #62). They already have
+   `last_seen_at`. Until then, few offers close, so the list defaults to "first seen in the last
+   30 days".
 
 ## MVP layers
 
@@ -73,7 +74,7 @@ Each layer works end to end before the next starts.
 2. `catalog-api`: `GET /offers` (filters, keyset pagination, offer count for each kind) and
    `GET /offers/{source}/{source_offer_id}`.
 3. Webapp list and detail pages on Railway.
-4. Collectors publish `closed` and `updated` (separate issue).
+4. Collectors publish `closed` and `updated` (issue #62).
 
 ## Data model
 
