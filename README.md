@@ -1,7 +1,7 @@
 # BoVIE
 
-Discover jobs from Welcome to the Jungle and VIE/VIA opportunities from
-Business France, then deliver new offers to Discord. WTTJ accepts all contract
+Discover jobs from Welcome to the Jungle and company career sites on Workday, and
+VIE/VIA opportunities from Business France, then deliver new offers to Discord. WTTJ accepts all contract
 types by default. Python 3.15+, SQLAlchemy 2, MySQL 8.4, and NATS JetStream are required.
 
 This repository is a [Turborepo](https://turborepo.dev) monorepo. Python code is a
@@ -26,6 +26,7 @@ imports and install each service independently.
 | --- | --- | --- | --- |
 | `collector-business-france` | Collect Business France VIE/VIA offers and publish the new ones | `collector_business_france` | Publish `offers.business_france.v1` |
 | `collector-wttj` | Collect Welcome to the Jungle jobs and publish the new ones | `collector_wttj` | Publish `offers.wttj.v1` |
+| `collector-workday` | Collect jobs from the configured Workday career sites and publish the new ones | `collector_workday` | Publish `offers.workday.v1` |
 | `discord-intake` | Read offers from NATS and queue a Discord message for each new one | `discord` | Consume `OFFERS/discord-intake` |
 | `discord-sender` | Post queued messages to the Discord webhook | `discord` | None |
 | `nats-setup` | Create the `OFFERS` stream and its consumer | None | Administrator |
@@ -64,11 +65,12 @@ docker compose up -d --wait mysql nats
 docker compose --profile workers build
 docker compose --profile workers run --rm migrate-collector-business-france
 docker compose --profile workers run --rm migrate-collector-wttj
+docker compose --profile workers run --rm migrate-collector-workday
 docker compose --profile workers run --rm migrate-discord
 docker compose --profile workers run --rm nats-setup
 ```
 
-Compose provisions three databases with separate unprivileged accounts, persistent
+Compose provisions four databases with separate unprivileged accounts, persistent
 MySQL/NATS volumes, and readiness checks. Its credentials are development examples;
 ports bind to localhost. The initialization SQL runs only on a fresh MySQL volume.
 Provision separate secrets and TLS for a production deployment. Do not reuse the
@@ -123,7 +125,25 @@ The collector searches the public v3 API, follows its pages, and fetches job det
 WTTJ public search is not a complete feed of every job. Query and page limits still
 bound each run, even without contract restrictions. See the [request contract](docs/wttj-api.md).
 
-Both collectors are one-shot commands. Schedule them independently with cron or
+Workday reads its boards from `WORKDAY_BOARDS`, a JSON list. When it is empty, the
+collector uses the bundled
+[`boards.json`](apps/collector-workday/src/collector_workday/boards.json). To add a
+board, add its public career site URL and company name. `searchText` and
+`appliedFacets` are optional and go unchanged into Workday's job list request.
+Empty values collect every job. `WORKDAY_LIMIT` (default 40) bounds the postings
+inspected per board and run. The collector waits one second before each request.
+A failed board does not stop the others, but it fails the run.
+
+```sh
+DATABASE_URL='mysql+pymysql://collector_workday:local-collector-workday-only@127.0.0.1/collector_workday' NATS_USER=collector-workday NATS_PASSWORD=local-nats-collector-workday \
+  uv run --package bovie-collector-workday collector-workday \
+  --boards '[{"url": "https://sanofi.wd3.myworkdayjobs.com/SanofiCareers", "company": "Sanofi", "searchText": "data"}]'
+```
+
+Read facet ids from the `facets` of a job list response. See the
+[request contract](docs/workday-api.md).
+
+The collectors are one-shot commands. Schedule them independently with cron or
 your deployment scheduler. Support is limited to **one active collector per
 source**. Database uniqueness handles duplicate discovery; it does not coordinate
 source rate limits or overlapping scans. Multiple collectors require a renewable
@@ -152,6 +172,7 @@ This starts posting to the configured real webhook. Collectors remain separate:
 ```sh
 docker compose --profile workers run --rm collector-business-france
 docker compose --profile workers run --rm collector-wttj
+docker compose --profile workers run --rm collector-workday
 ```
 
 Collectors outside Compose also need `NATS_URL`, `NATS_USER`, and `NATS_PASSWORD`
@@ -216,7 +237,7 @@ retention before deleting history. Back up all databases and the broker volume.
 
 ## Deployment and validation
 
-Railway production has three Railway MySQL databases, the focused services, private
+Railway production has four Railway MySQL databases, the focused services, private
 connections, NATS storage, and collector schedules. It deploys `main`. Railway creates a temporary copy for each pull request; copies do not post to Discord.
 Use the [Railway deployment guide](docs/railway.md) for the initial deployment and updates.
 

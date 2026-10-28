@@ -17,10 +17,12 @@ The deployment uses private networking and creates no public domains or database
 | --- | --- | --- |
 | `mysql-collector-business-france` | Business France data | Railway MySQL |
 | `mysql-collector-wttj` | WTTJ data | Railway MySQL |
+| `mysql-collector-workday` | Workday data | Railway MySQL |
 | `mysql-discord` | Inbox and pending deliveries | Railway MySQL |
 | `nats` | Persistent JetStream broker | NATS with the repository configuration |
 | `collector-business-france` | Collect and publish at minute 12, every two hours UTC | `collector-business-france` |
 | `collector-wttj` | Collect and publish at minute 22, every two hours UTC | `collector-wttj` |
+| `collector-workday` | Collect and publish at minute 32, every two hours UTC | `collector-workday` |
 | `nats-setup` | Create the stream and consumer, then exit | `nats-setup` |
 | `discord-intake` | Read offers and queue Discord messages | `discord-intake` |
 | `discord-sender` | Post queued messages to Discord | `discord-sender` |

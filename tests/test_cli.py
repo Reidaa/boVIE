@@ -106,6 +106,47 @@ def test_wttj_cli_defaults_and_optional_contract_filters(tmp_path, monkeypatch):
     assert observed[-1]["countries"] == ("CA",)
 
 
+def test_workday_cli_uses_bundled_boards_unless_configured(tmp_path, monkeypatch):
+    from collector_workday import main
+
+    monkeypatch.chdir(tmp_path)
+    for name in ("WORKDAY_BOARDS", "WORKDAY_LIMIT"):
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setenv("DATABASE_URL", "mysql+pymysql://u:p@localhost/source")
+    observed = []
+
+    class Engine:
+        def dispose(self):
+            pass
+
+    monkeypatch.setattr(main, "make_engine", lambda url: Engine())
+    monkeypatch.setattr(main, "Publisher", Publisher)
+    monkeypatch.setattr(
+        main,
+        "collect",
+        lambda engine, client, publish, boards, **kwargs: observed.append(
+            (boards, kwargs)
+        ),
+    )
+    result = CliRunner().invoke(main.main)
+    assert result.exit_code == 0, result.output
+    assert observed[-1][0] == main.load_boards("")
+    assert observed[-1][1] == {"limit": 40}
+    (tmp_path / ".env").write_text(
+        'WORKDAY_LIMIT=5\nWORKDAY_BOARDS=\'[{"url": '
+        '"https://acme.wd1.myworkdayjobs.com/Jobs", "company": "Acme", '
+        '"searchText": "data"}]\'\n'
+    )
+    result = CliRunner().invoke(main.main)
+    assert result.exit_code == 0, result.output
+    [board] = observed[-1][0]
+    assert (board.name, board.search_text) == ("acme/Jobs", "data")
+    assert observed[-1][1] == {"limit": 5}
+    result = CliRunner().invoke(main.main, ["--boards", '[{"url": "x"}]'])
+    assert result.exit_code == 2
+    assert "WORKDAY_BOARDS" in result.output
+
+
 def test_business_france_failure_is_logged_on_stderr(monkeypatch):
     from collector_business_france import main
 

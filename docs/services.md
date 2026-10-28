@@ -1,7 +1,7 @@
 # Service ownership
 
-The project collects general job offers from WTTJ and VIE/VIA offers from Business France.
-The uv workspace separates five deployable services from six shared libraries.
+The project collects general job offers from WTTJ and Workday career sites, and VIE/VIA offers
+from Business France. The uv workspace separates six deployable services from six shared libraries.
 Each service declares its own dependencies and has its own Dockerfile.
 The root project installs development tools only.
 
@@ -37,10 +37,15 @@ The API requires the `job_title` parameter even when its value is empty.
 Only published job details enter storage. Optional contract filters apply to search and detail responses.
 The scan remains bounded by public search results, `--limit`, and `--max-pages`.
 
-The Compose passwords are local development examples. Railway generates its own credentials.
-Use the [README](../README.md) for commands and the [WTTJ request contract](wttj-api.md) for observed API behavior.
+One Workday collector scans every configured board. Each board has its own scan
+checkpoint and silent-source check. A failed board fails the run after the other
+boards finish. `source_offer_id` is `<tenant>/<site>/<jobPostingId>`.
 
-Railway production uses three native MySQL services and
+The Compose passwords are local development examples. Railway generates its own credentials.
+Use the [README](../README.md) for commands and the [WTTJ](wttj-api.md) and [Workday](workday-api.md)
+request contracts for observed API behavior.
+
+Railway production uses four native MySQL services and
 explicit Dockerfiles for application and broker services. Pull requests get temporary copies.
 See [Railway deployment](railway.md).
 Migration commands accept `--wait-timeout` for initial database startup.
