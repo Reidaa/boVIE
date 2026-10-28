@@ -24,6 +24,7 @@ services:
       NATS_SETUP_PASSWORD: ${NATS_SETUP_PASSWORD:-local-nats-setup}
       NATS_COLLECTOR_BUSINESS_FRANCE_PASSWORD: ${NATS_COLLECTOR_BUSINESS_FRANCE_PASSWORD:-local-nats-collector-business-france}
       NATS_COLLECTOR_WTTJ_PASSWORD: ${NATS_COLLECTOR_WTTJ_PASSWORD:-local-nats-collector-wttj}
+      NATS_COLLECTOR_WORKDAY_PASSWORD: ${NATS_COLLECTOR_WORKDAY_PASSWORD:-local-nats-collector-workday}
       NATS_DISCORD_INTAKE_PASSWORD: ${NATS_DISCORD_INTAKE_PASSWORD:-local-nats-discord-intake}
     volumes:
       - nats:/data/jetstream
@@ -55,6 +56,18 @@ services:
     command: [collector-store-migrate]
     environment:
       DATABASE_URL: mysql+pymysql://collector_wttj:local-collector-wttj-only@mysql/collector_wttj
+    depends_on:
+      mysql: {condition: service_healthy}
+
+  migrate-collector-workday:
+    <<: *app
+    build:
+      context: .
+      dockerfile: apps/collector-workday/Dockerfile
+    image: bovie-collector-workday:local
+    command: [collector-store-migrate]
+    environment:
+      DATABASE_URL: mysql+pymysql://collector_workday:local-collector-workday-only@mysql/collector_workday
     depends_on:
       mysql: {condition: service_healthy}
 
@@ -122,6 +135,24 @@ services:
       NATS_PASSWORD: ${NATS_COLLECTOR_WTTJ_PASSWORD:-local-nats-collector-wttj}
     depends_on:
       migrate-collector-wttj: {condition: service_completed_successfully}
+      nats-setup: {condition: service_completed_successfully}
+
+  collector-workday:
+    <<: *app
+    build:
+      context: .
+      dockerfile: apps/collector-workday/Dockerfile
+    image: bovie-collector-workday:local
+    command: [collector-workday]
+    environment:
+      DATABASE_URL: mysql+pymysql://collector_workday:local-collector-workday-only@mysql/collector_workday
+      WORKDAY_BOARDS: ${WORKDAY_BOARDS:-}
+      WORKDAY_LIMIT: ${WORKDAY_LIMIT:-40}
+      NATS_URL: nats://nats:4222
+      NATS_USER: collector-workday
+      NATS_PASSWORD: ${NATS_COLLECTOR_WORKDAY_PASSWORD:-local-nats-collector-workday}
+    depends_on:
+      migrate-collector-workday: {condition: service_completed_successfully}
       nats-setup: {condition: service_completed_successfully}
 
   discord-intake:

@@ -1,0 +1,27 @@
+[project]
+name = "bovie-collector-workday"
+version = "0.4.0"
+requires-python = ">=3.15"
+description = "BoVIE collector-workday"
+dependencies = [
+    "click>=8.1.8",
+    "loguru>=0.7.3",
+    "httpx>=0.28.1",
+    "pydantic>=2.11.3",
+    "sqlalchemy>=2.1,<2.2",
+    "bovie-offer-events",
+    "bovie-mysql-common",
+    "bovie-collector-store",
+    "bovie-nats-client",
+    "bovie-cli-common"
+]
+
+[project.scripts]
+collector-workday = "collector_workday.main:main"
+
+[tool.uv.build-backend]
+module-name = "collector_workday"
+
+[build-system]
+requires = ["uv_build>=0.13.6,<0.14.0"]
+build-backend = "uv_build"

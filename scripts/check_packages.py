@@ -20,6 +20,12 @@ SERVICES = {
         ["collector-store-migrate"],
         ["nextcord", "collector_business_france", "discord_store"],
     ),
+    "collector-workday": (
+        "collector-workday",
+        "collector_workday.main",
+        ["collector-store-migrate"],
+        ["nextcord", "discord_store"],
+    ),
     "discord-intake": (
         "discord-intake",
         "discord_intake.main",
