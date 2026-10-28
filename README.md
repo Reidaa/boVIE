@@ -50,7 +50,9 @@ and cannot access collector databases. Collectors can run on different hosts.
 
 [ADR 0001](docs/adr/0001-service-based-services-with-one-offer-stream.md) records why
 the system uses coarse services that share one offer stream, and the rules for adding
-sources and consumers.
+sources and consumers. [ADR 0002](docs/adr/0002-offers-catalog-with-a-private-api.md)
+records the planned offers catalog for the webapp; the [design doc](docs/offers-catalog.md)
+has its pages, filters and build layers.
 
 ## Local setup
 
