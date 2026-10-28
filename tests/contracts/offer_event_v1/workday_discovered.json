@@ -2,13 +2,13 @@
   "version": 1,
   "type": "discovered",
   "source": "workday",
-  "source_offer_id": "sanofi/SanofiCareers/Data-Engineer_R2876000",
+  "source_offer_id": "example/Careers/Data-Engineer_R1",
   "offer": {
     "title": "Data Engineer",
-    "organization": "Sanofi",
+    "organization": "Example",
     "country": "FR",
     "city": "Paris",
-    "url": "https://sanofi.wd3.myworkdayjobs.com/SanofiCareers/job/Paris/Data-Engineer_R2876000",
+    "url": "https://example.wd1.myworkdayjobs.com/Careers/job/Paris/Data-Engineer_R1",
     "fields": [
       {
         "name": "Contrat",
@@ -17,6 +17,6 @@
       }
     ]
   },
-  "event_id": "a0d15bfb-e4ff-5113-87e7-22958d28293f",
+  "event_id": "d7006038-e485-53bc-a94e-7421f22ef153",
   "observed_at": "2026-10-28T12:00:00Z"
 }

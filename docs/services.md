@@ -37,7 +37,8 @@ The API requires the `job_title` parameter even when its value is empty.
 Only published job details enter storage. Optional contract filters apply to search and detail responses.
 The scan remains bounded by public search results, `--limit`, and `--max-pages`.
 
-One Workday collector scans every configured board. Each board has its own scan
+One Workday collector scans every board in the required `WORKDAY_BOARDS` variable.
+Railway sets it on the `collector-workday` service; the repository holds no board list. Each board has its own scan
 checkpoint and silent-source check. A failed board fails the run after the other
 boards finish. `source_offer_id` is `<tenant>/<site>/<jobPostingId>`.
 

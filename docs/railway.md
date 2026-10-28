@@ -43,6 +43,8 @@ Retain an alphabetic prefix when rotating NATS passwords.
 
 The collectors run `collector-store-migrate --wait-timeout 180` before deployment.
 `discord-intake` runs `discord-store-migrate --wait-timeout 180`.
+`collector-workday` requires `WORKDAY_BOARDS`, the JSON list of boards it collects.
+Set it on that service; the repository holds no board list.
 The Business France collector uses `BUSINESS_FRANCE_API_KEY` when it is set in Railway.
 Otherwise it reads the public API key from the official offers page.
 After a 401 response, it reads the page again and retries once.

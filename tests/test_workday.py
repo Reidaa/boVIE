@@ -97,12 +97,12 @@ def test_board_reads_tenant_host_and_site_from_its_public_url():
         board(url="https://example.wd3.myworkdayjobs.com/")
 
 
-def test_bundled_boards_are_valid():
+@pytest.mark.parametrize("text", ["", "  ", "[]"])
+def test_boards_are_required(text):
     from collector_workday.main import load_boards
 
-    boards = load_boards("")
-    assert boards
-    assert len({(b.tenant, b.site) for b in boards}) == len(boards)
+    with pytest.raises(ValueError, match="WORKDAY_BOARDS"):
+        load_boards(text)
 
 
 def test_detail_normalization():
