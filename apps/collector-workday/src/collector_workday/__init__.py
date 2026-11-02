@@ -1,0 +1,1 @@
+"""Workday career site collector."""

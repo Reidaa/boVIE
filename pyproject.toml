@@ -17,6 +17,7 @@ members = ["apps/*", "packages/*"]
 [tool.uv.sources]
 bovie-collector-business-france = { workspace = true }
 bovie-collector-wttj = { workspace = true }
+bovie-collector-workday = { workspace = true }
 bovie-discord-intake = { workspace = true }
 bovie-discord-sender = { workspace = true }
 bovie-nats-setup = { workspace = true }

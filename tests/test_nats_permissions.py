@@ -33,6 +33,7 @@ def test_deployment_nats_permissions_and_durable_acknowledgments(monkeypatch):
                     "local-nats-collector-business-france",
                 ),
                 ("wttj", "collector-wttj", "local-nats-collector-wttj"),
+                ("workday", "collector-workday", "local-nats-collector-workday"),
             ):
                 monkeypatch.setenv("NATS_USER", user)
                 monkeypatch.setenv("NATS_PASSWORD", password)
@@ -49,7 +50,7 @@ def test_deployment_nats_permissions_and_durable_acknowledgments(monkeypatch):
             sub = await receiver.jetstream().pull_subscribe_bind(
                 durable="discord-intake", stream="OFFERS"
             )
-            for message in await sub.fetch(2, timeout=2):
+            for message in await sub.fetch(3, timeout=2):
                 await message.ack_sync(timeout=2)
             errors = asyncio.Queue()
 
