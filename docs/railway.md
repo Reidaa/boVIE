@@ -8,6 +8,7 @@ Railway creates a temporary PR environment for each pull request and deletes it 
 pull request closes. A PR environment copies production and deploys the pull request branch.
 It gets fresh databases and its own broker. It does not post to Discord: Railway does not copy
 the sealed `DISCORD_WEBHOOK_URL`, so `discord-sender` logs a warning and exits.
+No service creates the `OFFERS` stream on that broker, so its collectors fail to publish.
 
 The deployment uses private networking and creates no public domains or database proxies.
 
@@ -21,7 +22,6 @@ The deployment uses private networking and creates no public domains or database
 | `nats` | Persistent JetStream broker | NATS with the repository configuration |
 | `collector-business-france` | Collect and publish at minute 12, every two hours UTC | `collector-business-france` |
 | `collector-wttj` | Collect and publish at minute 22, every two hours UTC | `collector-wttj` |
-| `nats-setup` | Create the stream and consumer, then exit | `nats-setup` |
 | `discord-intake` | Read offers and queue Discord messages | `discord-intake` |
 | `discord-sender` | Post queued messages to Discord | `discord-sender` |
 
@@ -47,7 +47,8 @@ After a 401 response, it reads the page again and retries once.
 These commands wait for database connectivity before applying migrations.
 Migration failures stop the deployment and are not retried as connection failures.
 Workers retry while their database or broker is starting.
-`nats-setup` exits successfully after provisioning and runs again when redeployed.
+No Railway service provisions the broker. An operator runs `scripts/nats_setup.py` by hand
+with the `nats-setup` account, from a host that can reach the broker (see the README).
 
 ## Updates and checks
 
@@ -63,5 +64,5 @@ railway logs --service collector-business-france --lines 50
 railway logs --service discord-intake --lines 50
 ```
 
-Collectors and broker setup finish after successful runs. That exit is expected.
+Collectors finish after successful runs. That exit is expected.
 `discord-intake` and `discord-sender` must stay running in production.

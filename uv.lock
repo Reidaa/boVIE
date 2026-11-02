@@ -13,7 +13,6 @@ members = [
     "bovie-discord-store",
     "bovie-mysql-common",
     "bovie-nats-client",
-    "bovie-nats-setup",
     "bovie-offer-events",
     "bovie-workspace",
 ]
@@ -259,25 +258,6 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "bovie-offer-events", editable = "packages/offer-events" },
-    { name = "nats-py", specifier = ">=2.10,<3" },
-]
-
-[[package]]
-name = "bovie-nats-setup"
-version = "0.4.0"
-source = { editable = "apps/nats-setup" }
-dependencies = [
-    { name = "bovie-cli-common" },
-    { name = "bovie-nats-client" },
-    { name = "click" },
-    { name = "nats-py" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "bovie-cli-common", editable = "packages/cli-common" },
-    { name = "bovie-nats-client", editable = "packages/nats-client" },
-    { name = "click", specifier = ">=8.1.8" },
     { name = "nats-py", specifier = ">=2.10,<3" },
 ]
 

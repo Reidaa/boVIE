@@ -1,4 +1,7 @@
-"""Install each app's wheels alone and check its deployable interface."""
+"""Install each app's wheels alone and check its deployable interface.
+
+Also run each uv script with only the dependencies in its inline metadata.
+"""
 
 import json
 import os
@@ -32,13 +35,9 @@ SERVICES = {
         ["discord-store-migrate"],
         ["nats", "nextcord", "collector_store"],
     ),
-    "nats-setup": (
-        "nats-setup",
-        "nats_setup.main",
-        [],
-        ["sqlalchemy", "httpx", "collector_store", "discord_store"],
-    ),
 }
+# Operator scripts run with `uv run` and declare their dependencies inline (PEP 723).
+SCRIPTS = [Path(__file__).with_name("nats_setup.py")]
 
 
 def check(roots: list[Path]):
@@ -139,5 +138,23 @@ importlib.import_module({(owner + ".migrate")!r})
             )
 
 
+def check_scripts():
+    """Fail when a script imports a package that its inline metadata omits."""
+    environment = os.environ.copy()
+    # PYTHONPATH could expose workspace modules that the script does not declare.
+    environment.pop("PYTHONPATH", None)
+    for script in SCRIPTS:
+        with tempfile.TemporaryDirectory(prefix=f"bovie-{script.stem}-") as temporary:
+            subprocess.run(
+                ["uv", "run", "--script", str(script), "--help"],
+                check=True,
+                cwd=temporary,
+                env=environment,
+                stdout=subprocess.DEVNULL,
+            )
+        print(json.dumps({"script": script.name, "isolated_run": "passed"}), flush=True)
+
+
 if __name__ == "__main__":
     check([Path(argument).resolve() for argument in sys.argv[1:]])
+    check_scripts()

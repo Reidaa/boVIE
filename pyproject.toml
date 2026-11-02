@@ -19,7 +19,6 @@ bovie-collector-business-france = { workspace = true }
 bovie-collector-wttj = { workspace = true }
 bovie-discord-intake = { workspace = true }
 bovie-discord-sender = { workspace = true }
-bovie-nats-setup = { workspace = true }
 bovie-offer-events = { workspace = true }
 bovie-mysql-common = { workspace = true }
 bovie-collector-store = { workspace = true }

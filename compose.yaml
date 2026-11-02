@@ -72,11 +72,11 @@ services:
 
   nats-setup:
     <<: *app
-    build:
-      context: .
-      dockerfile: apps/nats-setup/Dockerfile
-    image: bovie-nats-setup:local
-    command: [nats-setup]
+    # A uv script: uv installs its inline dependencies, including the mounted workspace libraries.
+    image: ghcr.io/astral-sh/uv:python3.15-trixie-slim
+    command: [uv, run, /repo/scripts/nats_setup.py]
+    volumes:
+      - ./:/repo:ro
     environment:
       NATS_URL: nats://nats:4222
       NATS_USER: nats-setup

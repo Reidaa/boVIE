@@ -1,4 +1,22 @@
+# /// script
+# requires-python = ">=3.15"
+# dependencies = [
+#     "click>=8.1.8",
+#     "nats-py>=2.10,<3",
+#     "bovie-nats-client",
+#     "bovie-cli-common",
+# ]
+#
+# [tool.uv.sources]
+# bovie-nats-client = { path = "../packages/nats-client" }
+# bovie-cli-common = { path = "../packages/cli-common" }
+# ///
 """Provision the offer stream and the Discord intake consumer.
+
+Run it once per broker with the administrator account, before the collectors
+and `discord-intake` start:
+
+    NATS_URL=... NATS_USER=nats-setup NATS_PASSWORD=... uv run scripts/nats_setup.py
 
 The stream keeps messages after consumers acknowledge them, so several
 consumers can read it and a new consumer can replay the retained history.
@@ -87,3 +105,7 @@ def main():
             await nc.close()
 
     asyncio.run(run())
+
+
+if __name__ == "__main__":
+    main()

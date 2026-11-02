@@ -30,7 +30,8 @@ def test_both_sources_through_real_jetstream_and_captured_discord(
     from discord_sender.delivery import deliver_one
     from discord_store import Delivery
     from nats_client import Publisher
-    from nats_setup.main import setup
+
+    from scripts.nats_setup import setup
 
     url = nats_url()
     monkeypatch.setenv("NATS_URL", url)
@@ -128,7 +129,7 @@ def test_both_sources_through_real_jetstream_and_captured_discord(
 
 
 def test_setup_applies_changed_stream_limits():
-    from nats_setup.main import setup
+    from scripts.nats_setup import setup
 
     url = nats_url()
     stream = "TEST_" + uuid4().hex

@@ -13,6 +13,7 @@ reads natively (experimental `experimentalPythonWorkspaces`). pnpm installs Turb
 | `apps/` | Deployable services, one package and Docker target each | uv |
 | `packages/` | Shared Python libraries | uv |
 | `deploy/` | Broker and database configuration used by Compose and Railway | — |
+| `scripts/` | Operator and CI scripts | uv |
 | `tests/` | Cross-package Python test suite | pytest |
 
 Each deployable service has its own package, dependencies, command, and Docker target.
@@ -28,11 +29,12 @@ imports and install each service independently.
 | `collector-wttj` | Collect Welcome to the Jungle jobs and publish the new ones | `collector_wttj` | Publish `offers.wttj.v1` |
 | `discord-intake` | Read offers from NATS and queue a Discord message for each new one | `discord` | Consume `OFFERS/discord-intake` |
 | `discord-sender` | Post queued messages to the Discord webhook | `discord` | None |
-| `nats-setup` | Create the `OFFERS` stream and its consumer | None | Administrator |
 
 Collectors run on schedules and publish new offers to NATS themselves. Each collector
 receives only its own database and broker credentials. `discord-intake` and
-`discord-sender` run continuously. `nats-setup` runs once.
+`discord-sender` run continuously. The `scripts/nats_setup.py` uv script creates the
+`OFFERS` stream and its consumer with the `nats-setup` administrator account. Run it once
+per broker, before the apps start.
 
 | Library in `packages/` | Contents |
 | --- | --- |
@@ -167,6 +169,18 @@ uv run --package bovie-discord-sender discord-sender
 `--once` drains currently eligible work and exits; future retries still need another
 invocation. Without it, these commands poll continuously. The `nats-setup` Compose job uses a
 separate administrator account and must run before the collectors or `discord-intake`.
+It runs `scripts/nats_setup.py` in the uv image with the repository mounted read-only.
+
+To provision another broker, run the script with its administrator credentials. uv
+installs the dependencies listed in the script's inline metadata:
+
+```sh
+NATS_URL='nats://broker.example:4222' NATS_USER=nats-setup NATS_PASSWORD='...' uv run scripts/nats_setup.py
+```
+
+Set `NATS_USER` and `NATS_PASSWORD` explicitly: the script loads `.env`, whose defaults
+use a collector account. A second run is safe. It applies changed stream limits and
+stops when a setting that NATS cannot change in place differs.
 
 ## Delivery and recovery
 
@@ -235,7 +249,7 @@ pnpm exec turbo run lint format:check check test verify:packages
 | `check` | ty |
 | `test` | pytest over `tests/` |
 | `build` | `uv build` into each member's `dist/` |
-| `verify:packages` | Installs each app's wheel alone with `scripts/check_packages.py` |
+| `verify:packages` | Installs each app's wheel alone and runs each uv script with only its inline dependencies, with `scripts/check_packages.py` |
 
 Use `--filter`, for example `pnpm exec turbo run build --filter=bovie-collector-wttj`, to run one package
 and its dependencies. The `Justfile` recipes call the same tasks.
