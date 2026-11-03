@@ -70,20 +70,6 @@ services:
     depends_on:
       mysql: {condition: service_healthy}
 
-  nats-setup:
-    <<: *app
-    # A uv script: uv installs its inline dependencies, including the mounted workspace libraries.
-    image: ghcr.io/astral-sh/uv:python3.15-trixie-slim
-    command: [uv, run, /repo/scripts/nats_setup.py]
-    volumes:
-      - ./:/repo:ro
-    environment:
-      NATS_URL: nats://nats:4222
-      NATS_USER: nats-setup
-      NATS_PASSWORD: ${NATS_SETUP_PASSWORD:-local-nats-setup}
-    depends_on:
-      nats: {condition: service_healthy}
-
   collector-business-france:
     <<: *app
     build:
@@ -102,7 +88,7 @@ services:
       NATS_PASSWORD: ${NATS_COLLECTOR_BUSINESS_FRANCE_PASSWORD:-local-nats-collector-business-france}
     depends_on:
       migrate-collector-business-france: {condition: service_completed_successfully}
-      nats-setup: {condition: service_completed_successfully}
+      nats: {condition: service_healthy}
 
   collector-wttj:
     <<: *app
@@ -122,7 +108,7 @@ services:
       NATS_PASSWORD: ${NATS_COLLECTOR_WTTJ_PASSWORD:-local-nats-collector-wttj}
     depends_on:
       migrate-collector-wttj: {condition: service_completed_successfully}
-      nats-setup: {condition: service_completed_successfully}
+      nats: {condition: service_healthy}
 
   discord-intake:
     <<: *app
@@ -139,7 +125,7 @@ services:
       NATS_PASSWORD: ${NATS_DISCORD_INTAKE_PASSWORD:-local-nats-discord-intake}
     depends_on:
       migrate-discord: {condition: service_completed_successfully}
-      nats-setup: {condition: service_completed_successfully}
+      nats: {condition: service_healthy}
 
   discord-sender:
     <<: *app

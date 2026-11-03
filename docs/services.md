@@ -4,8 +4,6 @@ The project collects general job offers from WTTJ and VIE/VIA offers from Busine
 The uv workspace separates four deployable services from six shared libraries.
 Each service declares its own dependencies and has its own Dockerfile.
 The root project installs development tools only.
-`scripts/nats_setup.py` provisions the broker. It is a uv script, not a service:
-its inline metadata declares its dependencies, including two workspace libraries.
 
 | Library | Owns | Used by |
 | --- | --- | --- |
@@ -13,18 +11,19 @@ its inline metadata declares its dependencies, including two workspace libraries
 | `collector_store` | Published offers, content hashes, sightings, checkpoints, collector database migrations | Collectors |
 | `discord_store` | Inbox, queued messages, atomic acceptance, Discord database migrations | `discord-intake` and `discord-sender` |
 | `mysql_common` | MySQL connections, UTC timestamps, queue leases, migration execution | Both storage libraries and database clients |
-| `nats_client` | NATS connection, stream names, and the collectors' synchronous publisher | Collectors, `discord-intake`, `scripts/nats_setup.py` |
+| `nats_client` | NATS connection, stream names and settings, stream creation, and the collectors' synchronous publisher | Collectors, `discord-intake` |
 | `cli_common` | Entrypoint environment loading and failure logging | Deployable services |
 
 A library cannot import a service. A service cannot import another service.
 `tests/test_architecture.py` checks these rules and declared workspace dependencies.
 `scripts/check_packages.py` installs each service from wheels into a separate environment.
 It checks entrypoints, packaged migrations, and the absence of unrelated service code.
-It also runs each uv script with only the dependencies in its inline metadata.
 
 Each worker has one role.
 Collectors cannot send Discord messages. `discord-sender` has no NATS client.
-`scripts/nats_setup.py` has no database dependency. Each collector publishes only its own source's subject.
+Each collector publishes only its own source's subject.
+Collectors create the `OFFERS` stream when it is missing. `discord-intake` creates its own consumer.
+No service can update or delete the stream or a consumer. Only the `nats-setup` administrator account can.
 `discord-intake` and `discord-sender` share the `discord` database and never query collector databases.
 
 Collectors publish each page and wait for JetStream acknowledgments before recording it.

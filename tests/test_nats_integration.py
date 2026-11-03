@@ -1,12 +1,11 @@
 import asyncio
 import os
 from dataclasses import replace
-from uuid import uuid4
 
 import httpx
 import nats
+import nats.js.errors
 import pytest
-from nats.js.api import ConsumerConfig
 from sqlalchemy import func, select
 
 from tests.test_collection import job
@@ -26,12 +25,10 @@ def test_both_sources_through_real_jetstream_and_captured_discord(
     from collector_business_france import main
     from collector_business_france.job.models.search import SearchParameters
     from collector_wttj.main import collect
-    from discord_intake.main import receive_message
+    from discord_intake.main import CONSUMER_CONFIG, ensure_consumer, receive_message
     from discord_sender.delivery import deliver_one
     from discord_store import Delivery
-    from nats_client import Publisher
-
-    from scripts.nats_setup import setup
+    from nats_client import CONSUMER, STREAM, Publisher
 
     url = nats_url()
     monkeypatch.setenv("NATS_URL", url)
@@ -40,25 +37,9 @@ def test_both_sources_through_real_jetstream_and_captured_discord(
     business_france = database_factory("collector")
     wttj = database_factory("collector")
     discord = database_factory("discord")
-    stream = "TEST_" + uuid4().hex
-    consumer = "discord-intake"
+    stream = STREAM
+    consumer = CONSUMER
 
-    async def provision():
-        nc = await nats.connect(url)
-        js = nc.jetstream()
-        await setup(js, stream=stream, consumer=consumer)
-        # A short ack wait exercises broker redelivery after a lost consumer ack.
-        await js.add_consumer(
-            stream, config=ConsumerConfig(durable_name=consumer, ack_wait=0.2)
-        )
-        await nc.close()
-
-    async def delete():
-        nc = await nats.connect(url)
-        await nc.jetstream().delete_stream(stream)
-        await nc.close()
-
-    asyncio.run(provision())
     try:
         monkeypatch.setattr(main, "search_id", lambda params: [1])
         monkeypatch.setattr(main, "get_from_id", job)
@@ -94,6 +75,12 @@ def test_both_sources_through_real_jetstream_and_captured_discord(
             nc = await nats.connect(url)
             js = nc.jetstream()
             try:
+                # The first collector run created the stream; intake adds its consumer.
+                await ensure_consumer(js)
+                # A short ack wait exercises broker redelivery after a lost consumer ack.
+                await js.add_consumer(
+                    stream, config=replace(CONSUMER_CONFIG, ack_wait=0.2)
+                )
                 sub = await js.pull_subscribe_bind(durable=consumer, stream=stream)
                 messages = await sub.fetch(3, timeout=2)
                 assert len(messages) == 2
@@ -113,7 +100,7 @@ def test_both_sources_through_real_jetstream_and_captured_discord(
 
         asyncio.run(consume())
     finally:
-        asyncio.run(delete())
+        asyncio.run(delete_stream(url))
     with discord.connect() as conn:
         assert conn.scalar(select(func.count()).select_from(Delivery)) == 2
     sent = []
@@ -128,27 +115,60 @@ def test_both_sources_through_real_jetstream_and_captured_discord(
     assert len(sent) == 2
 
 
-def test_setup_applies_changed_stream_limits():
-    from scripts.nats_setup import setup
+def test_existing_stream_keeps_its_limits():
+    from nats_client import STREAM, STREAM_CONFIG, ensure_stream
 
     url = nats_url()
-    stream = "TEST_" + uuid4().hex
 
     async def flow():
         nc = await nats.connect(url)
         js = nc.jetstream()
         try:
-            await setup(js, stream=stream)
-            info = await js.stream_info(stream)
-            await js.update_stream(
-                config=replace(info.config, max_age=24 * 60 * 60, max_bytes=1024)
-            )
-            await setup(js, stream=stream)
-            info = await js.stream_info(stream)
-            assert info.config.max_age == 90 * 24 * 60 * 60
-            assert info.config.max_bytes == 1024 * 1024 * 1024
+            # An operator changed the limits; collectors must not undo that.
+            await js.add_stream(config=replace(STREAM_CONFIG, max_bytes=1024))
+            await ensure_stream(js)
+            assert (await js.stream_info(STREAM)).config.max_bytes == 1024
         finally:
-            await js.delete_stream(stream)
             await nc.close()
+            await delete_stream(url)
 
     asyncio.run(flow())
+
+
+def test_intake_waits_for_the_first_collector_to_create_the_stream(monkeypatch):
+    from discord_intake import main
+    from nats_client import CONSUMER, STREAM, ensure_stream
+
+    url = nats_url()
+    monkeypatch.setattr(main, "STREAM_WAIT", 0.1)
+
+    async def flow():
+        nc = await nats.connect(url)
+        js = nc.jetstream()
+        try:
+            # `--once` has nothing to drain before the stream exists.
+            assert not await main.ensure_consumer(js, wait=False)
+            waiting = asyncio.create_task(main.ensure_consumer(js))
+            await asyncio.sleep(0.3)
+            assert not waiting.done()
+            await ensure_stream(js)
+            assert await asyncio.wait_for(waiting, timeout=2)
+            assert (await js.consumer_info(STREAM, CONSUMER)).config.ack_wait == 120
+        finally:
+            await nc.close()
+            await delete_stream(url)
+
+    asyncio.run(flow())
+
+
+async def delete_stream(url):
+    """Remove the offer stream, so each test starts with an empty broker."""
+    from nats_client import STREAM
+
+    nc = await nats.connect(url)
+    try:
+        await nc.jetstream().delete_stream(STREAM)
+    except nats.js.errors.NotFoundError:
+        pass
+    finally:
+        await nc.close()
