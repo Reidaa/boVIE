@@ -26,7 +26,8 @@ class SearchResponse(BaseModel):
 
 
 class Office(BaseModel):
-    city: str
+    # WTTJ sends null for some offices.
+    city: str | None
     country_code: str
 
 
