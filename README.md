@@ -34,8 +34,9 @@ receives only its own database and broker credentials. `discord-intake` and
 `discord-sender` run continuously.
 
 A new broker needs no setup step. The first collector run creates the `OFFERS` stream.
-`discord-intake` waits for the stream, then creates its own consumer. No service can
-change or delete them afterwards.
+`discord-intake` waits for the stream, then creates its own consumer. Afterwards,
+`discord-intake` can update its own consumer but cannot delete it. No service can change
+or delete the stream.
 
 | Library in `packages/` | Contents |
 | --- | --- |

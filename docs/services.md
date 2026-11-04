@@ -23,7 +23,8 @@ Each worker has one role.
 Collectors cannot send Discord messages. `discord-sender` has no NATS client.
 Each collector publishes only its own source's subject.
 Collectors create the `OFFERS` stream when it is missing. `discord-intake` creates its own consumer.
-No service can update or delete the stream or a consumer. Only the `nats-setup` administrator account can.
+`discord-intake` can update its own consumer, because NATS uses the same request to create and to update a consumer.
+No service can update the stream or delete the stream or a consumer. Only the `nats-setup` administrator account can.
 `discord-intake` and `discord-sender` share the `discord` database and never query collector databases.
 
 Collectors publish each page and wait for JetStream acknowledgments before recording it.

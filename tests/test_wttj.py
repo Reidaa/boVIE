@@ -334,3 +334,18 @@ def test_placeholder_title_is_derived_from_slug_or_skipped(monkeypatch):
         worker.collect(Mock(spec=Engine), client, recorded.append)
     assert [event.source_offer_id for event in recorded] == ["derived"]
     assert recorded[0].offer.title == "Network security implementation specialist"
+
+
+def test_office_without_city_is_normalized_as_unknown_city():
+    from collector_wttj.core.search import DetailResponse
+    from collector_wttj.main import normalize
+
+    payload = detail("no-city")
+    payload["job"]["offices"] = [{"city": None, "country_code": "FR"}]
+    job = DetailResponse.model_validate(payload).job
+
+    event = normalize(job, job.name)
+
+    assert event.offer.city == "N/A"
+    assert event.offer.country == "FR"
+    assert event.offer.fields[1].value == "N/A (FR)"
