@@ -75,7 +75,8 @@ Each layer works end to end before the next starts.
    after the commit. `nats-setup` creates its consumer. `nats.conf` gets its user. Migrations live
    in a `catalog_store` library.
 2. `catalog-api`: `GET /offers` (filters, keyset pagination, offer count for each kind) and
-   `GET /offers/{source}/{source_offer_id}`.
+   `GET /offers/{source}/{source_offer_id:path}`. The `:path` converter matches a `/` inside the ID:
+   Workday IDs (#61) have the form `<board>/<job_posting_id>`.
 3. Webapp list and detail pages on Railway.
 4. Collectors publish `closed` and `updated` (issue #62).
 
