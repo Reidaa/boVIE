@@ -85,8 +85,10 @@ Each layer works end to end before the next starts.
 `country_raw`, `city`, `url`, `fields` (JSON), `group_key` (indexed), `first_seen_at`,
 `observed_at`, `closed_at`, `search_text` (full-text index).
 
-Country names map to ISO 3166 codes with `pycountry`. An unknown name keeps `country_raw`, gets no
-code and logs a warning.
+`country_iso` is an ISO 3166 code. WTTJ already sends one. Business France sends a French name in
+capitals (`ESPAGNE`, `ETATS-UNIS`), and `pycountry` resolves only 80 of its 237 names. The catalog
+maps these names with the Business France country table (`countryId` in `country.py`), moved to a
+shared package. An unknown value keeps `country_raw`, gets no code and logs a warning.
 
 ## Sources
 
