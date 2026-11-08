@@ -51,10 +51,12 @@ time:
 1. The catalog stores one row per `(source, source_offer_id)`. It never deletes a source row.
 2. On write, it computes `group_key = sha256(normalize(organization), normalize(title), country_iso, normalize(city))`.
    `normalize` folds case, accents and spaces.
-3. A group holds at most one offer per source. When that source already has an offer with the same
-   `group_key`, the new offer gets `group_key = sha256(source, source_offer_id)` and forms a group of
-   its own. Two offers from the same source are two postings. A recompute processes rows in
-   `first_seen_at` order, so it gives the same groups.
+3. A group holds at most one offer per source. When several offers from one source share a key, the
+   earliest by `first_seen_at` (then by `source_offer_id`) keeps it. Each other offer gets
+   `group_key = sha256(source, source_offer_id)` and forms a group of its own. Two offers from the
+   same source are two postings. A `discovered` or `updated` event that changes a grouping field
+   re-runs this rule for the old and new keys of that source, so the result does not depend on
+   event order.
 4. The list shows one card per open `group_key`. The detail page lists every open source in the group.
 
 A later layer can add a manual "not a duplicate" override if a wrong merge happens. The MVP does not.
