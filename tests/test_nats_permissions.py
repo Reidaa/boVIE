@@ -43,6 +43,12 @@ def test_deployment_nats_permissions_and_durable_acknowledgments(monkeypatch):
                 await nc.jetstream().publish(
                     f"offers.{source}.v1", discovered.model_dump_json().encode()
                 )
+            # Collectors create the OFFERS stream when it is missing, so the
+            # Workday account can read and create it (see deploy/nats.conf).
+            workday = connections[-1]
+            assert (await workday.jetstream().stream_info("OFFERS")).config.name == (
+                "OFFERS"
+            )
             monkeypatch.setenv("NATS_USER", "discord-intake")
             monkeypatch.setenv("NATS_PASSWORD", "local-nats-discord-intake")
             receiver = await connect()
