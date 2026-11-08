@@ -71,9 +71,12 @@ A later layer can add a manual "not a duplicate" override if a wrong merge happe
 
 Each layer works end to end before the next starts.
 
-1. `catalog-intake` consumes `OFFERS` from the start of the stream, upserts offers and acknowledges
-   after the commit. `nats-setup` creates its consumer. `nats.conf` gets its user. Migrations live
-   in a `catalog_store` library.
+1. `catalog-intake` waits for the `OFFERS` stream and creates its own durable consumer, like
+   `discord-intake` after #66. It consumes from the start of the stream, upserts offers and
+   acknowledges after the commit. `nats.conf` gets its user, which may publish
+   `$JS.API.CONSUMER.INFO.OFFERS.catalog-intake`, `$JS.API.CONSUMER.CREATE.OFFERS.catalog-intake`,
+   `$JS.API.CONSUMER.MSG.NEXT.OFFERS.catalog-intake` and `$JS.ACK.OFFERS.catalog-intake.>`, and
+   subscribe to `_INBOX.catalog-intake.>`. Migrations live in a `catalog_store` library.
 2. `catalog-api`: `GET /offers` (filters, keyset pagination, offer count for each kind) and
    `GET /offers/{source}/{source_offer_id:path}`. The `:path` converter matches a `/` inside the ID:
    Workday IDs (#61) have the form `<board>/<job_posting_id>`.
