@@ -4,8 +4,11 @@ import click
 import nats.errors
 from cli_common import configure_logging, log_failure
 from discord_store import accept
+from loguru import logger
 from mysql_common import make_engine
 from mysql_common.env import load_env
+from nats.js.api import AckPolicy, ConsumerConfig
+from nats.js.errors import NotFoundError
 from nats_client import CONSUMER, STREAM, connect, subject
 from offer_events import OfferEvent
 from sqlalchemy.engine import Engine
@@ -13,6 +16,44 @@ from sqlalchemy.engine import Engine
 # A failing message is retried until it succeeds. JetStream keeps it, so a fix
 # deployed later still delivers it. The delay doubles from 30 s up to this cap.
 MAX_RETRY_DELAY = 3600
+# Setting `name` makes nats-py use CONSUMER.CREATE.OFFERS.discord-intake,
+# the only create subject this service's account may publish to.
+CONSUMER_CONFIG = ConsumerConfig(
+    name=CONSUMER,
+    durable_name=CONSUMER,
+    ack_policy=AckPolicy.EXPLICIT,
+    ack_wait=120,
+    max_ack_pending=1000,
+)
+# Seconds between checks for the stream on a broker that no collector used yet.
+STREAM_WAIT = 30
+
+
+async def ensure_consumer(js, *, wait: bool = True) -> bool:
+    """Create this service's consumer when it is missing. Never change it.
+
+    The collectors create the stream. On a new broker, intake can start first,
+    so it waits for the stream. Return False when the stream is missing and
+    `wait` is false.
+    """
+    while True:
+        try:
+            await js.consumer_info(STREAM, CONSUMER)
+            return True
+        except NotFoundError:
+            pass
+        try:
+            await js.add_consumer(STREAM, config=CONSUMER_CONFIG)
+            return True
+        except NotFoundError:
+            if not wait:
+                return False
+            logger.info(
+                "Stream {} does not exist yet; checking again in {} s",
+                STREAM,
+                STREAM_WAIT,
+            )
+            await asyncio.sleep(STREAM_WAIT)
 
 
 async def receive_message(engine: Engine, message):
@@ -55,6 +96,9 @@ def main(once: bool):
     async def run():
         nc = await connect()
         try:
+            # With `--once`, a missing stream means there is nothing to drain.
+            if not await ensure_consumer(nc.jetstream(), wait=not once):
+                return
             subscription = await nc.jetstream().pull_subscribe_bind(
                 durable=CONSUMER,
                 stream=STREAM,

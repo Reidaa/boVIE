@@ -24,22 +24,26 @@ imports and install each service independently.
 
 | App in `apps/` | Responsibility | Database | NATS access |
 | --- | --- | --- | --- |
-| `collector-business-france` | Collect Business France VIE/VIA offers and publish the new ones | `collector_business_france` | Publish `offers.business_france.v1` |
-| `collector-wttj` | Collect Welcome to the Jungle jobs and publish the new ones | `collector_wttj` | Publish `offers.wttj.v1` |
-| `discord-intake` | Read offers from NATS and queue a Discord message for each new one | `discord` | Consume `OFFERS/discord-intake` |
+| `collector-business-france` | Collect Business France VIE/VIA offers and publish the new ones | `collector_business_france` | Publish `offers.business_france.v1`; create `OFFERS` if missing |
+| `collector-wttj` | Collect Welcome to the Jungle jobs and publish the new ones | `collector_wttj` | Publish `offers.wttj.v1`; create `OFFERS` if missing |
+| `discord-intake` | Read offers from NATS and queue a Discord message for each new one | `discord` | Consume `OFFERS/discord-intake`; create it if missing |
 | `discord-sender` | Post queued messages to the Discord webhook | `discord` | None |
-| `nats-setup` | Create the `OFFERS` stream and its consumer | None | Administrator |
 
 Collectors run on schedules and publish new offers to NATS themselves. Each collector
 receives only its own database and broker credentials. `discord-intake` and
-`discord-sender` run continuously. `nats-setup` runs once.
+`discord-sender` run continuously.
+
+A new broker needs no setup step. The first collector run creates the `OFFERS` stream.
+`discord-intake` waits for the stream, then creates its own consumer. Afterwards,
+`discord-intake` can update its own consumer but cannot delete it. No service can change
+or delete the stream.
 
 | Library in `packages/` | Contents |
 | --- | --- |
 | `offer-events` | The `OfferEvent` schema every app exchanges |
 | `collector-store` | Collector database schema, page recording, `collector-store-migrate` |
 | `discord-store` | Discord database schema (inbox and queued messages), `discord-store-migrate` |
-| `nats-client` | NATS connection, stream and consumer names, the collectors' publisher |
+| `nats-client` | NATS connection, stream and consumer names, stream settings and creation, the collectors' publisher |
 | `mysql-common` | MySQL engine, UTC timestamps, queue leases, migration runner |
 | `cli-common` | `.env` loading and log setup for app entrypoints |
 
@@ -67,7 +71,6 @@ docker compose --profile workers build
 docker compose --profile workers run --rm migrate-collector-business-france
 docker compose --profile workers run --rm migrate-collector-wttj
 docker compose --profile workers run --rm migrate-discord
-docker compose --profile workers run --rm nats-setup
 ```
 
 Compose provisions three databases with separate unprivileged accounts, persistent
@@ -93,7 +96,7 @@ each deployed process should receive only its own database credentials.
 ## Collect offers
 
 The default `.env` selects the Business France database and broker account.
-Collectors need a running NATS broker with the stream provisioned:
+Collectors need a running NATS broker. The first run creates the `OFFERS` stream:
 
 ```sh
 uv run --package bovie-collector-business-france collector-business-france --limit 25 --country canada --specialization 'information systems'
@@ -167,8 +170,21 @@ uv run --package bovie-discord-sender discord-sender
 
 `discord-sender` only needs `discord` database credentials and `DISCORD_WEBHOOK_URL`.
 `--once` drains currently eligible work and exits; future retries still need another
-invocation. Without it, these commands poll continuously. The `nats-setup` Compose job uses a
-separate administrator account and must run before the collectors or `discord-intake`.
+invocation. Without it, these commands poll continuously. With `--once`, `discord-intake`
+exits when the stream does not exist yet.
+
+Services only create missing NATS objects. To change the stream's limits, an operator
+uses the `nats-setup` administrator account, for example with the `nats` CLI in the
+`natsio/nats-box` image:
+
+```sh
+docker run --rm --network host natsio/nats-box \
+  nats --server nats://127.0.0.1:4222 --user nats-setup --password local-nats-setup \
+  --inbox-prefix _INBOX.nats-setup stream edit OFFERS --max-bytes 2GiB --force
+```
+
+The account may only receive replies on `_INBOX.nats-setup.>`, so keep `--inbox-prefix`.
+Then change `STREAM_CONFIG` in `packages/nats-client` to match, so new brokers get the same limits.
 
 ## Delivery and recovery
 

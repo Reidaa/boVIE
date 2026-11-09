@@ -6,10 +6,26 @@ import threading
 from typing import Self
 
 import nats
+from nats.js.api import DiscardPolicy, RetentionPolicy, StorageType, StreamConfig
+from nats.js.errors import NotFoundError
 from offer_events import OfferEvent
 
 STREAM = "OFFERS"
 CONSUMER = "discord-intake"
+# Limits retention keeps acknowledged messages, so several consumers can read the
+# stream and a new consumer can replay the retained history.
+STREAM_CONFIG = StreamConfig(
+    name=STREAM,
+    subjects=["offers.*.v1"],
+    storage=StorageType.FILE,
+    retention=RetentionPolicy.LIMITS,
+    max_age=90 * 24 * 60 * 60,
+    discard=DiscardPolicy.NEW,
+    max_bytes=1024 * 1024 * 1024,
+    max_msg_size=131072,
+    duplicate_window=120,
+    num_replicas=1,
+)
 
 
 def subject(source: str) -> str:
@@ -25,6 +41,21 @@ async def connect():
         password=os.environ.get("NATS_PASSWORD"),
         connect_timeout=5,
     )
+
+
+async def ensure_stream(js):
+    """Create the offer stream when it is missing. Never change an existing one.
+
+    Collectors call this before they publish. Their accounts can create the
+    stream but not update it, so an operator changes its limits with the
+    nats-setup account.
+    """
+    try:
+        await js.stream_info(STREAM)
+    except NotFoundError:
+        # When both collectors create it at once, both calls succeed:
+        # JetStream accepts a create with the same configuration.
+        await js.add_stream(config=STREAM_CONFIG)
 
 
 class Publisher:
@@ -47,6 +78,11 @@ class Publisher:
             self._stop()
             raise
         self._js = self._nc.jetstream()
+        try:
+            self._run(ensure_stream(self._js))
+        except BaseException:
+            self.__exit__()
+            raise
         return self
 
     def __exit__(self, *exc_info):

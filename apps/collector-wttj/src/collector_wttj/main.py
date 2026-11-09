@@ -48,7 +48,8 @@ def normalize(job: JobDetail, title: str) -> OfferEvent:
         DisplayField(
             name="Lieu",
             value=", ".join(
-                f"{office.city} ({office.country_code})" for office in job.offices
+                f"{office.city or 'N/A'} ({office.country_code})"
+                for office in job.offices
             )[:1024]
             or "N/A",
         ),
@@ -78,7 +79,7 @@ def normalize(job: JobDetail, title: str) -> OfferEvent:
             title=title,
             organization=job.organization.name,
             country=office.country_code if office else "N/A",
-            city=office.city if office else "N/A",
+            city=office.city if office and office.city else "N/A",
             url=HttpUrl(
                 f"https://www.welcometothejungle.com/fr/companies/"
                 f"{quote(job.organization.slug, safe='')}/jobs/{quote(job.slug, safe='')}"
