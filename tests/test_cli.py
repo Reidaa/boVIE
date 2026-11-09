@@ -106,6 +106,69 @@ def test_wttj_cli_defaults_and_optional_contract_filters(tmp_path, monkeypatch):
     assert observed[-1]["countries"] == ("CA",)
 
 
+BOARD = '{"url": "https://example.wd1.myworkdayjobs.com/Careers", "company": "Example"'
+
+
+def test_workday_cli_reads_boards_from_the_environment(tmp_path, monkeypatch):
+    from collector_workday import main
+
+    monkeypatch.chdir(tmp_path)
+    for name in ("WORKDAY_BOARDS", "WORKDAY_LIMIT"):
+        monkeypatch.delenv(name, raising=False)
+    monkeypatch.setenv("DATABASE_URL", "mysql+pymysql://u:p@localhost/source")
+    observed = []
+
+    class Engine:
+        def dispose(self):
+            pass
+
+    monkeypatch.setattr(main, "make_engine", lambda url: Engine())
+    monkeypatch.setattr(main, "Publisher", Publisher)
+    monkeypatch.setattr(
+        main,
+        "collect",
+        lambda engine, client, publish, boards, **kwargs: observed.append(
+            (boards, kwargs)
+        ),
+    )
+    (tmp_path / ".env").write_text(
+        f'WORKDAY_LIMIT=5\nWORKDAY_BOARDS=\'[{BOARD}, "searchText": "data"}}]\'\n'
+    )
+    result = CliRunner().invoke(main.main)
+    assert result.exit_code == 0, result.output
+    [board] = observed[-1][0]
+    assert (board.name, board.search_text) == ("example/Careers", "data")
+    assert observed[-1][1] == {"limit": 5}
+    result = CliRunner().invoke(main.main, ["--boards", f"[{BOARD}}}]"])
+    assert result.exit_code == 0, result.output
+    assert observed[-1][0][0].search_text == ""
+    result = CliRunner().invoke(main.main, ["--boards", '[{"url": "x"}]'])
+    assert result.exit_code == 2
+    assert "WORKDAY_BOARDS" in result.output
+
+
+@pytest.mark.parametrize("value", [None, "", "[]"])
+def test_workday_cli_without_boards_fails_before_connecting(
+    tmp_path, monkeypatch, value
+):
+    from collector_workday import main
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delenv("WORKDAY_BOARDS", raising=False)
+    if value is not None:
+        monkeypatch.setenv("WORKDAY_BOARDS", value)
+    monkeypatch.setenv("DATABASE_URL", "mysql+pymysql://u:p@localhost/source")
+
+    def refuse(*args, **kwargs):
+        raise AssertionError("connected without boards")
+
+    monkeypatch.setattr(main, "make_engine", refuse)
+    monkeypatch.setattr(main, "Publisher", refuse)
+    result = CliRunner().invoke(main.main)
+    assert result.exit_code == 2
+    assert "WORKDAY_BOARDS" in result.output
+
+
 def test_business_france_failure_is_logged_on_stderr(monkeypatch):
     from collector_business_france import main
 

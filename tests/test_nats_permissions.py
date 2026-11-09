@@ -11,6 +11,7 @@ PASSWORDS = {
     "nats-setup": "local-nats-setup",
     "collector-business-france": "local-nats-collector-business-france",
     "collector-wttj": "local-nats-collector-wttj",
+    "collector-workday": "local-nats-collector-workday",
     "discord-intake": "local-nats-discord-intake",
 }
 
@@ -38,6 +39,7 @@ def test_deployment_nats_permissions_and_durable_acknowledgments(monkeypatch):
             for source, user in (
                 ("business_france", "collector-business-france"),
                 ("wttj", "collector-wttj"),
+                ("workday", "collector-workday"),
             ):
                 nc = await connect_as(user)
                 connections.append(nc)
@@ -52,7 +54,7 @@ def test_deployment_nats_permissions_and_durable_acknowledgments(monkeypatch):
             sub = await receiver.jetstream().pull_subscribe_bind(
                 durable="discord-intake", stream="OFFERS"
             )
-            for message in await sub.fetch(2, timeout=2):
+            for message in await sub.fetch(3, timeout=2):
                 await message.ack_sync(timeout=2)
 
             # Each account can create only its own object, and change nothing.

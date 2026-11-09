@@ -49,7 +49,7 @@ class OfferEvent(BaseModel):
     model_config = ConfigDict(extra="forbid")
     version: Literal[1] = 1
     type: EventType
-    source: Literal["business_france", "wttj"]
+    source: Literal["business_france", "wttj", "workday"]
     source_offer_id: str = Field(min_length=1, max_length=255)
     offer: OfferDetails
     event_id: UUID = Field(default_factory=stable_event_id)
