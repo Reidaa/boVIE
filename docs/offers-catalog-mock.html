@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>boVIE offers catalog: webapp mock</title>
+<!-- Static design reference for issue #11. It is not served by any service. -->
+<style>
+body{margin:24px;font-family:system-ui,sans-serif;background:#fff;color:#111}
+*{box-sizing:border-box}
+.screen{background:#fbfaf7;color:#1d1f24;border:1px solid #e3e0d8;border-radius:var(--radius,10px);padding:20px;font:14px/1.45 system-ui,sans-serif;margin:0 0 28px}
+.cap{font:600 12px/1 var(--font-sans,system-ui);letter-spacing:.06em;text-transform:uppercase;color:var(--muted-foreground,#777);margin:0 0 8px}
+h1.mock{font:600 18px/1.3 var(--font-sans,system-ui);margin:0 0 4px;color:var(--foreground,#111)}
+p.lead{margin:0 0 16px;color:var(--muted-foreground,#666);font:14px/1.5 var(--font-sans,system-ui)}
+.top{display:flex;align-items:center;gap:12px;border-bottom:1px solid #e3e0d8;padding-bottom:12px;margin-bottom:16px}
+.logo{font-weight:800;font-size:17px;letter-spacing:-.02em}.logo b{color:#1f6feb}
+.muted{color:#6b6f78}.small{font-size:12px}
+.tag{display:inline-block;font-size:11px;font-weight:600;padding:2px 7px;border-radius:999px;background:#eef2ff;color:#3346a8;white-space:nowrap}
+.tag.vie{background:#e8f6ee;color:#16683d}.tag.src{background:#f1efe9;color:#5a5446}
+.tag.closed{background:#fde8e8;color:#9b1c1c}
+input,select{font:inherit;border:1px solid #d6d2c8;border-radius:7px;padding:7px 9px;background:#fff;color:inherit;min-width:0}
+.btn{display:inline-block;background:#1f6feb;color:#fff;border-radius:7px;padding:8px 12px;font-weight:600;text-decoration:none;white-space:nowrap}
+.btn.ghost{background:#fff;color:#1f6feb;border:1px solid #c9d8f7}
+.title{font-weight:650;font-size:15px}
+dl.f{display:grid;grid-template-columns:max-content 1fr;gap:4px 14px;margin:0}dl.f dt{color:#6b6f78}dl.f dd{margin:0}
+.a-grid{display:grid;grid-template-columns:180px 1fr;gap:18px}
+.a-side{display:flex;flex-direction:column;gap:6px}.a-side label{display:flex;gap:6px;align-items:center}.a-side input[type=checkbox],.a-side input[type=radio]{margin:0}
+.a-h{font-weight:650;margin-top:8px}.a-h:first-child{margin-top:0}
+.a-card{display:flex;justify-content:space-between;gap:12px;background:#fff;border:1px solid #e3e0d8;border-radius:9px;padding:12px 14px;margin-bottom:8px}
+.a-tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}
+.a-grid2{display:grid;grid-template-columns:1fr 220px;gap:20px}
+.a-apply{background:#fff;border:1px solid #e3e0d8;border-radius:9px;padding:14px;align-self:start}
+@media (max-width:620px){.a-grid,.a-grid2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<h1 class="mock">Offers catalog webapp: chosen layout (mock A)</h1>
+<p class="lead">Static mock with sample data. Filters sit in a left sidebar. The detail is a full page. See offers-catalog.md and ADR 0002.</p>
+<div class="cap">List page</div>
+<div class="screen">
+ <div class="top"><span class="logo">bo<b>VIE</b></span><input style="flex:1" value="data" aria-label="Search"><a class="btn">Search</a></div>
+ <div class="a-grid">
+  <aside class="a-side">
+   <div class="a-h">Kind</div>
+   <label><input type="checkbox" checked> VIE / VIA <span class="muted">412</span></label>
+   <label><input type="checkbox" checked> Job <span class="muted">1 318</span></label>
+   <div class="a-h">Country</div>
+   <select><option>All countries</option></select>
+   <div class="a-h">First seen</div>
+   <label><input type="radio" name="d"> Last 7 days</label>
+   <label><input type="radio" name="d" checked> Last 30 days</label>
+   <label><input type="radio" name="d"> Any time</label>
+  </aside>
+  <main>
+   <div class="muted small" style="margin-bottom:8px">57 offers · newest first</div>
+   <article class="a-card"><div><div class="title">VIE – Data Analyst</div><div class="muted">Société Générale · Singapore, SG</div><div class="a-tags"><span class="tag vie">VIE</span><span class="tag src">Business France</span><span class="tag src">WTTJ</span></div></div><span class="muted small">2 h ago</span></article>
+   <article class="a-card"><div><div class="title">Data Engineer</div><div class="muted">Doctolib · Paris, FR</div><div class="a-tags"><span class="tag">Job</span><span class="tag src">WTTJ</span></div></div><span class="muted small">5 h ago</span></article>
+   <article class="a-card"><div><div class="title">VIE – Ingénieur data industrielle</div><div class="muted">Safran · Montréal, CA</div><div class="a-tags"><span class="tag vie">VIE</span><span class="tag src">Business France</span></div></div><span class="muted small">1 d ago</span></article>
+   <div class="muted small" style="text-align:center;margin-top:10px">Next page →</div>
+  </main>
+ </div>
+</div>
+<div class="cap">Detail page</div>
+<div class="screen">
+ <div class="muted small" style="margin-bottom:10px">← Back to results</div>
+ <div class="a-grid2">
+  <div><h2 style="margin:0 0 4px;font-size:21px">VIE – Data Analyst</h2><div class="muted" style="margin-bottom:14px">Société Générale · Singapore, SG · first seen 2 h ago</div>
+   <dl class="f"><dt>Durée</dt><dd>12 mois</dd><dt>Indemnité</dt><dd>3 450 €</dd><dt>Début</dt><dd>01/01/2027</dd><dt>Secteur</dt><dd>Banque</dd><dt>Spécialisation</dt><dd>Data, Finance</dd></dl></div>
+  <aside class="a-apply"><div style="font-weight:650;margin-bottom:8px">Apply on</div><a class="btn" style="display:block;text-align:center;margin-bottom:6px">Business France</a><a class="btn ghost" style="display:block;text-align:center">Welcome to the Jungle</a><div class="muted small" style="margin-top:8px">Same offer found on 2 sources.</div></aside>
+ </div>
+</div>
+</body>
+</html>
