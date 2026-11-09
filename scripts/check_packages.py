@@ -38,12 +38,6 @@ SERVICES = {
         ["discord-store-migrate"],
         ["nats", "nextcord", "collector_store"],
     ),
-    "nats-setup": (
-        "nats-setup",
-        "nats_setup.main",
-        [],
-        ["sqlalchemy", "httpx", "collector_store", "discord_store"],
-    ),
 }
 
 

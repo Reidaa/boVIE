@@ -23,7 +23,6 @@ The deployment uses private networking and creates no public domains or database
 | `collector-business-france` | Collect and publish at minute 12, every two hours UTC | `collector-business-france` |
 | `collector-wttj` | Collect and publish at minute 22, every two hours UTC | `collector-wttj` |
 | `collector-workday` | Collect and publish at minute 32, every two hours UTC | `collector-workday` |
-| `nats-setup` | Create the stream and consumer, then exit | `nats-setup` |
 | `discord-intake` | Read offers and queue Discord messages | `discord-intake` |
 | `discord-sender` | Post queued messages to Discord | `discord-sender` |
 
@@ -51,7 +50,8 @@ After a 401 response, it reads the page again and retries once.
 These commands wait for database connectivity before applying migrations.
 Migration failures stop the deployment and are not retried as connection failures.
 Workers retry while their database or broker is starting.
-`nats-setup` exits successfully after provisioning and runs again when redeployed.
+On a new broker, the first collector run creates the `OFFERS` stream.
+`discord-intake` waits for the stream, then creates its consumer.
 
 ## Updates and checks
 
@@ -67,5 +67,5 @@ railway logs --service collector-business-france --lines 50
 railway logs --service discord-intake --lines 50
 ```
 
-Collectors and broker setup finish after successful runs. That exit is expected.
+Collectors finish after successful runs. That exit is expected.
 `discord-intake` and `discord-sender` must stay running in production.

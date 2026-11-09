@@ -1,7 +1,7 @@
 # Service ownership
 
 The project collects general job offers from WTTJ and Workday career sites, and VIE/VIA offers
-from Business France. The uv workspace separates six deployable services from six shared libraries.
+from Business France. The uv workspace separates five deployable services from six shared libraries.
 Each service declares its own dependencies and has its own Dockerfile.
 The root project installs development tools only.
 
@@ -11,7 +11,7 @@ The root project installs development tools only.
 | `collector_store` | Published offers, content hashes, sightings, checkpoints, collector database migrations | Collectors |
 | `discord_store` | Inbox, queued messages, atomic acceptance, Discord database migrations | `discord-intake` and `discord-sender` |
 | `mysql_common` | MySQL connections, UTC timestamps, queue leases, migration execution | Both storage libraries and database clients |
-| `nats_client` | NATS connection, stream names, and the collectors' synchronous publisher | Collectors, `discord-intake`, `nats-setup` |
+| `nats_client` | NATS connection, stream names and settings, stream creation, and the collectors' synchronous publisher | Collectors, `discord-intake` |
 | `cli_common` | Entrypoint environment loading and failure logging | Deployable services |
 
 A library cannot import a service. A service cannot import another service.
@@ -21,7 +21,10 @@ It checks entrypoints, packaged migrations, and the absence of unrelated service
 
 Each worker has one role.
 Collectors cannot send Discord messages. `discord-sender` has no NATS client.
-`nats-setup` has no database dependency. Each collector publishes only its own source's subject.
+Each collector publishes only its own source's subject.
+Collectors create the `OFFERS` stream when it is missing. `discord-intake` creates its own consumer.
+`discord-intake` can update its own consumer, because NATS uses the same request to create and to update a consumer.
+No service can update the stream or delete the stream or a consumer. Only the `nats-setup` administrator account can.
 `discord-intake` and `discord-sender` share the `discord` database and never query collector databases.
 
 Collectors publish each page and wait for JetStream acknowledgments before recording it.

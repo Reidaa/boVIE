@@ -141,7 +141,6 @@ jobs:
           - apps/collector-workday/Dockerfile
           - apps/discord-intake/Dockerfile
           - apps/discord-sender/Dockerfile
-          - apps/nats-setup/Dockerfile
           - deploy/railway/nats/Dockerfile
     steps:
       - name: Checkout repository
