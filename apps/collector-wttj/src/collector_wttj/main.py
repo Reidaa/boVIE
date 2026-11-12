@@ -61,7 +61,7 @@ def normalize(job: JobDetail, title: str) -> OfferEvent:
             DisplayField(
                 name="Salaire",
                 value=(
-                    f"{job.salary_min or '?'} – {job.salary_max or '?'} "
+                    f"{job.salary_min or '?'} – {job.salary_max or '?'} "  # noqa: RUF001 - en dash shown in Discord
                     f"{job.salary_currency or ''} / {job.salary_period or 'N/A'}"
                 ),
             )

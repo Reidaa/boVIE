@@ -18,7 +18,7 @@ from pydantic import HttpUrl
 from sqlalchemy.engine import Engine
 
 from .choice import Choice
-from .config import configFromParams
+from .config import config_from_params
 from .display import display_fields
 from .job import get_from_id, search_id
 from .job.models.country import get_country_names
@@ -36,10 +36,10 @@ def normalize(job: Job) -> OfferEvent:
         source="business_france",
         source_offer_id=str(job.id),
         offer=OfferDetails(
-            title=job.missionTitle[:256],
-            organization=job.organizationName,
-            country=job.countryName,
-            city=job.cityName or job.cityAffectation,
+            title=job.mission_title[:256],
+            organization=job.organization_name,
+            country=job.country_name,
+            city=job.city_name or job.city_affectation,
             url=HttpUrl(f"https://mon-vie-via.businessfrance.fr/offres/{job.id}"),
             fields=display_fields(job),
         ),
@@ -53,8 +53,10 @@ def task(
     *,
     page_size: int = 25,
 ):
+    # Hash the API keys, not the field names: renaming a field must not
+    # create a new checkpoint.
     scan = hashlib.sha256(
-        json.dumps(params.model_dump(), sort_keys=True).encode()
+        json.dumps(params.model_dump(by_alias=True), sort_keys=True).encode()
     ).hexdigest()
     offset = 0
     # Replaying from zero is intentional: offset-based results can move between runs.
@@ -130,15 +132,16 @@ def task(
     package_name="bovie-collector-business-france", message="Bovie %(version)s"
 )
 def cli(
+    *,
     debug: bool,
     limit: int,
     geozone: tuple[str],
     country: tuple[str],
     specialization: tuple[str],
 ):
-    configure_logging(debug)
+    configure_logging(debug=debug)
 
-    config = configFromParams(
+    config = config_from_params(
         limit=limit,
         regions=geozone,
         specializations=specialization,
@@ -146,8 +149,8 @@ def cli(
     )
     params: SearchParameters = SearchParameters(
         limit=config.search.limit,
-        specializationsIds=list(config.search.specializations),
-        countriesIds=list(config.search.countries),
+        specializations_ids=list(config.search.specializations),
+        countries_ids=list(config.search.countries),
     )
 
     logger.debug(f"limit: {limit}")

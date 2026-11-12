@@ -88,7 +88,7 @@ async def handle(engine: Engine, message) -> bool:
 @click.option(
     "--once", is_flag=True, help="Drain currently available messages and exit."
 )
-def main(once: bool):
+def main(*, once: bool):
     """Commit events and pending Discord deliveries before acknowledging NATS."""
     configure_logging()
     engine = make_engine(load_env().database_url)

@@ -37,4 +37,43 @@ dev = [
 ]
 
 [tool.ruff.lint]
-extend-select = ["I"]
+extend-select = [
+    "A",     # flake8-builtins: names that shadow builtins (id, type, input)
+    "ASYNC", # flake8-async: blocking calls inside async functions
+    "B",     # flake8-bugbear: likely bugs (mutable defaults, loop closures)
+    "BLE",   # flake8-blind-except: `except Exception` that hides errors
+    "C4",    # flake8-comprehensions: needless list/dict/set calls
+    "DTZ",   # flake8-datetimez: datetimes without a time zone
+    "FAST",  # FastAPI: Annotated dependencies, redundant response models
+    "FBT",   # flake8-boolean-trap: positional bools such as f(True)
+    "FURB",  # refurb: modern idioms for standard library calls
+    "G",     # flake8-logging-format: f-strings and % in log calls
+    "I",     # isort: import order
+    "ISC",   # flake8-implicit-str-concat: accidental "a" "b" concatenation
+    "LOG",   # flake8-logging: logger misuse (root logger, exc_info)
+    "N",     # pep8-naming: snake_case functions, variables and fields
+    "PERF",  # Perflint: slow loop patterns
+    "PIE",   # flake8-pie: unnecessary pass, spread, and placeholder code
+    "PT",    # flake8-pytest-style: pytest conventions
+    "PTH",   # flake8-use-pathlib: pathlib instead of os.path
+    "RET",   # flake8-return: needless assignments and else after return
+    "RUF",   # Ruff-specific: ambiguous Unicode, mutable class defaults
+    "S",     # flake8-bandit: security issues (shell, eval, hardcoded secrets)
+    "SIM",   # flake8-simplify: conditions and blocks that can be simpler
+    "T20",   # flake8-print: print calls; use logging instead
+    "TRY",   # tryceratops: exception handling (log.exception, raise from)
+    "UP",    # pyupgrade: syntax for the target Python version
+]
+ignore = [
+    "ISC001", # conflicts with ruff format, which can join strings onto one line
+    "N818",   # exceptions may name a state (SourceSilent) without an Error suffix
+    "SIM105", # try/except/pass reads more plainly than contextlib.suppress
+    "TRY003", # long exception messages are fine; a class per message is overkill
+    "TRY300", # return inside try is clearer than a separate else block
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests use assert and fixed fake credentials.
+"**/tests/*" = ["S"]
+# Scripts are CLIs: they may shell out and print to stdout.
+"**/scripts/*" = ["S", "T20"]

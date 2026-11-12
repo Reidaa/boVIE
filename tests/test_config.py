@@ -1,5 +1,6 @@
 import pytest
-from collector_business_france.config import configFromParams
+from collector_business_france.config import config_from_params
+from pydantic import ValidationError
 
 
 def test_config_from_params():
@@ -8,7 +9,7 @@ def test_config_from_params():
     specializations = ["Information Systems"]
     countries = []
 
-    config = configFromParams(
+    config = config_from_params(
         limit=limit,
         regions=zones,
         specializations=specializations,
@@ -17,7 +18,7 @@ def test_config_from_params():
 
     assert config.search.limit == limit
     assert len(specializations) == len(list(config.search.specializations))
-    assert 3 == len(list(config.search.countries))
+    assert len(list(config.search.countries)) == 3
 
 
 def test_config_from_params_invalid_region():
@@ -26,8 +27,8 @@ def test_config_from_params_invalid_region():
     specializations = ["Information Systems"]
     countries = ["Germany", "Canada"]
 
-    with pytest.raises(ValueError) as _:
-        configFromParams(
+    with pytest.raises(ValueError, match="Invalid geographic zone"):
+        config_from_params(
             limit=limit,
             regions=regions,
             specializations=specializations,
@@ -37,12 +38,12 @@ def test_config_from_params_invalid_region():
 
 def test_config_from_params_invalid_specialization():
     limit = 100
-    regions = ["North America"]
+    regions = ["AMERIQUE DU NORD"]
     specializations = ["Invalid Specialization"]
     countries = ["Germany", "Canada"]
 
-    with pytest.raises(ValueError) as _:
-        configFromParams(
+    with pytest.raises(ValueError, match="Invalid specialization"):
+        config_from_params(
             limit=limit,
             regions=regions,
             specializations=specializations,
@@ -52,12 +53,12 @@ def test_config_from_params_invalid_specialization():
 
 def test_config_from_params_invalid_country():
     limit = 100
-    regions = ["North America"]
+    regions = ["AMERIQUE DU NORD"]
     specializations = ["Information Systems"]
     countries = ["Invalid Country"]
 
-    with pytest.raises(ValueError) as _:
-        configFromParams(
+    with pytest.raises(ValueError, match="Invalid country"):
+        config_from_params(
             limit=limit,
             regions=regions,
             specializations=specializations,
@@ -67,12 +68,12 @@ def test_config_from_params_invalid_country():
 
 def test_config_from_params_invalid_limit():
     limit = -10
-    regions = ["North America"]
+    regions = ["AMERIQUE DU NORD"]
     specializations = ["Information Systems"]
-    countries = ["Germany", "Canada"]
+    countries = []
 
-    with pytest.raises(ValueError) as _:
-        configFromParams(
+    with pytest.raises(ValidationError):
+        config_from_params(
             limit=limit,
             regions=regions,
             specializations=specializations,
@@ -83,7 +84,7 @@ def test_config_from_params_invalid_limit():
 def test_search_ids_are_sorted():
     # The collector hashes the search into its checkpoint key. Set order changes
     # with each process's hash seed, so unsorted IDs give a new key on each run.
-    config = configFromParams(
+    config = config_from_params(
         limit=10,
         regions=["Europe Occidentale", "Asie et Pacifique"],
         specializations=["Information Systems", "Business", "Marketing Communication"],

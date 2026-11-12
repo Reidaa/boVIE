@@ -25,14 +25,14 @@ class Config(BaseModel):
     search: SearchConfig
 
 
-def parseSearch(
+def parse_search(
     limit: int,
     regions: Iterable[str],
     specializations: Iterable[str],
     countries: Iterable[str],
 ) -> SearchConfig:
-    specializationsIds: set[str] = set()
-    countrieIds: set[str] = set()
+    specialization_ids: set[str] = set()
+    country_ids: set[str] = set()
 
     for spe in specializations:
         if spe.lower() not in get_specialization_names():
@@ -42,7 +42,7 @@ def parseSearch(
         if spe_id is None:
             raise ValueError(f"Invalid specialization: {spe}")
 
-        specializationsIds.add(spe_id)
+        specialization_ids.add(spe_id)
 
     for region in regions:
         if region.lower() not in get_zone_names():
@@ -55,7 +55,7 @@ def parseSearch(
         for country_id in get_countries_id_by_geographic_zone(zone_id):
             if country_id not in get_country_ids():
                 raise ValueError(f"Invalid country from preset: {country_id}")
-            countrieIds.add(country_id)
+            country_ids.add(country_id)
 
     for country in countries:
         if country.lower() not in get_country_names():
@@ -63,25 +63,25 @@ def parseSearch(
         country_id = get_country_code_from_name(country)
         if country_id is None:
             raise ValueError(f"Invalid country: {country}")
-        countrieIds.add(country_id)
+        country_ids.add(country_id)
 
     # Sorted, not set order: the collector hashes the search into its checkpoint
     # key, and set order changes with each process's hash seed.
     return SearchConfig(
         limit=limit,
-        specializations=sorted(specializationsIds),
-        countries=sorted(countrieIds),
+        specializations=sorted(specialization_ids),
+        countries=sorted(country_ids),
     )
 
 
-def configFromParams(
+def config_from_params(
     limit: int,
     regions: Iterable[str],
     specializations: Iterable[str],
     countries: Iterable[str],
 ) -> Config:
     return Config(
-        search=parseSearch(
+        search=parse_search(
             limit=limit,
             specializations=specializations,
             regions=regions,

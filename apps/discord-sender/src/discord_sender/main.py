@@ -15,7 +15,7 @@ from discord_sender.delivery import deliver_one
 @click.option(
     "--once", is_flag=True, help="Drain currently available deliveries and exit."
 )
-def main(once: bool):
+def main(*, once: bool):
     """Send queued Discord messages using only Discord database credentials."""
     configure_logging()
     webhook = os.environ.get("DISCORD_WEBHOOK_URL")

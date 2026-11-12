@@ -54,7 +54,8 @@ def test_discord_outage_then_success(discord_db):
             deliver_one(discord_db, client, "https://discord.invalid/webhook")
         with Session(discord_db) as session, session.begin():
             row = session.get(Delivery, str(discovered.event_id))
-            assert row is not None and row.completed_at is None
+            assert row is not None
+            assert row.completed_at is None
             session.execute(
                 update(Delivery).values(
                     available_at=datetime.now(UTC) - timedelta(seconds=1)
@@ -160,7 +161,8 @@ def test_rate_limited_delivery_waits_for_discord(discord_db, monkeypatch):
     assert any("429" in message for message in messages)
     with Session(discord_db) as session:
         row = session.get(Delivery, str(discovered.event_id))
-        assert row is not None and row.completed_at is None
+        assert row is not None
+        assert row.completed_at is None
         assert row.available_at >= datetime.now(UTC) + timedelta(seconds=5)
 
 

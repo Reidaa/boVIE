@@ -4,21 +4,21 @@ from collector_business_france.job.models.job import Job
 def test_job_detects_external_application_url():
     url = "https://prose.com/careers?ashby_jid=d93116e8"
 
-    job = Job.model_construct(contactURL=url)
+    job = Job.model_construct(contact_url=url)
 
     assert job.external_application_url == url
 
 
 def test_job_ignores_internal_application_url():
     job = Job.model_construct(
-        contactURL="https://mon-vie-via.businessfrance.fr/offres/244342"
+        contact_url="https://mon-vie-via.businessfrance.fr/offres/244342"
     )
 
     assert job.external_application_url is None
 
 
 def test_job_ignores_empty_application_url():
-    job = Job.model_construct(contactURL="")
+    job = Job.model_construct(contact_url="")
 
     assert job.external_application_url is None
 
@@ -46,4 +46,4 @@ def test_job_ignores_fields_the_collector_does_not_read():
 
     job = Job.model_validate(payload, strict=True, by_alias=True)
 
-    assert job.missionTitle == "Engineer"
+    assert job.mission_title == "Engineer"

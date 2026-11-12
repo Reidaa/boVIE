@@ -46,28 +46,25 @@ def _request(method: str, url: str, **kwargs) -> httpx.Response:
     return response
 
 
-def get_from_id(id: int) -> Job | None:
+def get_from_id(offer_id: int) -> Job | None:
     """Return the offer, or None when it was removed after the search listed it."""
-    url = f"/details/{id}"
+    url = f"/details/{offer_id}"
     try:
         r = _request("GET", url)
         if r.status_code in (httpx.codes.NOT_FOUND, httpx.codes.GONE):
-            logger.warning("Business France offer {} is gone; skipping it", id)
+            logger.warning("Business France offer {} is gone; skipping it", offer_id)
             return None
         r.raise_for_status()
     except httpx.HTTPError:
-        logger.exception("Failed to fetch Business France offer {}", id)
+        logger.exception("Failed to fetch Business France offer {}", offer_id)
         raise
 
-    job = Job.model_validate(r.json(), strict=True, by_alias=True)
-
-    return job
+    return Job.model_validate(r.json(), strict=True, by_alias=True)
 
 
 def search_id(params: SearchParameters) -> list[int]:
     url = "/search"
     p = params.model_dump(by_alias=True)
-    ids: list[int] = []
 
     logger.debug(f"Searching offers with parameters: {p}")
 
@@ -78,9 +75,4 @@ def search_id(params: SearchParameters) -> list[int]:
         logger.exception("Failed to search Business France offers")
         raise
 
-    response_json = r.json()
-
-    for result in response_json["result"]:
-        ids.append(int(result["id"]))
-
-    return ids
+    return [int(result["id"]) for result in r.json()["result"]]

@@ -7,16 +7,16 @@ from collector_business_france.job.models.job import Job
 
 
 def display_fields(job: Job) -> list[DisplayField]:
-    start: str = isoparse(job.missionStartDate).strftime("%d/%m/%Y")
-    end: str = isoparse(job.missionEndDate).strftime("%d/%m/%Y")
+    start: str = isoparse(job.mission_start_date).strftime("%d/%m/%Y")
+    end: str = isoparse(job.mission_end_date).strftime("%d/%m/%Y")
     specializations: str = (
         ", ".join([s.specialization_label for s in job.specializations])
         if job.specializations
         else "N/A"
     )
 
-    if job.creationDate:
-        posted: str = isoparse(job.creationDate).strftime("%d/%m/%Y")
+    if job.creation_date:
+        posted: str = isoparse(job.creation_date).strftime("%d/%m/%Y")
     else:
         posted: str = "N/A"
 
@@ -28,25 +28,25 @@ def display_fields(job: Job) -> list[DisplayField]:
     )
 
     fields = [
-        {"name": ":hot_springs: Entreprise", "value": job.organizationName},
+        {"name": ":hot_springs: Entreprise", "value": job.organization_name},
         {"name": ":satellite_orbital: Posté le", "value": posted},
-        {"name": ":calendar: Durée", "value": f"{job.missionDuration} mois"},
+        {"name": ":calendar: Durée", "value": f"{job.mission_duration} mois"},
         {
             "name": ":gear: Secteur",
-            "value": job.activitySectorN1 if job.activitySectorN1 else "N/A",
+            "value": job.activity_sector_n1 or "N/A",
         },
-        {"name": ":world_map: Pays", "value": job.countryName},
-        {"name": ":cityscape: Ville", "value": job.cityName if job.cityName else "N/A"},
+        {"name": ":world_map: Pays", "value": job.country_name},
+        {"name": ":cityscape: Ville", "value": job.city_name or "N/A"},
         {"name": ":money_with_wings: Salaire", "value": f"{job.indemnite}e"},
         {"name": ":person_running: Début", "value": start},
         {"name": ":checkered_flag: Fin", "value": end},
         {
             "name": ":e_mail: Email",
-            "value": job.contactEmail if job.contactEmail else "N/A",
+            "value": job.contact_email or "N/A",
         },
         {
             "name": ":person_bald: Contact",
-            "value": job.contactName if job.contactName else "N/A",
+            "value": job.contact_name or "N/A",
         },
         {
             "name": ":globe_with_meridians: Business France",

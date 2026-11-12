@@ -10,18 +10,18 @@ from sqlalchemy.orm import Session
 def job(identity):
     return Job.model_construct(
         id=identity,
-        missionTitle="Engineer",
-        organizationName="Example",
-        countryName="Canada",
-        cityName="Montreal",
-        missionStartDate="2026-06-01",
-        missionEndDate="2027-06-01",
-        creationDate="2026-05-01",
-        missionDuration=12,
-        activitySectorN1="Tech",
+        mission_title="Engineer",
+        organization_name="Example",
+        country_name="Canada",
+        city_name="Montreal",
+        mission_start_date="2026-06-01",
+        mission_end_date="2027-06-01",
+        creation_date="2026-05-01",
+        mission_duration=12,
+        activity_sector_n1="Tech",
         indemnite=2500,
-        contactEmail="jobs@example.com",
-        contactName="Example",
+        contact_email="jobs@example.com",
+        contact_name="Example",
         specializations=[],
     )
 
@@ -109,7 +109,7 @@ def test_business_france_long_display_values_are_truncated():
     # One oversized value must not reject the whole offer, or its page.
     from collector_business_france.main import normalize
 
-    long = job(1).model_copy(update={"contactEmail": "x" * 2000})
+    long = job(1).model_copy(update={"contact_email": "x" * 2000})
     event = normalize(long)
     assert max(len(field.value) for field in event.offer.fields) == 1024
 
