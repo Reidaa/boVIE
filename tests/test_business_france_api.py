@@ -47,7 +47,7 @@ def test_business_france_search_uses_public_site_key_and_api_field_names(client)
         return httpx.Response(200, json={"result": [{"id": 42}]})
 
     client(handler)
-    assert job.search_id(SearchParameters(geographicZones=["5"])) == [42]
+    assert job.search_id(SearchParameters(geographic_zones=["5"])) == [42]
 
 
 def test_rotated_key_is_fetched_again_and_the_request_retried(client):
@@ -66,7 +66,8 @@ def test_rotated_key_is_fetched_again_and_the_request_retried(client):
     assert job.search_id(SearchParameters(limit=3)) == [7]
     assert [key for key, _ in sent] == ["old", "new"]
     # The retry sends the same search, not an empty body.
-    assert sent[0][1] == sent[1][1] and sent[1][1]["limit"] == 3
+    assert sent[0][1] == sent[1][1]
+    assert sent[1][1]["limit"] == 3
 
 
 def test_configured_key_is_used_without_reading_the_site(client, monkeypatch):

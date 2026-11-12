@@ -16,13 +16,20 @@ repos:
       - id: end-of-file-fixer
       - id: trailing-whitespace
 
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.15.17
+  # Ruff runs from the project's environment, so the hook, the editor and
+  # CI all use the version pinned in uv.lock. The options mirror
+  # astral-sh/ruff-pre-commit.
+  - repo: local
     hooks:
       - id: ruff-check
-        args:
-          - "--fix"
-          - "--extend-select=I"
+        name: ruff check
+        entry: uv run ruff check --force-exclude --fix
+        language: system
+        types_or: [python, pyi]
+        require_serial: true
       - id: ruff-format
-        args:
-          - "--check"
+        name: ruff format
+        entry: uv run ruff format --force-exclude --check
+        language: system
+        types_or: [python, pyi]
+        require_serial: true

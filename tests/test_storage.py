@@ -92,7 +92,8 @@ def test_recorded_offers_keep_content_hash_and_sightings(collector_db):
     discovered = event()
     record_page(collector_db, [discovered], [discovered.source_offer_id], "scan", 1)
     record_page(collector_db, [discovered, event("abc")], ["ABC", "abc"], "scan", 2)
-    assert seen(collector_db, "ABC") and seen(collector_db, "abc")
+    assert seen(collector_db, "ABC")
+    assert seen(collector_db, "abc")
     with Session(collector_db) as session:
         assert session.scalar(select(func.count()).select_from(Offer)) == 2
         offer = session.get(Offer, "ABC")
@@ -103,11 +104,13 @@ def test_recorded_offers_keep_content_hash_and_sightings(collector_db):
         assert offer.last_seen_at is not None
         first_sighting = offer.last_seen_at
         checkpoint = session.get(Checkpoint, "scan")
-        assert checkpoint is not None and checkpoint.offset == 2
+        assert checkpoint is not None
+        assert checkpoint.offset == 2
     record_page(collector_db, [], ["ABC", "unrecorded"], "scan", 3)
     with Session(collector_db) as session:
         offer = session.get(Offer, "ABC")
-        assert offer is not None and offer.last_seen_at is not None
+        assert offer is not None
+        assert offer.last_seen_at is not None
         assert offer.last_seen_at > first_sighting
         assert session.get(Offer, "unrecorded") is None
 

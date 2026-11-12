@@ -1,6 +1,7 @@
 from urllib.parse import urlparse
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic.alias_generators import to_camel
 
 from collector_business_france.job.models.specialization import Specialization
 
@@ -17,29 +18,32 @@ class Job(BaseModel):
     Pydantic ignores the other API fields, so their changes cannot fail a run.
     """
 
-    activitySectorN1: str | None
-    cityAffectation: str
-    cityName: str | None
-    contactEmail: str | None
-    contactName: str | None
-    countryName: str
-    creationDate: str
+    # The API uses camelCase keys; the fields are snake_case.
+    model_config = ConfigDict(alias_generator=to_camel, validate_by_name=True)
+
+    activity_sector_n1: str | None
+    city_affectation: str
+    city_name: str | None
+    contact_email: str | None
+    contact_name: str | None
+    country_name: str
+    creation_date: str
     id: int
     indemnite: int | float
-    missionDuration: int
-    missionEndDate: str
-    missionStartDate: str
-    missionTitle: str
-    organizationName: str
+    mission_duration: int
+    mission_end_date: str
+    mission_start_date: str
+    mission_title: str
+    organization_name: str
     specializations: list[Specialization] | None
-    contactURL: str | None = None
+    contact_url: str | None = Field(default=None, alias="contactURL")
 
     @property
     def external_application_url(self) -> str | None:
-        if not self.contactURL:
+        if not self.contact_url:
             return None
 
-        parsed_url = urlparse(self.contactURL)
+        parsed_url = urlparse(self.contact_url)
         if parsed_url.scheme not in {"http", "https"} or not parsed_url.hostname:
             return None
 
@@ -47,7 +51,7 @@ class Job(BaseModel):
         if hostname in BUSINESS_FRANCE_HOSTS:
             return None
 
-        return self.contactURL
+        return self.contact_url
 
     @field_validator("*", mode="after")
     @classmethod
@@ -56,7 +60,7 @@ class Job(BaseModel):
             return v.strip()
         return v
 
-    @field_validator("contactName", mode="after")
+    @field_validator("contact_name", mode="after")
     @classmethod
     def sanitize(cls, v: str | None):
         if v is None:

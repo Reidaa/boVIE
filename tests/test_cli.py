@@ -64,7 +64,7 @@ def test_example_environment_is_accepted(monkeypatch):
     result = CliRunner().invoke(main.cli)
     assert result.exit_code == 0, result.output
     assert observed[0].limit == 25
-    assert observed[0].countriesIds
+    assert observed[0].countries_ids
 
 
 def test_wttj_cli_defaults_and_optional_contract_filters(tmp_path, monkeypatch):
@@ -187,8 +187,10 @@ def test_business_france_failure_is_logged_on_stderr(monkeypatch):
     result = CliRunner().invoke(main.cli)
     assert result.exit_code != 0
     # Railway marks stderr lines as errors, so only the failure belongs there.
-    assert "| INFO     |" in result.stdout and "Starting" in result.stdout
-    assert "| ERROR    |" in result.stderr and "source down" in result.stderr
+    assert "| INFO     |" in result.stdout
+    assert "Starting" in result.stdout
+    assert "| ERROR    |" in result.stderr
+    assert "source down" in result.stderr
     assert "| ERROR    |" not in result.stdout
 
 
