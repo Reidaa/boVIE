@@ -9,6 +9,13 @@ from mysql_common.queue import claim, finish, retry_later
 from offer_events import OfferEvent
 from sqlalchemy.engine import Engine
 
+# The card footer names the source, so readers can tell where an offer came from.
+SOURCE_LABELS = {
+    "business_france": "Business France",
+    "wttj": "Welcome to the Jungle",
+    "workday": "Workday",
+}
+
 
 def discord_payload(event: OfferEvent) -> dict:
     offer = event.offer
@@ -18,8 +25,9 @@ def discord_payload(event: OfferEvent) -> dict:
             {"name": "Entreprise", "value": offer.organization[:1024] or "N/A"},
             {"name": "Lieu", "value": f"{offer.city}, {offer.country}"[:1024]},
         ]
+    footer = SOURCE_LABELS[event.source]
     # Discord's aggregate embed text limit is 6000 characters.
-    remaining = 6000 - len(offer.title)
+    remaining = 6000 - len(offer.title) - len(footer)
     bounded = []
     for field in fields:
         available = remaining - len(field["name"])
@@ -37,6 +45,7 @@ def discord_payload(event: OfferEvent) -> dict:
                 "url": str(offer.url),
                 "color": 341401,
                 "fields": bounded,
+                "footer": {"text": footer},
             }
         ],
     }

@@ -67,6 +67,34 @@ def test_discord_outage_then_success(discord_db):
 
 
 @pytest.mark.parametrize(
+    ("source", "label"),
+    [
+        ("business_france", "Business France"),
+        ("wttj", "Welcome to the Jungle"),
+        ("workday", "Workday"),
+    ],
+)
+def test_card_footer_names_the_source(source, label):
+    from discord_sender.delivery import discord_payload
+
+    embed = discord_payload(event(source=source))["embeds"][0]
+    assert embed["footer"] == {"text": label}
+
+
+def test_card_with_footer_fits_discord_text_limit():
+    from discord_sender.delivery import discord_payload
+    from offer_events import DisplayField
+
+    offer = event().offer.model_copy(
+        update={"fields": [DisplayField(name="Notes", value="x" * 1024)] * 10}
+    )
+    embed = discord_payload(event(offer=offer))["embeds"][0]
+    text = [embed["title"], embed["footer"]["text"]]
+    text += [field[key] for field in embed["fields"] for key in ("name", "value")]
+    assert sum(map(len, text)) <= 6000
+
+
+@pytest.mark.parametrize(
     ("deliveries", "delay"), [(1, 30), (2, 60), (5, 480), (8, 3600), (50, 3600)]
 )
 def test_failed_messages_back_off_up_to_an_hour(deliveries, delay):
