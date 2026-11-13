@@ -70,6 +70,16 @@ We will follow these rules:
 - **Share data instead of calling across.** If two consumers need the same data, for example
   user preferences edited in the webapp and used by the Discord bot, they become one service
   with one database.
+- **One database per service, on one shared MySQL server** (amended 2026-11-13). Each service
+  owns one database: `collector_business_france`, `collector_wttj`, `collector_workday` and
+  `discord`. In production, all databases are on the one Railway `mysql` server, and every
+  service logs in as its `root` user. Each migration command creates its database when it is
+  missing. Reason: an idle MySQL server uses about 470 MB of RAM, so one server per service
+  costs more than the isolation gives. The data is public job offers and pending Discord
+  messages, so shared credentials are an accepted risk. The schemas stay separate, and the
+  rule that no service reads another service's database still holds. If a service needs
+  isolation later, the next step is one MySQL user per service with rights on its database
+  only, as local Compose already does. A separate server is the step after that.
 
 Business reasons: a new source or consumer is a new service, so it ships without touching the
 working ones (time to market). The design stays at two to three services per new capability on
@@ -82,11 +92,13 @@ Good:
 - A new source or consumer subscribes to the stream. The existing services do not change.
 - A broken collector stops only its own source. JetStream keeps the offers while a consumer is
   down, and replays its 90 days of history to a new consumer.
-- Each service has its own credentials, database and deploy.
+- Each service has its own database and deploy, and its own NATS credentials.
 
 Bad:
 
-- More deployables to run and pay for: a NATS broker, `nats-setup`, and one database per
+- More deployables to run and pay for: a NATS broker, `nats-setup`, and one MySQL server.
+- In production, all services share the MySQL `root` credentials and one server. A bug or a
+  leaked password in one service can reach every database, and one server outage stops every
   service.
 - Consumers are eventually consistent. A new offer reaches Discord and the webapp at different
   times.
@@ -122,4 +134,4 @@ the cheaper choice.
 
 Author: Thomas KEMKEMIAN
 Approved: Thomas KEMKEMIAN, 2026-10-18
-Last Updated: 2026-10-18
+Last Updated: 2026-11-13

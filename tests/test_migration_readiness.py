@@ -1,8 +1,43 @@
+from time import monotonic
 from unittest.mock import Mock
+from uuid import uuid4
 
 import pytest
-from mysql_common import migrate
+from mysql_common import make_engine, migrate
+from sqlalchemy import text
 from sqlalchemy.exc import OperationalError
+
+
+@pytest.fixture
+def database_name(mysql_admin):
+    """A database name that does not exist yet; the database is dropped afterwards."""
+    # The hyphen needs identifier quoting in CREATE DATABASE.
+    name = f"bovie-test-{uuid4().hex}"
+    yield name
+    with mysql_admin.connect() as conn:
+        conn.execute(text(f"DROP DATABASE IF EXISTS `{name}`"))
+
+
+def test_migration_creates_a_missing_database(mysql_admin, database_name):
+    from collector_store.migrate import upgrade
+
+    name = database_name
+    engine = make_engine(mysql_admin.url.set(database=name))
+    started = monotonic()
+    try:
+        upgrade(engine, wait_timeout=20)
+    finally:
+        engine.dispose()
+    assert monotonic() - started < 20
+    with mysql_admin.connect() as conn:
+        assert conn.execute(
+            text(
+                "SELECT DEFAULT_CHARACTER_SET_NAME, DEFAULT_COLLATION_NAME"
+                " FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = :name"
+            ),
+            {"name": name},
+        ).one() == ("utf8mb4", "utf8mb4_0900_bin")
+        assert conn.scalar(text(f"SELECT COUNT(*) FROM `{name}`.offers")) == 0
 
 
 def test_database_readiness_retries_connection_failures(monkeypatch):

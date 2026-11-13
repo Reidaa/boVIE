@@ -6,12 +6,20 @@ from sqlalchemy import create_engine, text
 
 
 @pytest.fixture
-def database_factory():
+def mysql_admin():
     """Only explicitly configured disposable MySQL; never an application DSN."""
     url = os.environ.get("MYSQL_TEST_ADMIN_URL")
     if not url:
         pytest.skip("Set MYSQL_TEST_ADMIN_URL to a disposable MySQL 8.4 server")
     admin = create_engine(url, isolation_level="AUTOCOMMIT")
+    yield admin
+    admin.dispose()
+
+
+@pytest.fixture
+def database_factory(mysql_admin):
+    """Creates migrated databases on the disposable server and drops them afterwards."""
+    admin = mysql_admin
     databases = []
 
     def create(domain):
@@ -32,7 +40,6 @@ def database_factory():
         engine.dispose()
         with admin.connect() as conn:
             conn.execute(text(f"DROP DATABASE `{name}`"))
-    admin.dispose()
 
 
 @pytest.fixture

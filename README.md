@@ -6,13 +6,15 @@ types by default. Python 3.15+, SQLAlchemy 2, MySQL 8.4, and NATS JetStream are 
 
 This repository is a [Turborepo](https://turborepo.dev) monorepo. Python code is a
 [uv workspace](https://docs.astral.sh/uv/concepts/projects/workspaces/) that Turborepo
-reads natively (experimental `experimentalPythonWorkspaces`). pnpm installs Turborepo.
+reads natively (experimental `experimentalPythonWorkspaces`). pnpm installs Turborepo and
+the Railway IaC SDK.
 
 | Directory | Contents | Toolchain |
 | --- | --- | --- |
 | `apps/` | Deployable services, one package and Docker target each | uv |
 | `packages/` | Shared Python libraries | uv |
 | `deploy/` | Broker and database configuration used by Compose and Railway | — |
+| `.railway/` | Railway infrastructure as code (`railway.ts`) | pnpm |
 | `tests/` | Cross-package Python test suite | pytest |
 
 Each deployable service has its own package, dependencies, command, and Docker target.
@@ -31,7 +33,8 @@ imports and install each service independently.
 | `discord-sender` | Post queued messages to the Discord webhook | `discord` | None |
 
 Collectors run on schedules and publish new offers to NATS themselves. Each collector
-receives only its own database and broker credentials. `discord-intake` and
+receives only its own broker credentials. With Compose, it also receives only its own database
+credentials. On Railway, all apps log in to MySQL as `root`; [ADR 0001](docs/adr/0001-service-based-services-with-one-offer-stream.md) explains why. `discord-intake` and
 `discord-sender` run continuously.
 
 A new broker needs no setup step. The first collector run creates the `OFFERS` stream.
@@ -50,8 +53,8 @@ or delete the stream.
 
 Libraries never depend on an app. Each collector owns its offers and scan
 checkpoints in its own database; the offers table records what it has already
-published. `discord-intake` and `discord-sender` share the `discord` database
-and cannot access collector databases. Collectors can run on different hosts.
+published. `discord-intake` and `discord-sender` share the `discord` database.
+With the Compose accounts, they cannot access collector databases. Collectors can run on different hosts.
 
 [ADR 0001](docs/adr/0001-service-based-services-with-one-offer-stream.md) records why
 the system uses coarse services that share one offer stream, and the rules for adding
@@ -91,9 +94,9 @@ DATABASE_URL='mysql+pymysql://user:password@host/discord' uv run --package bovie
 ```
 
 Run `collector-store-migrate` separately for each collector database. Each database has its own
-Alembic version history. Migrations are included in the wheel. Percent-encode
-reserved characters in URL passwords. Environment variables override `.env`;
-each deployed process should receive only its own database credentials.
+Alembic version history. The migration creates the database when it is missing; the
+database user then needs the right to create it. Migrations are included in the wheel. Percent-encode
+reserved characters in URL passwords. Environment variables override `.env`.
 
 ## Collect offers
 
@@ -255,8 +258,9 @@ retention before deleting history. Back up all databases and the broker volume.
 
 ## Deployment and validation
 
-Railway production has four Railway MySQL databases, the focused services, private
-connections, NATS storage, and collector schedules. It deploys `main`. Railway creates a temporary copy for each pull request; copies do not post to Discord.
+Railway production has one Railway MySQL server with a database per app, the focused services, private
+connections, NATS storage, and collector schedules. `.railway/railway.ts` defines them as
+Railway Infrastructure as Code. Railway deploys `main`. Railway creates a temporary copy for each pull request; copies do not post to Discord.
 Use the [Railway deployment guide](docs/railway.md) for the initial deployment and updates.
 
 Each service has a Dockerfile in its `apps/` directory. Docker builds use the repository
