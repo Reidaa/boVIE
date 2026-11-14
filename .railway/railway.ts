@@ -23,7 +23,7 @@ const repo = github("Reidaa/boVIE", { branch: "main", checkSuites: true, rootDir
  */
 function mysqlServer() {
   const server = mysql("mysql", { region: REGION });
-  server.deploy = { startCommand: MYSQL_START };
+  server.deploy = { ...server.deploy, startCommand: MYSQL_START };
   return server;
 }
 
