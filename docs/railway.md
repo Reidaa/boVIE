@@ -67,7 +67,8 @@ Railway does not apply `.railway/railway.ts` on merge. Apply it yourself.
 2. Link this checkout once: `railway link --project boVIE --environment production`.
 3. Edit `.railway/railway.ts`.
 4. Run `railway config plan` and read the plan.
-5. Run `railway config apply` and approve the plan.
+5. If the plan deletes a database server, copy its data first. See "Move data off a database server".
+6. Run `railway config apply` and approve the plan.
 
 The file owns every variable of its services: `apply` removes a variable that the file
 does not declare. Secrets and other values kept out of the repository use `preserve()`,
@@ -78,6 +79,26 @@ After `collector-workday` is first created, set `WORKDAY_BOARDS` on it before it
 Removing a resource or a variable is destructive. A non-interactive `apply` then also needs
 `--confirm-destructive`. Two detached volumes, `postgres-jnxp-volume` and
 `mysql-discord-volume-uvDU`, are not in the file; Railway keeps them.
+
+### Move data off a database server
+
+`apply` deletes the volume of a database server with the server, and the data is lost. Copy each
+database before you apply. The copy runs inside the private network: the MySQL image has
+`mysqldump` and `mysql`, and `railway ssh` forwards standard input. Stop the apps that write to
+the old server first, then run these commands for each database. `<database>` is the name of
+the app's database on `mysql`.
+
+```sh
+railway ssh --service <old server> -- 'mysqldump -uroot -p"$MYSQL_ROOT_PASSWORD" --single-transaction --set-gtid-purged=OFF "$MYSQL_DATABASE"' > <database>.sql
+railway ssh --service mysql -- 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" -e "CREATE DATABASE IF NOT EXISTS <database>"'
+railway ssh --service mysql -- 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" <database>' < <database>.sql
+```
+
+Compare `SELECT COUNT(*)` of each table on both servers. Then point the apps at `mysql` and apply.
+
+The pending apply deletes `mysql-collector-business-france`, `mysql-collector-wttj`,
+and `mysql-discord`. Their data was copied to `mysql` on 2026-11-13, and every app has used
+`mysql` since then. The old servers hold stale copies, so this deletion loses no data.
 
 PR environments are a project setting in the dashboard. Railway IaC cannot set them.
 
