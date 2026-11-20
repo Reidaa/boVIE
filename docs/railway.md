@@ -73,7 +73,8 @@ Railway does not apply `.railway/railway.ts` on merge. Apply it yourself.
 The file owns every variable of its services: `apply` removes a variable that the file
 does not declare. Secrets and other values kept out of the repository use `preserve()`,
 which keeps the value set in Railway. Set these values with the Railway CLI or dashboard:
-the NATS passwords, `DISCORD_WEBHOOK_URL` (sealed), and `WORKDAY_BOARDS`.
+the NATS passwords, `DISCORD_WEBHOOK_URL` (sealed), `WORKDAY_BOARDS`, and the optional
+`BUSINESS_FRANCE_API_KEY`.
 After `collector-workday` is first created, set `WORKDAY_BOARDS` on it before its first run.
 
 Removing a resource or a variable is destructive. A non-interactive `apply` then also needs

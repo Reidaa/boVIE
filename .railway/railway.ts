@@ -102,6 +102,8 @@ export default defineRailway(() => {
     {
       BUSINESS_FRANCE_REGION: "asie et pacifique,amerique latine,amerique du nord",
       BUSINESS_FRANCE_LIMIT: "25",
+      // Optional. Set it in Railway to override the public key that the collector reads from the offers page.
+      BUSINESS_FRANCE_API_KEY: preserve(),
     },
   );
   const wttj = collector("collector-wttj", "collector_wttj", "NATS_COLLECTOR_WTTJ_PASSWORD", "22 */2 * * *", {
