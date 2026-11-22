@@ -5,7 +5,7 @@ import { loadEnv } from "@bovie/mysql-common/env";
 import { Publisher } from "@bovie/nats-client";
 import type { OfferEvent } from "@bovie/offer-events";
 import { Command, InvalidArgumentError } from "commander";
-import { collect, type CollectOptions, type FetchLike } from "./index.js";
+import { type CollectOptions, collect, type FetchLike } from "./index.js";
 
 function parsePositiveInt(value: string): number {
   const parsed = Number(value);

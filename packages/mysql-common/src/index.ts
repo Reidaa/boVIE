@@ -7,8 +7,8 @@ import mysql, {
 } from "mysql2/promise";
 import type { DatabaseUrlConfig } from "./env.js";
 
-export type { Pool, PoolConnection, QueryResult, ResultSetHeader, RowDataPacket };
 export type { DatabaseUrlConfig } from "./env.js";
+export type { Pool, PoolConnection, QueryResult, ResultSetHeader, RowDataPacket };
 
 export type QueryParams = Parameters<Pool["query"]>[1];
 export type ExecuteParams = Parameters<Pool["execute"]>[1];
