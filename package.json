@@ -12,6 +12,8 @@
     "verify": "turbo run lint format:check check test verify:packages"
   },
   "devDependencies": {
+    "railway": "3.16.0",
     "turbo": "2.11.10"
-  }
+  },
+  "type": "module"
 }
