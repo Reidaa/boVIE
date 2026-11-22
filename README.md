@@ -1,8 +1,11 @@
 # BoVIE
 
-Discover jobs from Welcome to the Jungle and company career sites on Workday, and
-VIE/VIA opportunities from Business France, then deliver new offers to Discord. WTTJ accepts all contract
-types by default. Python 3.15+, SQLAlchemy 2, MySQL 8.4, and NATS JetStream are required.
+BoVIE collects job offers across multiple sources and delivers new ones to Discord.
+The project started as a VIE/VIA bot, which is where the name comes from, but it now
+tracks general job offers of any contract type. Its collectors cover Welcome to the
+Jungle, company career sites on Workday, and Business France VIE/VIA listings.
+
+Python 3.15+, SQLAlchemy 2, MySQL 8.4, and NATS JetStream are required.
 
 This repository is a [Turborepo](https://turborepo.dev) monorepo. Python code is a
 [uv workspace](https://docs.astral.sh/uv/concepts/projects/workspaces/) that Turborepo
