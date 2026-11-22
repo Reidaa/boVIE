@@ -39,16 +39,20 @@ export async function connect(options?: {
   url?: string;
   user?: string;
   password?: string;
+  waitOnFirstConnect?: boolean;
 }): Promise<NatsConnection> {
   const user = options?.user ?? process.env.NATS_USER;
   const password = options?.password ?? process.env.NATS_PASSWORD;
   const url = options?.url ?? process.env.NATS_URL ?? "nats://127.0.0.1:4222";
+  const waitOnFirstConnect = options?.waitOnFirstConnect ?? false;
   return await natsConnect({
     servers: [url],
     user: user || undefined,
     pass: password || undefined,
     inboxPrefix: user ? `_INBOX.${user}` : "_INBOX",
     timeout: 5000,
+    waitOnFirstConnect,
+    ...(waitOnFirstConnect ? { maxReconnectAttempts: -1, reconnectTimeWait: 2000 } : {}),
   });
 }
 

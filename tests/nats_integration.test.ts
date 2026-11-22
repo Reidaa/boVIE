@@ -212,4 +212,14 @@ describe("NATS JetStream integration", () => {
       }
     },
   );
+
+  test.skipIf(!getNatsTestUrl())("connect supports waitOnFirstConnect", async () => {
+    const { connect } = await import("@bovie/nats-client");
+    const nc = await connect({ url: getNatsTestUrl()!, waitOnFirstConnect: true });
+    try {
+      expect(nc.isClosed()).toBe(false);
+    } finally {
+      await nc.close();
+    }
+  });
 });
