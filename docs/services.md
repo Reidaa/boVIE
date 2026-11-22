@@ -1,23 +1,21 @@
 # Service ownership
 
 The project collects general job offers from WTTJ and Workday career sites, and VIE/VIA offers
-from Business France. The uv workspace separates five deployable services from six shared libraries.
-Each service declares its own dependencies and has its own Dockerfile.
-The root project installs development tools only.
+from Business France. The Go module separates five deployable services in `apps/` from six
+shared libraries in `packages/`. Each service builds into its own static binary and has its own Dockerfile.
 
 | Library | Owns | Used by |
 | --- | --- | --- |
-| `offer_events` | Version-1 offer events with stable event IDs | Collectors, `discord-intake`, `discord-sender` |
-| `collector_store` | Published offers, content hashes, sightings, checkpoints, collector database migrations | Collectors |
-| `discord_store` | Inbox, queued messages, atomic acceptance, Discord database migrations | `discord-intake` and `discord-sender` |
-| `mysql_common` | MySQL connections, UTC timestamps, queue leases, migration execution | Both storage libraries and database clients |
-| `nats_client` | NATS connection, stream names and settings, stream creation, and the collectors' synchronous publisher | Collectors, `discord-intake` |
-| `cli_common` | Entrypoint environment loading and failure logging | Deployable services |
+| `offerevents` | Version-1 offer events with stable event IDs | Collectors, `discord-intake`, `discord-sender` |
+| `collectorstore` | Published offers, content hashes, sightings, checkpoints, collector database migrations | Collectors |
+| `discordstore` | Inbox, queued messages, atomic acceptance, Discord database migrations | `discord-intake` and `discord-sender` |
+| `mysqlcommon` | MySQL connections, UTC timestamps, queue leases, SQL migration execution | Both storage libraries and database clients |
+| `natsclient` | NATS connection, stream names and settings, stream creation, and the collectors' publisher | Collectors, `discord-intake` |
+| `clicommon` | Entrypoint environment loading and redacted failure logging | Deployable services |
 
 A library cannot import a service. A service cannot import another service.
-`tests/test_architecture.py` checks these rules and declared workspace dependencies.
-`scripts/check_packages.py` installs each service from wheels into a separate environment.
-It checks entrypoints, packaged migrations, and the absence of unrelated service code.
+`tests/architecture_test.go` verifies these rules against the Go dependency graph (`go list`),
+checks forbidden transitive dependencies per service, and builds and smoke-tests every binary.
 
 Each worker has one role.
 Collectors cannot send Discord messages. `discord-sender` has no NATS client.
@@ -49,7 +47,7 @@ The Compose passwords are local development examples. Railway generates its own 
 Use the [README](../README.md) for commands and the [WTTJ](wttj-api.md) and [Workday](workday-api.md)
 request contracts for observed API behavior.
 
-Railway production uses four native MySQL services and
+Railway production uses a shared MySQL server with one database per app and
 explicit Dockerfiles for application and broker services. Pull requests get temporary copies.
 See [Railway deployment](railway.md).
 Migration commands accept `--wait-timeout` for initial database startup.

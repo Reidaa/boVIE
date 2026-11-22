@@ -1,12 +1,13 @@
-FROM ghcr.io/astral-sh/uv:python3.15-trixie-slim AS build
-WORKDIR /app
-COPY pyproject.toml uv.lock ./
+FROM golang:1.27-alpine AS build
+WORKDIR /src
+COPY go.mod go.sum ./
+RUN go mod download
 COPY packages ./packages
-COPY apps ./apps
-RUN uv sync --frozen --no-dev --no-editable --package bovie-discord-sender
+COPY apps/discord-sender ./apps/discord-sender
+RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/discord-sender ./apps/discord-sender && \
+    CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/discord-store-migrate ./packages/discordstore/cmd/discord-store-migrate
 
-FROM python:3.15-slim-trixie
-WORKDIR /app
-COPY --from=build /app/.venv /app/.venv
-ENV PATH="/app/.venv/bin:$PATH"
+FROM alpine:3.21
+RUN apk add --no-cache ca-certificates tzdata
+COPY --from=build /out/ /usr/local/bin/
 CMD ["discord-sender"]

@@ -25,7 +25,7 @@ The deployment uses private networking and creates no public domains or database
 | `discord-sender` | Post queued messages to Discord | `discord-sender` |
 
 Every application or broker service uses the repository root as its build context and has an explicit Dockerfile path.
-Each application image installs only its workspace package and dependencies.
+Each application image compiles only its own Go service binary and migration binary.
 Railway creates and mounts the storage of `mysql`.
 `mysql` holds one database per app: `collector_business_france`, `collector_wttj`,
 `collector_workday`, and `discord`. `discord-intake` and `discord-sender` share `discord`.
@@ -38,7 +38,7 @@ Railway provisions the connection variables of `mysql`. Each app builds its `DAT
 from them: user `root`, `MYSQL_ROOT_PASSWORD`, the private domain of `mysql`, and its own database.
 All apps share the `root` credentials. [ADR 0001](adr/0001-service-based-services-with-one-offer-stream.md) explains why.
 Each app references only its own NATS password.
-The database library accepts Railway's `mysql://` URL and uses PyMySQL.
+The database library accepts Railway's `mysql://` URL and connects with `go-sql-driver/mysql`.
 NATS passwords start with `bovie_` so NATS reads them as strings.
 Retain an alphabetic prefix when rotating NATS passwords.
 Use only letters and digits when rotating `MYSQL_ROOT_PASSWORD`: each `DATABASE_URL` contains it without encoding.

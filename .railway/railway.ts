@@ -47,7 +47,7 @@ function dockerBuild(dockerfilePath: string, watchPatterns: string[]) {
 function appService(name: string, config: Omit<Parameters<typeof service>[1], "source" | "build" | "start" | "replicas">) {
   return service(name, {
     source: repo,
-    build: dockerBuild(`apps/${name}/Dockerfile`, [`apps/${name}/**`, "packages/**", "pyproject.toml", "uv.lock"]),
+    build: dockerBuild(`apps/${name}/Dockerfile`, [`apps/${name}/**`, "packages/**", "go.mod", "go.sum"]),
     start: name,
     replicas: { [REGION]: 1 },
     ...config,

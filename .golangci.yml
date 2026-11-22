@@ -1,0 +1,16 @@
+version: "2"
+
+linters:
+  default: standard
+  enable:
+    - misspell
+  settings:
+    errcheck:
+      exclude-functions:
+        - fmt.Fprintln
+        - fmt.Fprintf
+        - fmt.Printf
+
+formatters:
+  enable:
+    - gofmt

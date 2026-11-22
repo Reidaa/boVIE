@@ -5,27 +5,24 @@ The project started as a VIE/VIA bot, which is where the name comes from, but it
 tracks general job offers of any contract type. Its collectors cover Welcome to the
 Jungle, company career sites on Workday, and Business France VIE/VIA listings.
 
-Python 3.15+, SQLAlchemy 2, MySQL 8.4, and NATS JetStream are required.
+Go 1.27+, MySQL 8.4+, and NATS JetStream are required.
 
-This repository is a [Turborepo](https://turborepo.dev) monorepo. Python code is a
-[uv workspace](https://docs.astral.sh/uv/concepts/projects/workspaces/) that Turborepo
-reads natively (experimental `experimentalPythonWorkspaces`). pnpm installs Turborepo and
-the Railway IaC SDK.
+This repository is a single Go module (`github.com/Reidaa/boVIE`). pnpm installs the
+Railway IaC SDK used by `.railway/railway.ts`.
 
 | Directory | Contents | Toolchain |
 | --- | --- | --- |
-| `apps/` | Deployable services, one package and Docker target each | uv |
-| `packages/` | Shared Python libraries | uv |
+| `apps/` | Deployable Go services, one main package and Dockerfile each | Go |
+| `packages/` | Shared Go libraries and schema migration CLIs | Go |
 | `deploy/` | Broker and database configuration used by Compose and Railway | — |
 | `.railway/` | Railway infrastructure as code (`railway.ts`) | pnpm |
-| `tests/` | Cross-package Python test suite | pytest |
+| `tests/` | Frozen event contract fixtures, architecture, and integration tests | `go test` |
 
-Each deployable service has its own package, dependencies, command, and Docker target.
-An app's directory, command, Docker target, Compose and Railway service, and NATS
-account share one name. Its database uses the same name with underscores.
-The root contains development tools and one lockfile per toolchain (`uv.lock`,
-`pnpm-lock.yaml`). Services do not import other services. Tests enforce declared
-imports and install each service independently.
+Each deployable service has its own command and multi-stage Dockerfile producing a
+static binary. An app's directory, command, Docker image, Compose and Railway service,
+and NATS account share one name. Its database uses the same name with underscores.
+Services do not import other services. `tests/architecture_test.go` enforces package
+boundaries and builds and checks every service binary independently.
 
 | App in `apps/` | Responsibility | Database | NATS access |
 | --- | --- | --- | --- |
@@ -47,12 +44,12 @@ or delete the stream.
 
 | Library in `packages/` | Contents |
 | --- | --- |
-| `offer-events` | The `OfferEvent` schema every app exchanges |
-| `collector-store` | Collector database schema, page recording, `collector-store-migrate` |
-| `discord-store` | Discord database schema (inbox and queued messages), `discord-store-migrate` |
-| `nats-client` | NATS connection, stream and consumer names, stream settings and creation, the collectors' publisher |
-| `mysql-common` | MySQL engine, UTC timestamps, queue leases, migration runner |
-| `cli-common` | `.env` loading and log setup for app entrypoints |
+| `offerevents` | The `OfferEvent` schema every app exchanges |
+| `collectorstore` | Collector database schema, page recording, `collector-store-migrate` |
+| `discordstore` | Discord database schema (inbox and queued messages), `discord-store-migrate` |
+| `natsclient` | NATS connection, stream and consumer names, stream settings and creation, the collectors' publisher |
+| `mysqlcommon` | MySQL connection pool, UTC timestamps, queue leases, SQL migration runner |
+| `clicommon` | `.env` loading and log setup for app entrypoints |
 
 Libraries never depend on an app. Each collector owns its offers and scan
 checkpoints in its own database; the offers table records what it has already
@@ -67,10 +64,10 @@ has its pages, filters and build layers.
 
 ## Local setup
 
-Install Python 3.15+, uv, Node.js, and pnpm (`mise install` provides all of them).
+Install Go 1.27+, golangci-lint, Node.js, and pnpm (`mise install` provides all of them).
 
 ```sh
-uv sync --all-packages
+go mod download
 pnpm install
 cp .env.example .env
 docker compose up -d --wait mysql nats
@@ -85,21 +82,21 @@ Compose provisions four databases with separate unprivileged accounts, persisten
 MySQL/NATS volumes, and readiness checks. Its credentials are development examples;
 ports bind to localhost. The initialization SQL runs only on a fresh MySQL volume.
 Provision separate secrets and TLS for a production deployment. Do not reuse the
-local credentials there. PyMySQL's `rsa` extra supports MySQL's default
-`caching_sha2_password` authentication.
+local credentials there.
 
-Schema changes are explicit Alembic migrations. Imports and collector startup do
-not connect or create tables. To migrate an externally hosted database:
+Schema changes are explicit embedded SQL migrations tracked in `schema_migrations`
+(and automatically bootstrapped from existing `alembic_version` tables when upgrading
+an existing database). Startup does not create tables. To migrate an externally hosted database:
 
 ```sh
-DATABASE_URL='mysql+pymysql://user:password@host/collector_db' uv run --package bovie-collector-store collector-store-migrate
-DATABASE_URL='mysql+pymysql://user:password@host/discord' uv run --package bovie-discord-store discord-store-migrate
+DATABASE_URL='mysql://user:password@host/collector_db' go run ./packages/collectorstore/cmd/collector-store-migrate
+DATABASE_URL='mysql://user:password@host/discord' go run ./packages/discordstore/cmd/discord-store-migrate
 ```
 
 Run `collector-store-migrate` separately for each collector database. Each database has its own
-Alembic version history. The migration creates the database when it is missing; the
-database user then needs the right to create it. Migrations are included in the wheel. Percent-encode
-reserved characters in URL passwords. Environment variables override `.env`.
+migration history. The migration creates the database when it is missing; the
+database user then needs the right to create it. Percent-encode reserved characters in URL passwords.
+Environment variables override `.env`.
 
 ## Collect offers
 
@@ -107,9 +104,9 @@ The default `.env` selects the Business France database and broker account.
 Collectors need a running NATS broker. The first run creates the `OFFERS` stream:
 
 ```sh
-uv run --package bovie-collector-business-france collector-business-france --limit 25 --country canada --specialization 'information systems'
-DATABASE_URL='mysql+pymysql://collector_wttj:local-collector-wttj-only@127.0.0.1/collector_wttj' NATS_USER=collector-wttj NATS_PASSWORD=local-nats-collector-wttj \
-  uv run --package bovie-collector-wttj collector-wttj --query engineer --limit 50 --max-pages 5 --country CA
+go run ./apps/collector-business-france --limit 25 --country canada --specialization 'information systems'
+DATABASE_URL='mysql://collector_wttj:local-collector-wttj-only@127.0.0.1/collector_wttj' NATS_USER=collector-wttj NATS_PASSWORD=local-nats-collector-wttj \
+  go run ./apps/collector-wttj --query engineer --limit 50 --max-pages 5 --country CA
 ```
 
 Business France accepts `--geozone`/`-g`, `--country`/`-c`,
@@ -127,8 +124,8 @@ Use repeated `--contract` options to select contract types. `WTTJ_CONTRACTS` acc
 space-separated values. `--country` accepts repeated ISO country codes.
 
 ```sh
-DATABASE_URL='mysql+pymysql://collector_wttj:local-collector-wttj-only@127.0.0.1/collector_wttj' NATS_USER=collector-wttj NATS_PASSWORD=local-nats-collector-wttj \
-  uv run --package bovie-collector-wttj collector-wttj --contract full_time --contract internship --country CA
+DATABASE_URL='mysql://collector_wttj:local-collector-wttj-only@127.0.0.1/collector_wttj' NATS_USER=collector-wttj NATS_PASSWORD=local-nats-collector-wttj \
+  go run ./apps/collector-wttj --contract full_time --contract internship --country CA
 ```
 
 The collector searches the public v3 API, follows its pages, and fetches job details.
@@ -146,8 +143,8 @@ inspected per board and run. The collector waits one second before each request.
 A failed board does not stop the others, but it fails the run.
 
 ```sh
-DATABASE_URL='mysql+pymysql://collector_workday:local-collector-workday-only@127.0.0.1/collector_workday' NATS_USER=collector-workday NATS_PASSWORD=local-nats-collector-workday \
-  uv run --package bovie-collector-workday collector-workday \
+DATABASE_URL='mysql://collector_workday:local-collector-workday-only@127.0.0.1/collector_workday' NATS_USER=collector-workday NATS_PASSWORD=local-nats-collector-workday \
+  go run ./apps/collector-workday \
   --boards '[{"url": "https://example.wd1.myworkdayjobs.com/Careers", "company": "Example", "searchText": "data"}]'
 ```
 
@@ -191,8 +188,8 @@ for their own broker account. For the background processes, set
 `DATABASE_URL` and the broker variables for the relevant owner, then use:
 
 ```sh
-uv run --package bovie-discord-intake discord-intake
-uv run --package bovie-discord-sender discord-sender
+go run ./apps/discord-intake
+go run ./apps/discord-sender
 ```
 
 `discord-sender` only needs `discord` database credentials and `DISCORD_WEBHOOK_URL`.
@@ -211,7 +208,7 @@ docker run --rm --network host natsio/nats-box \
 ```
 
 The account may only receive replies on `_INBOX.nats-setup.>`, so keep `--inbox-prefix`.
-Then change `STREAM_CONFIG` in `packages/nats-client` to match, so new brokers get the same limits.
+Then change `StreamConfig` in `packages/natsclient` to match, so new brokers get the same limits.
 
 ## Delivery and recovery
 
@@ -268,37 +265,33 @@ Use the [Railway deployment guide](docs/railway.md) for the initial deployment a
 
 Each service has a Dockerfile in its `apps/` directory. Docker builds use the repository
 root as context, for example `docker build -f apps/collector-wttj/Dockerfile -t bovie-collector-wttj .`.
-Each final image contains only that service and its installed dependencies.
+Each final image contains only that service's static binary and its schema migration binary.
 
 ```sh
-pnpm exec turbo run lint format:check check test verify:packages
+just check
 ```
 
-| Task | Python (`bovie-python` root and members) |
+| Command | Check |
 | --- | --- |
-| `lint` | Ruff check |
-| `format`, `format:check` | Ruff format |
-| `check` | ty |
-| `test` | pytest over `tests/` |
-| `build` | `uv build` into each member's `dist/` |
-| `verify:packages` | Installs each app's wheel alone with `scripts/check_packages.py` |
-
-Use `--filter`, for example `pnpm exec turbo run build --filter=bovie-collector-wttj`, to run one package
-and its dependencies. The `Justfile` recipes call the same tasks.
+| `gofmt -l apps packages tests` | Formatting |
+| `golangci-lint run ./...` | Linting |
+| `go vet ./...` | Static analysis |
+| `go test -race ./...` | Unit, contract, architecture, and integration tests |
+| `go build ./...` | Build all packages and binaries |
 
 To include integration tests, point these **test-only** variables at disposable
 servers. The MySQL fixture creates and drops uniquely named test databases/users;
 the NATS test creates and deletes its test stream. Never point them at production.
 
 ```sh
-MYSQL_TEST_ADMIN_URL='mysql+pymysql://root:test-password@127.0.0.1:33077/mysql' \
-NATS_TEST_URL='nats://127.0.0.1:42277' pnpm exec turbo run test
+MYSQL_TEST_ADMIN_URL='mysql://root:test-password@127.0.0.1:33077/mysql' \
+NATS_TEST_URL='nats://127.0.0.1:42277' go test -race ./...
 ```
 
 Without these variables, integration tests report skips. CI supplies real
-MySQL 8.4 and NATS JetStream. Source HTTP and Discord are mocked; tests never send
+MySQL and NATS JetStream. Source HTTP and Discord are mocked; tests never send
 real notifications. The suite covers deduplication, rollback, leases, cross-domain
-database grants, lost acknowledgments, and both complete source flows.
+database grants, lost acknowledgments, and end-to-end JetStream flows.
 
 `NATS_AUTH_TEST_URL` enables the additional deployment-permissions test against a
 separate disposable broker running `deploy/nats.conf` with its documented local

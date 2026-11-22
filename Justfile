@@ -1,60 +1,46 @@
 SHELL := "/bin/sh"
 
-PACKAGE := "collector_business_france"
-
-TURBO := "pnpm exec turbo run"
+APP := "collector-business-france"
 
 i:
-	uv sync --all-packages
+	go mod download
 	pnpm install
 
-upgrade:
-	uv lock --upgrade
-	uv sync --all-packages
-
 fmt:
-	{{TURBO}} format
+	gofmt -w apps packages tests
 
 lint:
-	{{TURBO}} lint format:check
+	test -z "$(gofmt -l apps packages tests)"
+	golangci-lint run ./...
 
-typecheck:
-	{{TURBO}} check
+vet:
+	go vet ./...
 
 test:
-	{{TURBO}} test
+	go test -race ./...
 
-check:
-	{{TURBO}} lint format:check check test
+check: lint vet test build
 
 clean:
-	find . -name "__pycache__" -type d -exec rm -rf {} +
-	find . -name "*.pyc" -delete
-	rm -rf .pytest_cache .turbo dist build apps/*/dist packages/*/dist
+	rm -rf bin dist
 
 run:
-	uv run --all-packages python -m {{PACKAGE}}.main
+	go run ./apps/{{APP}}
 
 run-help:
-	uv run --all-packages python -m {{PACKAGE}}.main --help
+	go run ./apps/{{APP}} --help
 
 up:
 	docker compose up -d --wait mysql nats
 
-migrate store="collector-store":
-	uv run --all-packages {{store}}-migrate
+migrate store="collectorstore":
+	go run ./packages/{{store}}/cmd/{{ if store == "collectorstore" { "collector-store-migrate" } else { "discord-store-migrate" } }}
 
 build:
-	{{TURBO}} build
-
-verify-packages:
-	{{TURBO}} verify:packages
+	go build ./...
 
 workers:
 	docker compose --profile workers up --build -d discord-intake discord-sender
 
 down:
 	docker compose down
-
-pre-commit:
-	uv run --all-packages pre-commit run --all-files
