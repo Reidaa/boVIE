@@ -7,8 +7,6 @@ on:
     branches: [main]
 
 env:
-  # uv must use the Python that mise installed, not download its own.
-  UV_PYTHON_DOWNLOADS: never
   PRE_COMMIT_HOME: ${{ github.workspace }}/.cache/pre-commit
 
 jobs:
@@ -26,22 +24,20 @@ jobs:
         with:
           version: 2026.11.8
 
-      - name: Cache uv
+      - name: Find pnpm store
+        id: pnpm-store
+        run: echo "path=$(pnpm store path)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache pnpm
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          path: ~/.cache/uv
-          key: uv-${{ runner.os }}-${{ hashFiles('mise.toml', 'uv.lock') }}
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: pnpm-${{ runner.os }}-${{ hashFiles('mise.toml', 'pnpm-lock.yaml') }}
           restore-keys: |
-            uv-${{ runner.os }}-
+            pnpm-${{ runner.os }}-
 
       - name: Install dependencies
-        run: uv sync --all-packages
-
-      - name: Install pip
-        run: uv pip install pip
-
-      - name: Add virtualenv to PATH
-        run: echo "$(pwd)/.venv/bin" >> $GITHUB_PATH
+        run: pnpm install --frozen-lockfile
 
       - name: Cache pre-commit
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -52,7 +48,7 @@ jobs:
             pre-commit-${{ runner.os }}-
 
       - name: Run pre-commit
-        run: uv run --all-packages pre-commit run --all-files --show-diff-on-failure
+        run: pipx run pre-commit run --all-files --show-diff-on-failure
 
   tests:
     name: Tests
@@ -70,7 +66,7 @@ jobs:
           --health-cmd="mysqladmin ping -h 127.0.0.1 --silent"
           --health-interval=5s --health-timeout=5s --health-retries=30
     env:
-      MYSQL_TEST_ADMIN_URL: mysql+pymysql://root:bovie-test-only@127.0.0.1:3306/mysql
+      MYSQL_TEST_ADMIN_URL: mysql://root:bovie-test-only@127.0.0.1:3306/mysql
       NATS_TEST_URL: nats://127.0.0.1:4222
       NATS_AUTH_TEST_URL: nats://127.0.0.1:4223
 
@@ -82,14 +78,6 @@ jobs:
         uses: jdx/mise-action@236a21c3b91f5db6d4e174b348674a0f0caac06d # v5.2.9
         with:
           version: 2026.11.8
-
-      - name: Cache uv
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ~/.cache/uv
-          key: uv-${{ runner.os }}-${{ hashFiles('mise.toml', 'uv.lock') }}
-          restore-keys: |
-            uv-${{ runner.os }}-
 
       - name: Find pnpm store
         id: pnpm-store
@@ -112,9 +100,7 @@ jobs:
             turbo-${{ runner.os }}-
 
       - name: Install dependencies
-        run: |
-          pnpm install --frozen-lockfile
-          uv sync --all-packages
+        run: pnpm install --frozen-lockfile
 
       - name: Start test brokers
         run: |

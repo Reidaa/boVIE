@@ -1,0 +1,39 @@
+{
+  "name": "@bovie/collector-wttj",
+  "version": "0.4.0",
+  "description": "BoVIE collector-wttj",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "bin": {
+    "collector-wttj": "./dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json && chmod +x dist/cli.js",
+    "check": "tsc -p tsconfig.json --noEmit && tsc -p test/tsconfig.json",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@bovie/cli-common": "workspace:*",
+    "@bovie/collector-store": "workspace:*",
+    "@bovie/mysql-common": "workspace:*",
+    "@bovie/nats-client": "workspace:*",
+    "@bovie/offer-events": "workspace:*",
+    "commander": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@bovie/test-support": "workspace:*",
+    "@types/bun": "catalog:",
+    "@types/node": "catalog:",
+    "typescript": "catalog:"
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "name": "@bovie/test-support",
+  "version": "0.4.0",
+  "description": "Test helpers shared by BoVIE package and integration tests",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "check": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@bovie/mysql-common": "workspace:*",
+    "@bovie/offer-events": "workspace:*",
+    "mysql2": "catalog:"
+  },
+  "devDependencies": {
+    "@types/bun": "catalog:",
+    "typescript": "catalog:"
+  }
+}

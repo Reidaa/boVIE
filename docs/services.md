@@ -1,22 +1,22 @@
 # Service ownership
 
 The project collects general job offers from WTTJ and Workday career sites, and VIE/VIA offers
-from Business France. The uv workspace separates five deployable services from six shared libraries.
+from Business France. The pnpm workspace separates five deployable services from six shared libraries.
 Each service declares its own dependencies and has its own Dockerfile.
 The root project installs development tools only.
 
-| Library | Owns | Used by |
-| --- | --- | --- |
-| `offer_events` | Version-1 offer events with stable event IDs | Collectors, `discord-intake`, `discord-sender` |
-| `collector_store` | Published offers, content hashes, sightings, checkpoints, collector database migrations | Collectors |
-| `discord_store` | Inbox, queued messages, atomic acceptance, Discord database migrations | `discord-intake` and `discord-sender` |
-| `mysql_common` | MySQL connections, UTC timestamps, queue leases, migration execution | Both storage libraries and database clients |
-| `nats_client` | NATS connection, stream names and settings, stream creation, and the collectors' synchronous publisher | Collectors, `discord-intake` |
-| `cli_common` | Entrypoint environment loading and failure logging | Deployable services |
+| Library                  | Owns                                                                                       | Used by                                        |
+| ------------------------ | ------------------------------------------------------------------------------------------ | ---------------------------------------------- |
+| `@bovie/offer-events`    | Version-1 offer events with stable event IDs                                               | Collectors, `discord-intake`, `discord-sender` |
+| `@bovie/collector-store` | Published offers, content hashes, sightings, checkpoints, collector database migrations    | Collectors                                     |
+| `@bovie/discord-store`   | Inbox, queued messages, atomic acceptance, Discord database migrations                     | `discord-intake` and `discord-sender`          |
+| `@bovie/mysql-common`    | MySQL connections, UTC timestamps, queue leases, migration execution                       | Both storage libraries and database clients    |
+| `@bovie/nats-client`     | NATS connection, stream names and settings, stream creation, and the collectors' publisher | Collectors, `discord-intake`                   |
+| `@bovie/cli-common`      | Entrypoint environment loading and failure logging                                         | Deployable services                            |
 
 A library cannot import a service. A service cannot import another service.
-`tests/test_architecture.py` checks these rules and declared workspace dependencies.
-`scripts/check_packages.py` installs each service from wheels into a separate environment.
+`tests/architecture.test.ts` checks these rules and declared workspace dependencies.
+`scripts/check-packages.ts` deploys each service with `pnpm deploy` into a separate directory.
 It checks entrypoints, packaged migrations, and the absence of unrelated service code.
 
 Each worker has one role.

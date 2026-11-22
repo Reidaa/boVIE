@@ -38,7 +38,7 @@ Railway provisions the connection variables of `mysql`. Each app builds its `DAT
 from them: user `root`, `MYSQL_ROOT_PASSWORD`, the private domain of `mysql`, and its own database.
 All apps share the `root` credentials. [ADR 0001](adr/0001-service-based-services-with-one-offer-stream.md) explains why.
 Each app references only its own NATS password.
-The database library accepts Railway's `mysql://` URL and uses PyMySQL.
+The database library accepts Railway's `mysql://` URL and uses `mysql2`.
 NATS passwords start with `bovie_` so NATS reads them as strings.
 Retain an alphabetic prefix when rotating NATS passwords.
 Use only letters and digits when rotating `MYSQL_ROOT_PASSWORD`: each `DATABASE_URL` contains it without encoding.

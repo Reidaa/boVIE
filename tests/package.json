@@ -1,0 +1,29 @@
+{
+  "name": "@bovie/integration-tests",
+  "version": "0.4.0",
+  "description": "Tests that span several BoVIE packages or the whole workspace",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "tsc -p tsconfig.json",
+    "test": "bun test"
+  },
+  "devDependencies": {
+    "@bovie/cli-common": "workspace:*",
+    "@bovie/collector-business-france": "workspace:*",
+    "@bovie/collector-store": "workspace:*",
+    "@bovie/collector-wttj": "workspace:*",
+    "@bovie/discord-intake": "workspace:*",
+    "@bovie/discord-sender": "workspace:*",
+    "@bovie/discord-store": "workspace:*",
+    "@bovie/mysql-common": "workspace:*",
+    "@bovie/nats-client": "workspace:*",
+    "@bovie/offer-events": "workspace:*",
+    "@bovie/test-support": "workspace:*",
+    "@nats-io/jetstream": "catalog:",
+    "@nats-io/transport-node": "catalog:",
+    "@types/bun": "catalog:",
+    "mysql2": "catalog:",
+    "typescript": "catalog:"
+  }
+}

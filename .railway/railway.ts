@@ -34,7 +34,8 @@ function mysqlServer() {
  */
 function databaseUrl(name: string) {
   return (
-    "mysql://root:${{mysql.MYSQL_ROOT_PASSWORD}}@${{mysql.RAILWAY_PRIVATE_DOMAIN}}:${{mysql.MYSQLPORT}}/" + name
+    "mysql://root:${{mysql.MYSQL_ROOT_PASSWORD}}@${{mysql.RAILWAY_PRIVATE_DOMAIN}}:${{mysql.MYSQLPORT}}/" +
+    name
   );
 }
 
@@ -44,10 +45,21 @@ function dockerBuild(dockerfilePath: string, watchPatterns: string[]) {
 }
 
 /** An app in `apps/<name>`. Its start command is its own name. */
-function appService(name: string, config: Omit<Parameters<typeof service>[1], "source" | "build" | "start" | "replicas">) {
+function appService(
+  name: string,
+  config: Omit<Parameters<typeof service>[1], "source" | "build" | "start" | "replicas">,
+) {
   return service(name, {
     source: repo,
-    build: dockerBuild(`apps/${name}/Dockerfile`, [`apps/${name}/**`, "packages/**", "pyproject.toml", "uv.lock"]),
+    build: dockerBuild(`apps/${name}/Dockerfile`, [
+      `apps/${name}/**`,
+      "packages/**",
+      "package.json",
+      "pnpm-lock.yaml",
+      "pnpm-workspace.yaml",
+      "tsconfig.base.json",
+      "turbo.json",
+    ]),
     start: name,
     replicas: { [REGION]: 1 },
     ...config,
@@ -58,7 +70,10 @@ export default defineRailway(() => {
   const jetStream = volume("nats-jetstream", { region: REGION, sizeMB: 2048 });
   const nats = service("nats", {
     source: repo,
-    build: dockerBuild("deploy/railway/nats/Dockerfile", ["deploy/railway/nats/**", "deploy/nats.conf"]),
+    build: dockerBuild("deploy/railway/nats/Dockerfile", [
+      "deploy/railway/nats/**",
+      "deploy/nats.conf",
+    ]),
     replicas: { [REGION]: 1 },
     deploy: { requiredMountPath: "/data", restartPolicyMaxRetries: 100 },
     volumeMounts: { "/data": jetStream },
@@ -106,21 +121,36 @@ export default defineRailway(() => {
       BUSINESS_FRANCE_API_KEY: preserve(),
     },
   );
-  const wttj = collector("collector-wttj", "collector_wttj", "NATS_COLLECTOR_WTTJ_PASSWORD", "22 */2 * * *", {
-    WTTJ_QUERY: "",
-    WTTJ_CONTRACTS: "",
-    WTTJ_LIMIT: "50",
-    WTTJ_MAX_PAGES: "5",
-  });
+  const wttj = collector(
+    "collector-wttj",
+    "collector_wttj",
+    "NATS_COLLECTOR_WTTJ_PASSWORD",
+    "22 */2 * * *",
+    {
+      WTTJ_QUERY: "",
+      WTTJ_CONTRACTS: "",
+      WTTJ_LIMIT: "50",
+      WTTJ_MAX_PAGES: "5",
+    },
+  );
   // The board list stays out of the repository. Set WORKDAY_BOARDS in Railway.
-  const workday = collector("collector-workday", "collector_workday", "NATS_COLLECTOR_WORKDAY_PASSWORD", "32 */2 * * *", {
-    WORKDAY_BOARDS: preserve(),
-  });
+  const workday = collector(
+    "collector-workday",
+    "collector_workday",
+    "NATS_COLLECTOR_WORKDAY_PASSWORD",
+    "32 */2 * * *",
+    {
+      WORKDAY_BOARDS: preserve(),
+    },
+  );
 
   const discordIntake = appService("discord-intake", {
     preDeploy: "discord-store-migrate --wait-timeout 180",
     deploy: { restartPolicyMaxRetries: 100 },
-    env: { DATABASE_URL: databaseUrl("discord"), ...natsEnv("discord-intake", "NATS_DISCORD_INTAKE_PASSWORD") },
+    env: {
+      DATABASE_URL: databaseUrl("discord"),
+      ...natsEnv("discord-intake", "NATS_DISCORD_INTAKE_PASSWORD"),
+    },
   });
   // DISCORD_WEBHOOK_URL is sealed, so PR environments do not receive it. The sender has no
   // migration: discord-intake's migration creates the shared `discord` database.

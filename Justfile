@@ -1,16 +1,14 @@
 SHELL := "/bin/sh"
 
-PACKAGE := "collector_business_france"
+PACKAGE := "@bovie/collector-business-france"
 
 TURBO := "pnpm exec turbo run"
 
 i:
-	uv sync --all-packages
 	pnpm install
 
 upgrade:
-	uv lock --upgrade
-	uv sync --all-packages
+	pnpm update --recursive
 
 fmt:
 	{{TURBO}} format
@@ -28,21 +26,19 @@ check:
 	{{TURBO}} lint format:check check test
 
 clean:
-	find . -name "__pycache__" -type d -exec rm -rf {} +
-	find . -name "*.pyc" -delete
-	rm -rf .pytest_cache .turbo dist build apps/*/dist packages/*/dist
+	rm -rf .turbo dist build apps/*/dist packages/*/dist
 
 run:
-	uv run --all-packages python -m {{PACKAGE}}.main
+	pnpm --filter {{PACKAGE}} exec bun run dist/cli.js
 
 run-help:
-	uv run --all-packages python -m {{PACKAGE}}.main --help
+	pnpm --filter {{PACKAGE}} exec bun run dist/cli.js --help
 
 up:
 	docker compose up -d --wait mysql nats
 
 migrate store="collector-store":
-	uv run --all-packages {{store}}-migrate
+	pnpm --filter @bovie/{{store}} exec bun run dist/cli.js
 
 build:
 	{{TURBO}} build
@@ -57,4 +53,4 @@ down:
 	docker compose down
 
 pre-commit:
-	uv run --all-packages pre-commit run --all-files
+	pre-commit run --all-files
