@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { externalApplicationUrl, parseJob } from "@bovie/collector-business-france";
+import { externalApplicationUrl, parseJob } from "../src/index.js";
 
 describe("business france job model", () => {
   test("detects external application URL", () => {

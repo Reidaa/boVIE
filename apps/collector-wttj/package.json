@@ -18,7 +18,8 @@
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json && chmod +x dist/cli.js",
-    "check": "tsc -p tsconfig.json --noEmit"
+    "check": "tsc -p tsconfig.json --noEmit && tsc -p test/tsconfig.json",
+    "test": "bun test"
   },
   "dependencies": {
     "@bovie/cli-common": "workspace:*",
@@ -26,7 +27,13 @@
     "@bovie/mysql-common": "workspace:*",
     "@bovie/nats-client": "workspace:*",
     "@bovie/offer-events": "workspace:*",
-    "commander": "15.1.0",
-    "zod": "4.6.7"
+    "commander": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@bovie/test-support": "workspace:*",
+    "@types/bun": "catalog:",
+    "@types/node": "catalog:",
+    "typescript": "catalog:"
   }
 }

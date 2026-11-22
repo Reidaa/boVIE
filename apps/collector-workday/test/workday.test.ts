@@ -1,4 +1,8 @@
 import { describe, expect, test } from "bun:test";
+import { upgrade as upgradeCollector } from "@bovie/collector-store";
+import type { DbPool, RowDataPacket } from "@bovie/mysql-common";
+import type { OfferEvent } from "@bovie/offer-events";
+import { createTestDbContext, getMysqlAdminUrl, jsonResponse } from "@bovie/test-support";
 import {
   type Board,
   CollectionFailed,
@@ -9,10 +13,7 @@ import {
   normalize,
   parseBoard,
   type WorkdayCollectOptions,
-} from "@bovie/collector-workday";
-import type { DbPool, RowDataPacket } from "@bovie/mysql-common";
-import type { OfferEvent } from "@bovie/offer-events";
-import { createTestDbContext, getMysqlAdminUrl, jsonResponse } from "./helpers/db.js";
+} from "../src/index.js";
 
 const API = "/wday/cxs/example/Careers";
 
@@ -162,7 +163,7 @@ describe("workday collector", () => {
   test.skipIf(!getMysqlAdminUrl())("pagination records offers and skips known ones", async () => {
     const ctx = await createTestDbContext();
     try {
-      const pool = await ctx.create("collector");
+      const pool = await ctx.create(upgradeCollector);
       const requests: Array<{ method: string; url: string; body?: string }> = [];
       const serve = makePages([
         Array.from({ length: 20 }, (_, i) => makePosting(`job-${i}`)),
@@ -252,7 +253,7 @@ describe("workday collector", () => {
     async () => {
       const ctx = await createTestDbContext();
       try {
-        const pool = await ctx.create("collector");
+        const pool = await ctx.create(upgradeCollector);
         const serve = makePages([
           Array.from({ length: 20 }, (_, i) => makePosting(`job-${i}`)),
           [makePosting("job-20")],
@@ -297,7 +298,7 @@ describe("workday collector", () => {
   test.skipIf(!getMysqlAdminUrl())("failed detail does not commit page", async () => {
     const ctx = await createTestDbContext();
     try {
-      const pool = await ctx.create("collector");
+      const pool = await ctx.create(upgradeCollector);
       const serve = makePages([[makePosting("first"), makePosting("second")]]);
 
       const handler: FetchLike = async (input, init) => {
@@ -403,7 +404,7 @@ describe("workday collector", () => {
   test.skipIf(!getMysqlAdminUrl())("board without results fails", async () => {
     const ctx = await createTestDbContext();
     try {
-      const pool = await ctx.create("collector");
+      const pool = await ctx.create(upgradeCollector);
       await expect(runWorkday(pool, makePages([[]]), [makeBoard()])).rejects.toThrow(
         /example\/Careers/,
       );

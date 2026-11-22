@@ -22,8 +22,7 @@
     "//#check": {
       "dependsOn": ["^build"]
     },
-    "test": {},
-    "//#test": {
+    "test": {
       "dependsOn": ["^build"],
       "env": ["MYSQL_TEST_ADMIN_URL", "NATS_TEST_URL", "NATS_AUTH_TEST_URL"]
     },

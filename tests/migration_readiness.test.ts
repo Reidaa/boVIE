@@ -10,7 +10,7 @@ import {
 } from "@bovie/mysql-common";
 import { parseDatabaseUrl } from "@bovie/mysql-common/env";
 import { upgradeSchema, waitForDatabase } from "@bovie/mysql-common/migrate";
-import { getMysqlAdminUrl, withMysqlAdmin } from "./helpers/db.js";
+import { getMysqlAdminUrl, withMysqlAdmin } from "@bovie/test-support";
 
 describe("migration readiness and alembic adoption", () => {
   test.skipIf(!getMysqlAdminUrl())(

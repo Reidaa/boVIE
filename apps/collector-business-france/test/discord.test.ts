@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { displayFields, type Job } from "@bovie/collector-business-france";
+import { displayFields, type Job } from "../src/index.js";
 
 function makeBfJob(overrides: Partial<Job> = {}): Job {
   return {

@@ -1,6 +1,4 @@
 import { randomUUID } from "node:crypto";
-import { upgrade as upgradeCollector } from "@bovie/collector-store";
-import { upgrade as upgradeDiscord } from "@bovie/discord-store";
 import { type DbPool, makePool } from "@bovie/mysql-common";
 import { parseDatabaseUrl } from "@bovie/mysql-common/env";
 import { createOfferEvent, type OfferEvent, type OfferEventInput } from "@bovie/offer-events";
@@ -40,8 +38,15 @@ export async function withMysqlAdmin<T>(fn: (admin: Connection) => Promise<T>): 
   }
 }
 
+/**
+ * Disposable MySQL databases for one test.
+ *
+ * `create(upgrade)` makes an empty database and runs the schema upgrade of the
+ * store under test, e.g. `ctx.create(upgrade)` with collector-store's `upgrade`.
+ * `cleanup()` drops every database the context created.
+ */
 export interface TestDbContext {
-  create(domain: "collector" | "discord"): Promise<DbPool>;
+  create(upgrade: (pool: DbPool) => Promise<void>): Promise<DbPool>;
   cleanup(): Promise<void>;
 }
 
@@ -63,16 +68,12 @@ export async function createTestDbContext(): Promise<TestDbContext> {
   const created: Array<{ name: string; pool: DbPool }> = [];
 
   return {
-    async create(domain: "collector" | "discord"): Promise<DbPool> {
+    async create(upgrade: (pool: DbPool) => Promise<void>): Promise<DbPool> {
       const name = `bovie_test_${randomUUID().replace(/-/g, "")}`;
       await admin.query(`CREATE DATABASE \`${name}\` CHARACTER SET utf8mb4`);
       const pool = makePool({ ...config, database: name });
       created.push({ name, pool });
-      if (domain === "collector") {
-        await upgradeCollector(pool);
-      } else {
-        await upgradeDiscord(pool);
-      }
+      await upgrade(pool);
       return pool;
     },
     async cleanup(): Promise<void> {
@@ -116,3 +117,5 @@ export function jsonResponse(
     headers: { "Content-Type": "application/json", ...headers },
   });
 }
+
+export { isolateProcess, stubPool, stubPublisher } from "./cli.js";

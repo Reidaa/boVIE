@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { configureLogging, logFailure, logger } from "@bovie/cli-common";
+import { configureLogging, logFailure, logger } from "../src/index.js";
 
 function captureStreams(fn: () => void): { stdout: string; stderr: string } {
   let stdout = "";

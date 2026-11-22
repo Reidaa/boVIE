@@ -1,13 +1,13 @@
 import { describe, expect, test } from "bun:test";
-import { accept } from "@bovie/discord-store";
 import type { RowDataPacket } from "@bovie/mysql-common";
-import { createTestDbContext, getMysqlAdminUrl, makeEvent } from "./helpers/db.js";
+import { createTestDbContext, getMysqlAdminUrl, makeEvent } from "@bovie/test-support";
+import { accept, upgrade as upgradeDiscord } from "../src/index.js";
 
 describe("discord store atomic rollback", () => {
   test.skipIf(!getMysqlAdminUrl())("failed delivery insert rolls back inbox", async () => {
     const ctx = await createTestDbContext();
     try {
-      const pool = await ctx.create("discord");
+      const pool = await ctx.create(upgradeDiscord);
       await pool.query(`
         CREATE TRIGGER fail_deliveries_insert
         BEFORE INSERT ON deliveries

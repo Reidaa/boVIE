@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { configFromParams } from "@bovie/collector-business-france";
+import { configFromParams } from "../src/index.js";
 
 describe("business france config", () => {
   test("configFromParams resolves regions and specializations", () => {

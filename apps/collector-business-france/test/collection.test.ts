@@ -1,16 +1,11 @@
 import { describe, expect, test } from "bun:test";
-import {
-  createSearchParameters,
-  type Job,
-  normalize,
-  task,
-} from "@bovie/collector-business-france";
-import { MAX_SILENCE_MS, SourceSilent } from "@bovie/collector-store";
+import { MAX_SILENCE_MS, SourceSilent, upgrade as upgradeCollector } from "@bovie/collector-store";
 import { formatUtcDateTime, type RowDataPacket } from "@bovie/mysql-common";
 import type { OfferEvent } from "@bovie/offer-events";
-import { createTestDbContext, getMysqlAdminUrl } from "./helpers/db.js";
+import { createTestDbContext, getMysqlAdminUrl } from "@bovie/test-support";
+import { createSearchParameters, type Job, normalize, task } from "../src/index.js";
 
-export function makeBfJob(identity: number, overrides: Partial<Job> = {}): Job {
+function makeBfJob(identity: number, overrides: Partial<Job> = {}): Job {
   return {
     id: identity,
     missionTitle: "Engineer",
@@ -36,7 +31,7 @@ describe("business france collection", () => {
   test.skipIf(!getMysqlAdminUrl())("interrupted collection replays without skipping", async () => {
     const ctx = await createTestDbContext();
     try {
-      const pool = await ctx.create("collector");
+      const pool = await ctx.create(upgradeCollector);
       const searchId = async (params: { skip: number }) =>
         ({ 0: [1, 2], 2: [3] })[params.skip] ?? [];
 
@@ -93,7 +88,7 @@ describe("business france collection", () => {
   test.skipIf(!getMysqlAdminUrl())("failed publish leaves page unrecorded", async () => {
     const ctx = await createTestDbContext();
     try {
-      const pool = await ctx.create("collector");
+      const pool = await ctx.create(upgradeCollector);
       const deps = {
         searchId: async () => [1, 2],
         getFromId: async (id: number) => makeBfJob(id),
@@ -148,7 +143,7 @@ describe("business france collection", () => {
     async () => {
       const ctx = await createTestDbContext();
       try {
-        const pool = await ctx.create("collector");
+        const pool = await ctx.create(upgradeCollector);
         const published: OfferEvent[] = [];
         await task(
           createSearchParameters({ limit: 2 }),
@@ -187,7 +182,7 @@ describe("business france collection", () => {
     async () => {
       const ctx = await createTestDbContext();
       try {
-        const pool = await ctx.create("collector");
+        const pool = await ctx.create(upgradeCollector);
         let results = [1];
         const deps = {
           searchId: async () => [...results],
@@ -212,7 +207,7 @@ describe("business france collection", () => {
   test.skipIf(!getMysqlAdminUrl())("first run without results fails", async () => {
     const ctx = await createTestDbContext();
     try {
-      const pool = await ctx.create("collector");
+      const pool = await ctx.create(upgradeCollector);
       await expect(
         task(createSearchParameters({ limit: 1 }), pool, () => {}, {
           deps: {

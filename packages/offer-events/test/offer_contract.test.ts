@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { parseOfferEvent, parseOfferEventJson } from "@bovie/offer-events";
+import { parseOfferEvent, parseOfferEventJson } from "../src/index.js";
 
 const SAMPLES_DIR = resolve(import.meta.dirname, "contracts", "offer_event_v1");
 const SAMPLES = readdirSync(SAMPLES_DIR)

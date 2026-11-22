@@ -1,8 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import {
-  getCountriesIdByGeographicZone,
-  getZoneIdFromName,
-} from "@bovie/collector-business-france";
+import { getCountriesIdByGeographicZone, getZoneIdFromName } from "../src/index.js";
 
 describe("business france countries", () => {
   test("getCountriesIdByGeographicZone from numeric ID", () => {

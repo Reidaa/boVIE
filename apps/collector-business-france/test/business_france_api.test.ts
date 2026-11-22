@@ -1,11 +1,11 @@
 import { afterEach, describe, expect, test } from "bun:test";
+import { jsonResponse } from "@bovie/test-support";
 import {
   BusinessFranceClient,
   createSearchParameters,
   HttpStatusError,
   PUBLIC_OFFERS_URL,
-} from "@bovie/collector-business-france";
-import { jsonResponse } from "./helpers/db.js";
+} from "../src/index.js";
 
 function publicSite(...keys: string[]) {
   let index = 0;

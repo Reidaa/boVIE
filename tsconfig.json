@@ -4,5 +4,5 @@
     "noEmit": true,
     "types": ["bun", "node"]
   },
-  "include": ["tests/**/*.ts", "scripts/**/*.ts", ".railway/**/*.ts"]
+  "include": ["scripts/**/*.ts", ".railway/**/*.ts"]
 }

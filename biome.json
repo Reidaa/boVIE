@@ -34,7 +34,7 @@
   },
   "overrides": [
     {
-      "includes": ["tests/**"],
+      "includes": ["tests/**", "**/test/**"],
       "linter": {
         "rules": {
           "style": {

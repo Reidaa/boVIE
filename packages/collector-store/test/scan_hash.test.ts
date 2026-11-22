@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { scanHash } from "@bovie/collector-store";
+import { scanHash } from "../src/index.js";
 
 // Expected values come from Python: hashlib.sha256(json.dumps(...).encode()).hexdigest().
 // Existing checkpoint rows are keyed by these hashes.

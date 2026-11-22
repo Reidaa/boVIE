@@ -1,11 +1,11 @@
 import { describe, expect, test } from "bun:test";
-import { SourceSilent } from "@bovie/collector-store";
-import { collect, DetailResponseSchema, HttpStatusError, normalize } from "@bovie/collector-wttj";
+import { SourceSilent, upgrade as upgradeCollector } from "@bovie/collector-store";
 import type { DbPool, RowDataPacket } from "@bovie/mysql-common";
 import type { OfferEvent } from "@bovie/offer-events";
-import { createTestDbContext, getMysqlAdminUrl, jsonResponse } from "./helpers/db.js";
+import { createTestDbContext, getMysqlAdminUrl, jsonResponse } from "@bovie/test-support";
+import { collect, DetailResponseSchema, HttpStatusError, normalize } from "../src/index.js";
 
-export function makeWttjHit(identity: string, contract = "vie") {
+function makeWttjHit(identity: string, contract = "vie") {
   return {
     reference: identity,
     slug: identity,
@@ -14,7 +14,7 @@ export function makeWttjHit(identity: string, contract = "vie") {
   };
 }
 
-export function makeWttjDetail(identity: string, contract = "vie") {
+function makeWttjDetail(identity: string, contract = "vie") {
   return {
     job: {
       wttj_reference: identity,
@@ -40,7 +40,7 @@ describe("wttj collector", () => {
   test.skipIf(!getMysqlAdminUrl())("pagination, filtering, and detail normalization", async () => {
     const ctx = await createTestDbContext();
     try {
-      const pool = await ctx.create("collector");
+      const pool = await ctx.create(upgradeCollector);
       const paths: string[] = [];
       const published: OfferEvent[] = [];
 
@@ -110,7 +110,7 @@ describe("wttj collector", () => {
   test.skipIf(!getMysqlAdminUrl())("failed detail does not commit page", async () => {
     const ctx = await createTestDbContext();
     try {
-      const pool = await ctx.create("collector");
+      const pool = await ctx.create(upgradeCollector);
       const published: OfferEvent[] = [];
       const fetchFn = async (input: string) => {
         const url = new URL(input);
@@ -154,7 +154,7 @@ describe("wttj collector", () => {
     async () => {
       const ctx = await createTestDbContext();
       try {
-        const pool = await ctx.create("collector");
+        const pool = await ctx.create(upgradeCollector);
         const published: OfferEvent[] = [];
         const fetchFn = async (input: string) => {
           const url = new URL(input);
@@ -317,7 +317,7 @@ describe("wttj collector", () => {
   test.skipIf(!getMysqlAdminUrl())("WTTJ run without results fails", async () => {
     const ctx = await createTestDbContext();
     try {
-      const pool = await ctx.create("collector");
+      const pool = await ctx.create(upgradeCollector);
       const fetchFn = async () => jsonResponse({ data: [], metadata: { page: 1, page_count: 1 } });
 
       await expect(

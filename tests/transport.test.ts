@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { logger } from "@bovie/cli-common";
 import { handle, receiveMessage, retryDelay } from "@bovie/discord-intake";
 import { deliverOne, discordPayload, HttpStatusError } from "@bovie/discord-sender";
-import { accept } from "@bovie/discord-store";
+import { accept, upgrade as upgradeDiscord } from "@bovie/discord-store";
 import {
   type DbPool,
   formatUtcDateTime,
@@ -10,13 +10,18 @@ import {
   type RowDataPacket,
 } from "@bovie/mysql-common";
 import { type OfferSource, serializeOfferEvent } from "@bovie/offer-events";
-import { createTestDbContext, getMysqlAdminUrl, jsonResponse, makeEvent } from "./helpers/db.js";
+import {
+  createTestDbContext,
+  getMysqlAdminUrl,
+  jsonResponse,
+  makeEvent,
+} from "@bovie/test-support";
 
 describe("intake and sender transport", () => {
   test.skipIf(!getMysqlAdminUrl())("receiver commit precedes ack", async () => {
     const ctx = await createTestDbContext();
     try {
-      const pool = await ctx.create("discord");
+      const pool = await ctx.create(upgradeDiscord);
       const discovered = makeEvent();
       let acked = 0;
 
@@ -42,7 +47,7 @@ describe("intake and sender transport", () => {
   test.skipIf(!getMysqlAdminUrl())("discord outage then success", async () => {
     const ctx = await createTestDbContext();
     try {
-      const pool = await ctx.create("discord");
+      const pool = await ctx.create(upgradeDiscord);
       const discovered = makeEvent();
       await accept(pool, discovered);
 
@@ -139,7 +144,7 @@ describe("intake and sender transport", () => {
   test.skipIf(!getMysqlAdminUrl())("delivery waits for Discord to save the message", async () => {
     const ctx = await createTestDbContext();
     try {
-      const pool = await ctx.create("discord");
+      const pool = await ctx.create(upgradeDiscord);
       await accept(pool, makeEvent());
       const urls: string[] = [];
 
@@ -161,7 +166,7 @@ describe("intake and sender transport", () => {
   test.skipIf(!getMysqlAdminUrl())("lost lease after sending is logged", async () => {
     const ctx = await createTestDbContext();
     try {
-      const pool = await ctx.create("discord");
+      const pool = await ctx.create(upgradeDiscord);
       await accept(pool, makeEvent());
       const messages: string[] = [];
       const sinkId = logger.addSink((msg) => messages.push(msg), "WARNING");
@@ -186,7 +191,7 @@ describe("intake and sender transport", () => {
   test.skipIf(!getMysqlAdminUrl())("rate limited delivery waits for Discord", async () => {
     const ctx = await createTestDbContext();
     try {
-      const pool = await ctx.create("discord");
+      const pool = await ctx.create(upgradeDiscord);
       const discovered = makeEvent();
       await accept(pool, discovered);
       const waits: number[] = [];
@@ -232,7 +237,7 @@ describe("intake and sender transport", () => {
       async () => {
         const ctx = await createTestDbContext();
         try {
-          const pool = await ctx.create("discord");
+          const pool = await ctx.create(upgradeDiscord);
           await accept(pool, makeEvent());
           const messages: string[] = [];
           const sinkId = logger.addSink((msg) => messages.push(msg), "WARNING");

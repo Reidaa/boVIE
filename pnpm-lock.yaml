@@ -171,6 +171,39 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+catalogs:
+  default:
+    '@nats-io/jetstream':
+      specifier: 3.5.0
+      version: 3.5.0
+    '@nats-io/nats-core':
+      specifier: 3.5.0
+      version: 3.5.0
+    '@nats-io/transport-node':
+      specifier: 3.5.0
+      version: 3.5.0
+    '@types/bun':
+      specifier: 1.4.5
+      version: 1.4.5
+    '@types/node':
+      specifier: 26.6.6
+      version: 26.6.6
+    commander:
+      specifier: 15.1.0
+      version: 15.1.0
+    dotenv:
+      specifier: 18.0.10
+      version: 18.0.10
+    mysql2:
+      specifier: 3.24.6
+      version: 3.24.6
+    typescript:
+      specifier: 7.0.2
+      version: 7.0.2
+    zod:
+      specifier: 4.6.7
+      version: 4.6.7
+
 importers:
 
   .:
@@ -178,60 +211,12 @@ importers:
       '@biomejs/biome':
         specifier: 2.6.8
         version: 2.6.8
-      '@bovie/cli-common':
-        specifier: workspace:*
-        version: link:packages/cli-common
-      '@bovie/collector-business-france':
-        specifier: workspace:*
-        version: link:apps/collector-business-france
-      '@bovie/collector-store':
-        specifier: workspace:*
-        version: link:packages/collector-store
-      '@bovie/collector-workday':
-        specifier: workspace:*
-        version: link:apps/collector-workday
-      '@bovie/collector-wttj':
-        specifier: workspace:*
-        version: link:apps/collector-wttj
-      '@bovie/discord-intake':
-        specifier: workspace:*
-        version: link:apps/discord-intake
-      '@bovie/discord-sender':
-        specifier: workspace:*
-        version: link:apps/discord-sender
-      '@bovie/discord-store':
-        specifier: workspace:*
-        version: link:packages/discord-store
-      '@bovie/mysql-common':
-        specifier: workspace:*
-        version: link:packages/mysql-common
-      '@bovie/nats-client':
-        specifier: workspace:*
-        version: link:packages/nats-client
-      '@bovie/offer-events':
-        specifier: workspace:*
-        version: link:packages/offer-events
-      '@nats-io/jetstream':
-        specifier: 3.5.0
-        version: 3.5.0
-      '@nats-io/nats-core':
-        specifier: 3.5.0
-        version: 3.5.0
-      '@nats-io/transport-node':
-        specifier: 3.5.0
-        version: 3.5.0
       '@types/bun':
-        specifier: 1.4.5
+        specifier: 'catalog:'
         version: 1.4.5
       '@types/node':
-        specifier: 26.6.6
+        specifier: 'catalog:'
         version: 26.6.6
-      dotenv:
-        specifier: 18.0.10
-        version: 18.0.10
-      mysql2:
-        specifier: 3.24.6
-        version: 3.24.6(@types/node@26.6.6)
       railway:
         specifier: 3.16.0
         version: 3.16.0
@@ -239,7 +224,7 @@ importers:
         specifier: 2.11.10
         version: 2.11.10
       typescript:
-        specifier: 7.0.2
+        specifier: 'catalog:'
         version: 7.0.2
 
   apps/collector-business-france:
@@ -260,11 +245,27 @@ importers:
         specifier: workspace:*
         version: link:../../packages/offer-events
       commander:
-        specifier: 15.1.0
+        specifier: 'catalog:'
         version: 15.1.0
       zod:
-        specifier: 4.6.7
+        specifier: 'catalog:'
         version: 4.6.7
+    devDependencies:
+      '@bovie/test-support':
+        specifier: workspace:*
+        version: link:../../packages/test-support
+      '@types/bun':
+        specifier: 'catalog:'
+        version: 1.4.5
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.6
+      dotenv:
+        specifier: 'catalog:'
+        version: 18.0.10
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
 
   apps/collector-workday:
     dependencies:
@@ -284,11 +285,24 @@ importers:
         specifier: workspace:*
         version: link:../../packages/offer-events
       commander:
-        specifier: 15.1.0
+        specifier: 'catalog:'
         version: 15.1.0
       zod:
-        specifier: 4.6.7
+        specifier: 'catalog:'
         version: 4.6.7
+    devDependencies:
+      '@bovie/test-support':
+        specifier: workspace:*
+        version: link:../../packages/test-support
+      '@types/bun':
+        specifier: 'catalog:'
+        version: 1.4.5
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.6
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
 
   apps/collector-wttj:
     dependencies:
@@ -308,11 +322,24 @@ importers:
         specifier: workspace:*
         version: link:../../packages/offer-events
       commander:
-        specifier: 15.1.0
+        specifier: 'catalog:'
         version: 15.1.0
       zod:
-        specifier: 4.6.7
+        specifier: 'catalog:'
         version: 4.6.7
+    devDependencies:
+      '@bovie/test-support':
+        specifier: workspace:*
+        version: link:../../packages/test-support
+      '@types/bun':
+        specifier: 'catalog:'
+        version: 1.4.5
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.6
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
 
   apps/discord-intake:
     dependencies:
@@ -332,14 +359,21 @@ importers:
         specifier: workspace:*
         version: link:../../packages/offer-events
       '@nats-io/jetstream':
-        specifier: 3.5.0
+        specifier: 'catalog:'
         version: 3.5.0
       '@nats-io/nats-core':
-        specifier: 3.5.0
+        specifier: 'catalog:'
         version: 3.5.0
       commander:
-        specifier: 15.1.0
+        specifier: 'catalog:'
         version: 15.1.0
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.6
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
 
   apps/discord-sender:
     dependencies:
@@ -356,14 +390,37 @@ importers:
         specifier: workspace:*
         version: link:../../packages/offer-events
       commander:
-        specifier: 15.1.0
+        specifier: 'catalog:'
         version: 15.1.0
+    devDependencies:
+      '@bovie/test-support':
+        specifier: workspace:*
+        version: link:../../packages/test-support
+      '@types/bun':
+        specifier: 'catalog:'
+        version: 1.4.5
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.6
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
 
   packages/cli-common:
     dependencies:
       dotenv:
-        specifier: 18.0.10
+        specifier: 'catalog:'
         version: 18.0.10
+    devDependencies:
+      '@types/bun':
+        specifier: 'catalog:'
+        version: 1.4.5
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.6
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
 
   packages/collector-store:
     dependencies:
@@ -374,8 +431,21 @@ importers:
         specifier: workspace:*
         version: link:../offer-events
       commander:
-        specifier: 15.1.0
+        specifier: 'catalog:'
         version: 15.1.0
+    devDependencies:
+      '@bovie/test-support':
+        specifier: workspace:*
+        version: link:../test-support
+      '@types/bun':
+        specifier: 'catalog:'
+        version: 1.4.5
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.6
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
 
   packages/discord-store:
     dependencies:
@@ -386,17 +456,40 @@ importers:
         specifier: workspace:*
         version: link:../offer-events
       commander:
-        specifier: 15.1.0
+        specifier: 'catalog:'
         version: 15.1.0
+    devDependencies:
+      '@bovie/test-support':
+        specifier: workspace:*
+        version: link:../test-support
+      '@types/bun':
+        specifier: 'catalog:'
+        version: 1.4.5
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.6
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
 
   packages/mysql-common:
     dependencies:
       dotenv:
-        specifier: 18.0.10
+        specifier: 'catalog:'
         version: 18.0.10
       mysql2:
-        specifier: 3.24.6
+        specifier: 'catalog:'
         version: 3.24.6(@types/node@26.6.6)
+    devDependencies:
+      '@types/bun':
+        specifier: 'catalog:'
+        version: 1.4.5
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.6
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
 
   packages/nats-client:
     dependencies:
@@ -404,20 +497,107 @@ importers:
         specifier: workspace:*
         version: link:../offer-events
       '@nats-io/jetstream':
-        specifier: 3.5.0
+        specifier: 'catalog:'
         version: 3.5.0
       '@nats-io/nats-core':
-        specifier: 3.5.0
+        specifier: 'catalog:'
         version: 3.5.0
       '@nats-io/transport-node':
-        specifier: 3.5.0
+        specifier: 'catalog:'
         version: 3.5.0
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.6
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
 
   packages/offer-events:
     dependencies:
       zod:
-        specifier: 4.6.7
+        specifier: 'catalog:'
         version: 4.6.7
+    devDependencies:
+      '@types/bun':
+        specifier: 'catalog:'
+        version: 1.4.5
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.6
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
+
+  packages/test-support:
+    dependencies:
+      '@bovie/mysql-common':
+        specifier: workspace:*
+        version: link:../mysql-common
+      '@bovie/offer-events':
+        specifier: workspace:*
+        version: link:../offer-events
+      mysql2:
+        specifier: 'catalog:'
+        version: 3.24.6(@types/node@26.6.6)
+    devDependencies:
+      '@types/bun':
+        specifier: 'catalog:'
+        version: 1.4.5
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
+
+  tests:
+    devDependencies:
+      '@bovie/cli-common':
+        specifier: workspace:*
+        version: link:../packages/cli-common
+      '@bovie/collector-business-france':
+        specifier: workspace:*
+        version: link:../apps/collector-business-france
+      '@bovie/collector-store':
+        specifier: workspace:*
+        version: link:../packages/collector-store
+      '@bovie/collector-wttj':
+        specifier: workspace:*
+        version: link:../apps/collector-wttj
+      '@bovie/discord-intake':
+        specifier: workspace:*
+        version: link:../apps/discord-intake
+      '@bovie/discord-sender':
+        specifier: workspace:*
+        version: link:../apps/discord-sender
+      '@bovie/discord-store':
+        specifier: workspace:*
+        version: link:../packages/discord-store
+      '@bovie/mysql-common':
+        specifier: workspace:*
+        version: link:../packages/mysql-common
+      '@bovie/nats-client':
+        specifier: workspace:*
+        version: link:../packages/nats-client
+      '@bovie/offer-events':
+        specifier: workspace:*
+        version: link:../packages/offer-events
+      '@bovie/test-support':
+        specifier: workspace:*
+        version: link:../packages/test-support
+      '@nats-io/jetstream':
+        specifier: 'catalog:'
+        version: 3.5.0
+      '@nats-io/transport-node':
+        specifier: 'catalog:'
+        version: 3.5.0
+      '@types/bun':
+        specifier: 'catalog:'
+        version: 1.4.5
+      mysql2:
+        specifier: 'catalog:'
+        version: 3.24.6(@types/node@26.6.6)
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
 
 packages:
 

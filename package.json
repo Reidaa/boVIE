@@ -9,32 +9,16 @@
     "format": "biome format --write .",
     "format:check": "biome format .",
     "lint": "biome lint .",
-    "test": "bun test",
+    "test": "turbo run test",
     "verify": "turbo run lint format:check check test verify:packages",
     "verify:packages": "bun run scripts/check-packages.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "2.6.8",
-    "@bovie/cli-common": "workspace:*",
-    "@bovie/collector-business-france": "workspace:*",
-    "@bovie/collector-store": "workspace:*",
-    "@bovie/collector-workday": "workspace:*",
-    "@bovie/collector-wttj": "workspace:*",
-    "@bovie/discord-intake": "workspace:*",
-    "@bovie/discord-sender": "workspace:*",
-    "@bovie/discord-store": "workspace:*",
-    "@bovie/mysql-common": "workspace:*",
-    "@bovie/nats-client": "workspace:*",
-    "@bovie/offer-events": "workspace:*",
-    "@nats-io/jetstream": "3.5.0",
-    "@nats-io/nats-core": "3.5.0",
-    "@nats-io/transport-node": "3.5.0",
-    "@types/bun": "1.4.5",
-    "@types/node": "26.6.6",
-    "dotenv": "18.0.10",
-    "mysql2": "3.24.6",
+    "@types/bun": "catalog:",
+    "@types/node": "catalog:",
     "railway": "3.16.0",
     "turbo": "2.11.10",
-    "typescript": "7.0.2"
+    "typescript": "catalog:"
   }
 }

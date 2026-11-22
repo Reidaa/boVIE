@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { getZoneIdFromName, getZoneNames } from "@bovie/collector-business-france";
+import { getZoneIdFromName, getZoneNames } from "../src/index.js";
 
 describe("business france geographic zones", () => {
   test("getZoneNames returns all 8 zones", () => {

@@ -1,9 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import { createSearchParameters, task } from "@bovie/collector-business-france";
+import { upgrade as upgradeCollector } from "@bovie/collector-store";
 import { collect } from "@bovie/collector-wttj";
 import { CONSUMER_CONFIG, ensureConsumer, receiveMessage } from "@bovie/discord-intake";
 import { deliverOne } from "@bovie/discord-sender";
-import { accept } from "@bovie/discord-store";
+import { accept, upgrade as upgradeDiscord } from "@bovie/discord-store";
 import type { RowDataPacket } from "@bovie/mysql-common";
 import {
   CONSUMER,
@@ -14,17 +15,15 @@ import {
   STREAM_CONFIG,
 } from "@bovie/nats-client";
 import { type OfferEvent, parseOfferEventJson } from "@bovie/offer-events";
-import { jetstream, jetstreamManager } from "@nats-io/jetstream";
-import { nanos } from "@nats-io/nats-core";
-import { connect as natsConnect } from "@nats-io/transport-node";
-import { makeBfJob } from "./collection.test.js";
 import {
   createTestDbContext,
   getMysqlAdminUrl,
   getNatsTestUrl,
   jsonResponse,
-} from "./helpers/db.js";
-import { makeWttjDetail, makeWttjHit } from "./wttj.test.js";
+} from "@bovie/test-support";
+import { jetstream, jetstreamManager } from "@nats-io/jetstream";
+import { nanos, connect as natsConnect } from "@nats-io/transport-node";
+import { makeBfJob, makeWttjDetail, makeWttjHit } from "./fixtures.js";
 
 async function deleteStream(url: string): Promise<void> {
   const nc = await natsConnect({ servers: [url] });
@@ -57,9 +56,9 @@ describe("NATS JetStream integration", () => {
       const ctx = await createTestDbContext();
       try {
         await deleteStream(url);
-        const businessFranceDb = await ctx.create("collector");
-        const wttjDb = await ctx.create("collector");
-        const discordDb = await ctx.create("discord");
+        const businessFranceDb = await ctx.create(upgradeCollector);
+        const wttjDb = await ctx.create(upgradeCollector);
+        const discordDb = await ctx.create(upgradeDiscord);
 
         const published: OfferEvent[] = [];
         const publisher = new Publisher();

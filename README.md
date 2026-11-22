@@ -16,12 +16,16 @@ TypeScript packages compile to ESM JavaScript and execute on the [Bun](https://b
 | `packages/` | Shared TypeScript libraries                                       | pnpm / Bun |
 | `deploy/`   | Broker and database configuration used by Compose and Railway     | —          |
 | `.railway/` | Railway infrastructure as code (`railway.ts`)                     | pnpm       |
-| `tests/`    | Cross-package test suite                                          | `bun test` |
+| `tests/`    | Integration tests that span several packages                      | `bun test` |
 
 Each deployable service has its own package, dependencies, command, and Docker target.
 An app's directory, command, Docker target, Compose and Railway service, and NATS
 account share one name. Its database uses the same name with underscores.
-The root contains development tools and one lockfile (`pnpm-lock.yaml`). Services do
+The root contains workspace-wide tools (Biome, Turbo, Railway) and one lockfile
+(`pnpm-lock.yaml`). Each package declares its own dependencies and dev dependencies;
+`pnpm-workspace.yaml` pins every third-party version once in its `catalog:`. Unit
+tests live in each package's `test/` directory and import its `src/`. Shared test
+helpers are in `packages/test-support`. Services do
 not import other services. Tests enforce declared imports and `pnpm deploy` installs
 each service independently.
 
@@ -230,7 +234,7 @@ Then change `STREAM_CONFIG` in `packages/nats-client` to match, so new brokers g
   message's stream sequence and delivery count.
 - A collector run fails when its scan has returned no results for 12 hours, or
   never has. A broken source usually returns an empty list instead of an error.
-- `tests/contracts/offer_event_v1/` holds frozen published events. Every schema
+- `packages/offer-events/test/contracts/offer_event_v1/` holds frozen published events. Every schema
   change must still parse them and derive the same event IDs; a change that cannot
   needs a new subject version. The test only checks that new code reads old
   events. `OfferEvent` rejects unknown top-level fields, so a new field also needs
@@ -279,7 +283,7 @@ pnpm exec turbo run lint format:check check test verify:packages
 | `lint`                   | Biome lint                                                                |
 | `format`, `format:check` | Biome format                                                              |
 | `check`                  | TypeScript (`tsc --noEmit`) across all workspace packages and root        |
-| `test`                   | `bun test` over `tests/`                                                  |
+| `test`                   | `bun test` in each package's `test/` and in `tests/`                      |
 | `build`                  | `tsc` into each member's `dist/`                                          |
 | `verify:packages`        | Deploys each app alone with `pnpm deploy` via `scripts/check-packages.ts` |
 

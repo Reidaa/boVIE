@@ -2,10 +2,10 @@ import { describe, expect, test } from "bun:test";
 import { ensureConsumer } from "@bovie/discord-intake";
 import { CONSUMER, connect, ensureStream, isNotFoundError, STREAM } from "@bovie/nats-client";
 import { type OfferSource, serializeOfferEvent } from "@bovie/offer-events";
+import { getNatsAuthTestUrl, makeEvent } from "@bovie/test-support";
 import { jetstream, jetstreamManager } from "@nats-io/jetstream";
-import type { NatsConnection } from "@nats-io/nats-core";
+import type { NatsConnection } from "@nats-io/transport-node";
 import { connect as natsConnect } from "@nats-io/transport-node";
-import { getNatsAuthTestUrl, makeEvent } from "./helpers/db.js";
 
 const PASSWORDS: Record<string, string> = {
   "nats-setup": "local-nats-setup",
