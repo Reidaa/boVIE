@@ -5,18 +5,14 @@
     "**/.hg": true,
     "**/CVS": true,
     "**/.DS_Store": true,
-    "**/Thumbs.db": true,
-    "**/__pycache__": true
+    "**/Thumbs.db": true
   },
-  "[python]": {
-    "editor.defaultFormatter": "charliermarsh.ruff"
+  "[go]": {
+    "editor.formatOnSave": true
   },
   "[dockerfile]": {
     "editor.quickSuggestions": {
       "strings": true
     }
-  },
-  "python.testing.pytestArgs": ["tests"],
-  "python.testing.unittestEnabled": false,
-  "python.testing.pytestEnabled": true
+  }
 }

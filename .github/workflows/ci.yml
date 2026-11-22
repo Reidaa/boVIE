@@ -6,14 +6,9 @@ on:
   pull_request:
     branches: [main]
 
-env:
-  # uv must use the Python that mise installed, not download its own.
-  UV_PYTHON_DOWNLOADS: never
-  PRE_COMMIT_HOME: ${{ github.workspace }}/.cache/pre-commit
-
 jobs:
-  pre-commit:
-    name: Pre-commit
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -26,33 +21,31 @@ jobs:
         with:
           version: 2026.11.8
 
-      - name: Cache uv
+      - name: Cache Go build and modules
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          path: ~/.cache/uv
-          key: uv-${{ runner.os }}-${{ hashFiles('mise.toml', 'uv.lock') }}
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+            ~/.cache/golangci-lint
+          key: go-lint-${{ runner.os }}-${{ hashFiles('mise.toml', 'go.sum') }}
           restore-keys: |
-            uv-${{ runner.os }}-
+            go-lint-${{ runner.os }}-
 
-      - name: Install dependencies
-        run: uv sync --all-packages
+      - name: Check formatting
+        run: |
+          unformatted="$(gofmt -l apps packages tests)"
+          if [ -n "$unformatted" ]; then
+            echo "Unformatted Go files:"
+            echo "$unformatted"
+            exit 1
+          fi
 
-      - name: Install pip
-        run: uv pip install pip
+      - name: Run golangci-lint
+        run: golangci-lint run ./...
 
-      - name: Add virtualenv to PATH
-        run: echo "$(pwd)/.venv/bin" >> $GITHUB_PATH
-
-      - name: Cache pre-commit
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ${{ env.PRE_COMMIT_HOME }}
-          key: pre-commit-${{ runner.os }}-${{ hashFiles('mise.toml', '.pre-commit-config.yaml') }}
-          restore-keys: |
-            pre-commit-${{ runner.os }}-
-
-      - name: Run pre-commit
-        run: uv run --all-packages pre-commit run --all-files --show-diff-on-failure
+      - name: Run go vet
+        run: go vet ./...
 
   tests:
     name: Tests
@@ -70,7 +63,7 @@ jobs:
           --health-cmd="mysqladmin ping -h 127.0.0.1 --silent"
           --health-interval=5s --health-timeout=5s --health-retries=30
     env:
-      MYSQL_TEST_ADMIN_URL: mysql+pymysql://root:bovie-test-only@127.0.0.1:3306/mysql
+      MYSQL_TEST_ADMIN_URL: mysql://root:bovie-test-only@127.0.0.1:3306/mysql
       NATS_TEST_URL: nats://127.0.0.1:4222
       NATS_AUTH_TEST_URL: nats://127.0.0.1:4223
 
@@ -83,48 +76,30 @@ jobs:
         with:
           version: 2026.11.8
 
-      - name: Cache uv
+      - name: Cache Go build and modules
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          path: ~/.cache/uv
-          key: uv-${{ runner.os }}-${{ hashFiles('mise.toml', 'uv.lock') }}
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+          key: go-test-${{ runner.os }}-${{ hashFiles('mise.toml', 'go.sum') }}
           restore-keys: |
-            uv-${{ runner.os }}-
+            go-test-${{ runner.os }}-
 
-      - name: Find pnpm store
-        id: pnpm-store
-        run: echo "path=$(pnpm store path)" >> "$GITHUB_OUTPUT"
-
-      - name: Cache pnpm
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ${{ steps.pnpm-store.outputs.path }}
-          key: pnpm-${{ runner.os }}-${{ hashFiles('mise.toml', 'pnpm-lock.yaml') }}
-          restore-keys: |
-            pnpm-${{ runner.os }}-
-
-      - name: Cache Turborepo
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: .turbo/cache
-          key: turbo-${{ runner.os }}-${{ github.sha }}
-          restore-keys: |
-            turbo-${{ runner.os }}-
-
-      - name: Install dependencies
-        run: |
-          pnpm install --frozen-lockfile
-          uv sync --all-packages
+      - name: Download Go modules
+        run: go mod download
 
       - name: Start test brokers
         run: |
-          docker run -d --name bovie-test-nats -p 127.0.0.1:4222:4222 nats:2.11-alpine --jetstream
-          docker create --name bovie-test-nats-auth -p 127.0.0.1:4223:4222 -e NATS_SETUP_PASSWORD=local-nats-setup -e NATS_COLLECTOR_BUSINESS_FRANCE_PASSWORD=local-nats-collector-business-france -e NATS_COLLECTOR_WTTJ_PASSWORD=local-nats-collector-wttj -e NATS_COLLECTOR_WORKDAY_PASSWORD=local-nats-collector-workday -e NATS_DISCORD_INTAKE_PASSWORD=local-nats-discord-intake nats:2.11-alpine --config /tmp/nats.conf
+          docker run -d --name bovie-test-nats -p 127.0.0.1:4222:4222 nats:2.15-alpine --jetstream
+          docker create --name bovie-test-nats-auth -p 127.0.0.1:4223:4222 -e NATS_SETUP_PASSWORD=local-nats-setup -e NATS_COLLECTOR_BUSINESS_FRANCE_PASSWORD=local-nats-collector-business-france -e NATS_COLLECTOR_WTTJ_PASSWORD=local-nats-collector-wttj -e NATS_COLLECTOR_WORKDAY_PASSWORD=local-nats-collector-workday -e NATS_DISCORD_INTAKE_PASSWORD=local-nats-discord-intake nats:2.15-alpine --config /tmp/nats.conf
           docker cp deploy/nats.conf bovie-test-nats-auth:/tmp/nats.conf
           docker start bovie-test-nats-auth
 
-      - name: Lint, typecheck, test, and verify built artifacts
-        run: pnpm exec turbo run lint format:check check test verify:packages
+      - name: Run tests and verify builds
+        run: |
+          go test -race -v ./...
+          go build ./...
 
   images:
     name: Build ${{ matrix.dockerfile }}
