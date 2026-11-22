@@ -1,0 +1,32 @@
+{
+  "name": "@bovie/collector-workday",
+  "version": "0.4.0",
+  "description": "BoVIE collector-workday",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "bin": {
+    "collector-workday": "./dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json && chmod +x dist/cli.js",
+    "check": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@bovie/cli-common": "workspace:*",
+    "@bovie/collector-store": "workspace:*",
+    "@bovie/mysql-common": "workspace:*",
+    "@bovie/nats-client": "workspace:*",
+    "@bovie/offer-events": "workspace:*",
+    "commander": "15.1.0",
+    "zod": "4.6.7"
+  }
+}

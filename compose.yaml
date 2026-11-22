@@ -11,7 +11,8 @@ services:
       - mysql:/var/lib/mysql
       - ./deploy/mysql-init.sql:/docker-entrypoint-initdb.d/01-domains.sql:ro
     healthcheck:
-      test: [CMD-SHELL, 'MYSQL_PWD="$$MYSQL_ROOT_PASSWORD" mysql -h 127.0.0.1 -u root -e "SELECT 1"']
+      test:
+        [CMD-SHELL, 'MYSQL_PWD="$$MYSQL_ROOT_PASSWORD" mysql -h 127.0.0.1 -u root -e "SELECT 1"']
       interval: 5s
       timeout: 5s
       retries: 30
@@ -43,9 +44,9 @@ services:
     image: bovie-collector-business-france:local
     command: [collector-store-migrate]
     environment:
-      DATABASE_URL: mysql+pymysql://collector_business_france:local-collector-business-france-only@mysql/collector_business_france
+      DATABASE_URL: mysql://collector_business_france:local-collector-business-france-only@mysql/collector_business_france
     depends_on:
-      mysql: {condition: service_healthy}
+      mysql: { condition: service_healthy }
 
   migrate-collector-wttj:
     <<: *app
@@ -55,9 +56,9 @@ services:
     image: bovie-collector-wttj:local
     command: [collector-store-migrate]
     environment:
-      DATABASE_URL: mysql+pymysql://collector_wttj:local-collector-wttj-only@mysql/collector_wttj
+      DATABASE_URL: mysql://collector_wttj:local-collector-wttj-only@mysql/collector_wttj
     depends_on:
-      mysql: {condition: service_healthy}
+      mysql: { condition: service_healthy }
 
   migrate-collector-workday:
     <<: *app
@@ -67,9 +68,9 @@ services:
     image: bovie-collector-workday:local
     command: [collector-store-migrate]
     environment:
-      DATABASE_URL: mysql+pymysql://collector_workday:local-collector-workday-only@mysql/collector_workday
+      DATABASE_URL: mysql://collector_workday:local-collector-workday-only@mysql/collector_workday
     depends_on:
-      mysql: {condition: service_healthy}
+      mysql: { condition: service_healthy }
 
   migrate-discord:
     <<: *app
@@ -79,9 +80,9 @@ services:
     image: bovie-discord-intake:local
     command: [discord-store-migrate]
     environment:
-      DATABASE_URL: mysql+pymysql://discord:local-discord-only@mysql/discord
+      DATABASE_URL: mysql://discord:local-discord-only@mysql/discord
     depends_on:
-      mysql: {condition: service_healthy}
+      mysql: { condition: service_healthy }
 
   collector-business-france:
     <<: *app
@@ -91,7 +92,7 @@ services:
     image: bovie-collector-business-france:local
     command: [collector-business-france]
     environment:
-      DATABASE_URL: mysql+pymysql://collector_business_france:local-collector-business-france-only@mysql/collector_business_france
+      DATABASE_URL: mysql://collector_business_france:local-collector-business-france-only@mysql/collector_business_france
       BUSINESS_FRANCE_LIMIT: ${BUSINESS_FRANCE_LIMIT:-25}
       BUSINESS_FRANCE_REGION: ${BUSINESS_FRANCE_REGION:-}
       BUSINESS_FRANCE_COUNTRY: ${BUSINESS_FRANCE_COUNTRY:-}
@@ -100,8 +101,8 @@ services:
       NATS_USER: collector-business-france
       NATS_PASSWORD: ${NATS_COLLECTOR_BUSINESS_FRANCE_PASSWORD:-local-nats-collector-business-france}
     depends_on:
-      migrate-collector-business-france: {condition: service_completed_successfully}
-      nats: {condition: service_healthy}
+      migrate-collector-business-france: { condition: service_completed_successfully }
+      nats: { condition: service_healthy }
 
   collector-wttj:
     <<: *app
@@ -111,7 +112,7 @@ services:
     image: bovie-collector-wttj:local
     command: [collector-wttj]
     environment:
-      DATABASE_URL: mysql+pymysql://collector_wttj:local-collector-wttj-only@mysql/collector_wttj
+      DATABASE_URL: mysql://collector_wttj:local-collector-wttj-only@mysql/collector_wttj
       WTTJ_QUERY: ${WTTJ_QUERY:-}
       WTTJ_CONTRACTS: ${WTTJ_CONTRACTS:-}
       WTTJ_LIMIT: ${WTTJ_LIMIT:-50}
@@ -120,8 +121,8 @@ services:
       NATS_USER: collector-wttj
       NATS_PASSWORD: ${NATS_COLLECTOR_WTTJ_PASSWORD:-local-nats-collector-wttj}
     depends_on:
-      migrate-collector-wttj: {condition: service_completed_successfully}
-      nats: {condition: service_healthy}
+      migrate-collector-wttj: { condition: service_completed_successfully }
+      nats: { condition: service_healthy }
 
   collector-workday:
     <<: *app
@@ -131,15 +132,15 @@ services:
     image: bovie-collector-workday:local
     command: [collector-workday]
     environment:
-      DATABASE_URL: mysql+pymysql://collector_workday:local-collector-workday-only@mysql/collector_workday
+      DATABASE_URL: mysql://collector_workday:local-collector-workday-only@mysql/collector_workday
       WORKDAY_BOARDS: ${WORKDAY_BOARDS:-}
       WORKDAY_LIMIT: ${WORKDAY_LIMIT:-40}
       NATS_URL: nats://nats:4222
       NATS_USER: collector-workday
       NATS_PASSWORD: ${NATS_COLLECTOR_WORKDAY_PASSWORD:-local-nats-collector-workday}
     depends_on:
-      migrate-collector-workday: {condition: service_completed_successfully}
-      nats: {condition: service_healthy}
+      migrate-collector-workday: { condition: service_completed_successfully }
+      nats: { condition: service_healthy }
 
   discord-intake:
     <<: *app
@@ -150,13 +151,13 @@ services:
     command: [discord-intake]
     restart: unless-stopped
     environment:
-      DATABASE_URL: mysql+pymysql://discord:local-discord-only@mysql/discord
+      DATABASE_URL: mysql://discord:local-discord-only@mysql/discord
       NATS_URL: nats://nats:4222
       NATS_USER: discord-intake
       NATS_PASSWORD: ${NATS_DISCORD_INTAKE_PASSWORD:-local-nats-discord-intake}
     depends_on:
-      migrate-discord: {condition: service_completed_successfully}
-      nats: {condition: service_healthy}
+      migrate-discord: { condition: service_completed_successfully }
+      nats: { condition: service_healthy }
 
   discord-sender:
     <<: *app
@@ -167,10 +168,10 @@ services:
     command: [discord-sender]
     restart: unless-stopped
     environment:
-      DATABASE_URL: mysql+pymysql://discord:local-discord-only@mysql/discord
+      DATABASE_URL: mysql://discord:local-discord-only@mysql/discord
       DISCORD_WEBHOOK_URL: ${DISCORD_WEBHOOK_URL:-}
     depends_on:
-      migrate-discord: {condition: service_completed_successfully}
+      migrate-discord: { condition: service_completed_successfully }
 
 volumes:
   mysql:

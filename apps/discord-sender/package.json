@@ -1,0 +1,30 @@
+{
+  "name": "@bovie/discord-sender",
+  "version": "0.4.0",
+  "description": "BoVIE discord-sender",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "bin": {
+    "discord-sender": "./dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json && chmod +x dist/cli.js",
+    "check": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@bovie/cli-common": "workspace:*",
+    "@bovie/discord-store": "workspace:*",
+    "@bovie/mysql-common": "workspace:*",
+    "@bovie/offer-events": "workspace:*",
+    "commander": "15.1.0"
+  }
+}
