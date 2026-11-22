@@ -213,13 +213,54 @@ describe("NATS JetStream integration", () => {
     },
   );
 
-  test.skipIf(!getNatsTestUrl())("connect supports waitOnFirstConnect", async () => {
-    const { connect } = await import("@bovie/nats-client");
-    const nc = await connect({ url: getNatsTestUrl()!, waitOnFirstConnect: true });
-    try {
-      expect(nc.isClosed()).toBe(false);
-    } finally {
-      await nc.close();
-    }
-  });
+  test.skipIf(!getNatsTestUrl())(
+    "connect retries until a late server starts",
+    async () => {
+      const { connect } = await import("@bovie/nats-client");
+      const target = new URL(getNatsTestUrl()!);
+      // Reserve a free port, then free it so the first dials are refused.
+      const probe = Bun.listen({ hostname: "127.0.0.1", port: 0, socket: { data() {} } });
+      const port = probe.port;
+      probe.stop(true);
+
+      const connecting = connect({ url: `nats://127.0.0.1:${port}` });
+      await Bun.sleep(2500);
+      // Start a TCP proxy to the real server on the reserved port.
+      const proxy = Bun.listen<{ upstream?: Awaited<ReturnType<typeof Bun.connect>> }>({
+        hostname: "127.0.0.1",
+        port,
+        socket: {
+          async open(client) {
+            client.data = {};
+            client.data.upstream = await Bun.connect({
+              hostname: target.hostname,
+              port: Number(target.port),
+              socket: {
+                data(_, chunk) {
+                  client.write(chunk);
+                },
+                close() {
+                  client.end();
+                },
+              },
+            });
+          },
+          data(client, chunk) {
+            client.data.upstream?.write(chunk);
+          },
+          close(client) {
+            client.data.upstream?.end();
+          },
+        },
+      });
+      try {
+        const nc = await connecting;
+        expect(nc.isClosed()).toBe(false);
+        await nc.close();
+      } finally {
+        proxy.stop(true);
+      }
+    },
+    15_000,
+  );
 });

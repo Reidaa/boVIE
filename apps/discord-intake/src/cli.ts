@@ -16,7 +16,7 @@ export async function runCli(argv: string[]): Promise<void> {
       configureLogging();
       const pool = makePool(loadEnv().databaseUrl);
       try {
-        const nc = await connect({ waitOnFirstConnect: !options.once });
+        const nc = await connect();
         try {
           const jsm = await jetstreamManager(nc, { checkAPI: false });
           // With `--once`, a missing stream means there is nothing to drain.

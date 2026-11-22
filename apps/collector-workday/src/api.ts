@@ -29,12 +29,34 @@ const WorkdayUrlSchema = z.string().transform((value, ctx) => {
   return parsed;
 });
 
-const BoardRawSchema = z.strictObject({
-  url: WorkdayUrlSchema,
-  company: z.string().min(1),
-  searchText: z.string().default(""),
-  appliedFacets: z.record(z.string(), z.array(z.string())).default({}),
-});
+// The Python config also accepted snake_case filter keys. Rename them when the
+// camelCase key is absent; when both are given, the strict schema rejects the extra key.
+function acceptSnakeCase(input: unknown): unknown {
+  if (input === null || typeof input !== "object" || Array.isArray(input)) {
+    return input;
+  }
+  const board: Record<string, unknown> = { ...input };
+  for (const [snake, camel] of [
+    ["search_text", "searchText"],
+    ["applied_facets", "appliedFacets"],
+  ] as const) {
+    if (snake in board && !(camel in board)) {
+      board[camel] = board[snake];
+      delete board[snake];
+    }
+  }
+  return board;
+}
+
+const BoardRawSchema = z.preprocess(
+  acceptSnakeCase,
+  z.strictObject({
+    url: WorkdayUrlSchema,
+    company: z.string().min(1),
+    searchText: z.string().default(""),
+    appliedFacets: z.record(z.string(), z.array(z.string())).default({}),
+  }),
+);
 
 export interface Board {
   readonly url: string;

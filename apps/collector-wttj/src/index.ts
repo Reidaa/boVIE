@@ -1,6 +1,5 @@
-import { createHash } from "node:crypto";
 import { logger } from "@bovie/cli-common";
-import { recordPage, requireRecentResults, seen } from "@bovie/collector-store";
+import { recordPage, requireRecentResults, scanHash, seen } from "@bovie/collector-store";
 import type { DbPool } from "@bovie/mysql-common";
 import {
   createOfferEvent,
@@ -26,17 +25,6 @@ export class HttpStatusError extends Error {
 }
 
 export type FetchLike = (input: string, init?: RequestInit) => Promise<Response>;
-
-function pythonJsonDumps(value: unknown): string {
-  if (Array.isArray(value)) {
-    return `[${value.map((item) => pythonJsonDumps(item)).join(", ")}]`;
-  }
-  if (value !== null && typeof value === "object") {
-    const entries = Object.entries(value as Record<string, unknown>);
-    return `{${entries.map(([k, v]) => `${JSON.stringify(k)}: ${pythonJsonDumps(v)}`).join(", ")}}`;
-  }
-  return JSON.stringify(value);
-}
 
 /**
  * Return the offer title, or null when WTTJ gives no usable title.
@@ -141,9 +129,7 @@ export async function collect(
   const savePage = options.store?.recordPage ?? recordPage;
   const checkRecent = options.store?.requireRecentResults ?? requireRecentResults;
 
-  const scan = createHash("sha256")
-    .update(pythonJsonDumps([query, [...countries], [...contracts], limit, maxPages]), "utf8")
-    .digest("hex");
+  const scan = scanHash([query, [...countries], [...contracts], limit, maxPages]);
 
   let inspected = 0;
 

@@ -35,24 +35,32 @@ export function subject(source: string): string {
   return `offers.${source}.v1`;
 }
 
+// Match nats-py defaults: 60 attempts 2 s apart, for the first connect and reconnects.
+const MAX_CONNECT_ATTEMPTS = 60;
+
+/**
+ * Connect to NATS from NATS_URL, NATS_USER and NATS_PASSWORD.
+ *
+ * Every service calls this at startup. It waits for a server that is not up yet,
+ * then fails after MAX_CONNECT_ATTEMPTS so the platform sees a failed process.
+ */
 export async function connect(options?: {
   url?: string;
   user?: string;
   password?: string;
-  waitOnFirstConnect?: boolean;
 }): Promise<NatsConnection> {
   const user = options?.user ?? process.env.NATS_USER;
   const password = options?.password ?? process.env.NATS_PASSWORD;
   const url = options?.url ?? process.env.NATS_URL ?? "nats://127.0.0.1:4222";
-  const waitOnFirstConnect = options?.waitOnFirstConnect ?? false;
   return await natsConnect({
     servers: [url],
     user: user || undefined,
     pass: password || undefined,
     inboxPrefix: user ? `_INBOX.${user}` : "_INBOX",
     timeout: 5000,
-    waitOnFirstConnect,
-    ...(waitOnFirstConnect ? { maxReconnectAttempts: -1, reconnectTimeWait: 2000 } : {}),
+    waitOnFirstConnect: ({ attempts }) => attempts < MAX_CONNECT_ATTEMPTS,
+    maxReconnectAttempts: MAX_CONNECT_ATTEMPTS,
+    reconnectTimeWait: 2000,
   });
 }
 

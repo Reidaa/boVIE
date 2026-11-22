@@ -1,6 +1,11 @@
-import { createHash } from "node:crypto";
 import { logger } from "@bovie/cli-common";
-import { recordPage, requireRecentResults, SourceSilent, seen } from "@bovie/collector-store";
+import {
+  recordPage,
+  requireRecentResults,
+  SourceSilent,
+  scanHash,
+  seen,
+} from "@bovie/collector-store";
 import type { DbPool } from "@bovie/mysql-common";
 import {
   createOfferEvent,
@@ -32,6 +37,14 @@ export class HttpStatusError extends Error {
   }
 }
 
+// A request that failed before its whole response arrived: refused, timed out, or cut off.
+export class TransportError extends Error {
+  constructor(url: string, cause: unknown) {
+    super(`Request to ${url} failed`, { cause });
+    this.name = "TransportError";
+  }
+}
+
 export class CollectionFailed extends Error {
   constructor(message: string) {
     super(message);
@@ -47,19 +60,6 @@ export class BoardValidationError extends Error {
 }
 
 export type FetchLike = (input: string, init?: RequestInit) => Promise<Response>;
-
-function pythonJsonSorted(value: unknown): string {
-  if (Array.isArray(value)) {
-    return `[${value.map((item) => pythonJsonSorted(item)).join(", ")}]`;
-  }
-  if (value !== null && typeof value === "object") {
-    const entries = Object.entries(value as Record<string, unknown>).sort(([a], [b]) =>
-      a.localeCompare(b),
-    );
-    return `{${entries.map(([k, v]) => `${JSON.stringify(k)}: ${pythonJsonSorted(v)}`).join(", ")}}`;
-  }
-  return JSON.stringify(value);
-}
 
 /**
  * Parse the JSON list of boards from WORKDAY_BOARDS; it must not be empty.
@@ -167,9 +167,19 @@ export async function collectBoard(
   const savePage = options.store?.recordPage ?? recordPage;
   const checkRecent = options.store?.requireRecentResults ?? requireRecentResults;
 
-  const scan = createHash("sha256")
-    .update(pythonJsonSorted([board.apiUrl, board.searchText, board.appliedFacets, limit]), "utf8")
-    .digest("hex");
+  const scan = scanHash([board.apiUrl, board.searchText, board.appliedFacets, limit], {
+    sortKeys: true,
+  });
+
+  // Read the whole body here, so a connection lost mid-body also fails only this board.
+  const request = async (url: string, init: RequestInit) => {
+    try {
+      const response = await fetchFn(url, init);
+      return { status: response.status, ok: response.ok, body: await response.text() };
+    } catch (cause) {
+      throw new TransportError(url, cause);
+    }
+  };
 
   let inspected = 0;
   let offset = 0;
@@ -178,7 +188,7 @@ export async function collectBoard(
   // Restart at offset 0 each run: the newest postings come first.
   while (inspected < limit) {
     await sleep(delay);
-    const listResponse = await fetchFn(`${board.apiUrl}/jobs`, {
+    const listResponse = await request(`${board.apiUrl}/jobs`, {
       method: "POST",
       headers: {
         Accept: "application/json",
@@ -195,7 +205,7 @@ export async function collectBoard(
     if (!listResponse.ok) {
       throw new HttpStatusError(listResponse.status);
     }
-    const result = SearchResponseSchema.parse(await listResponse.json());
+    const result = SearchResponseSchema.parse(JSON.parse(listResponse.body));
     if (total === null) {
       total = result.total;
     }
@@ -209,7 +219,7 @@ export async function collectBoard(
         continue;
       }
       await sleep(delay);
-      const detailResponse = await fetchFn(`${board.apiUrl}${posting.externalPath}`, {
+      const detailResponse = await request(`${board.apiUrl}${posting.externalPath}`, {
         method: "GET",
         headers: { Accept: "application/json" },
         signal: AbortSignal.timeout(timeoutMs),
@@ -221,7 +231,7 @@ export async function collectBoard(
       if (!detailResponse.ok) {
         throw new HttpStatusError(detailResponse.status);
       }
-      const job = DetailResponseSchema.parse(await detailResponse.json()).jobPostingInfo;
+      const job = DetailResponseSchema.parse(JSON.parse(detailResponse.body)).jobPostingInfo;
       if (job.jobPostingId !== posting.jobId) {
         throw new WorkdayDetailMismatchError("Workday detail identity does not match its posting");
       }
@@ -258,6 +268,7 @@ export async function collectBoard(
 function isBoardIsolatedError(error: unknown): boolean {
   return (
     error instanceof HttpStatusError ||
+    error instanceof TransportError ||
     error instanceof ZodError ||
     error instanceof SourceSilent ||
     error instanceof WorkdayDetailMismatchError ||

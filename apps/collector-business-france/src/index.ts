@@ -1,6 +1,5 @@
-import { createHash } from "node:crypto";
 import { logger } from "@bovie/cli-common";
-import { recordPage, requireRecentResults, seen } from "@bovie/collector-store";
+import { recordPage, requireRecentResults, scanHash, seen } from "@bovie/collector-store";
 import type { DbPool } from "@bovie/mysql-common";
 import { createOfferEvent, type OfferEvent } from "@bovie/offer-events";
 import { displayFields } from "./display.js";
@@ -12,19 +11,6 @@ export * from "./display.js";
 export * from "./job.js";
 
 export const DEFAULT_OFFER_LIMIT = 25;
-
-function pythonJsonSorted(value: unknown): string {
-  if (Array.isArray(value)) {
-    return `[${value.map((item) => pythonJsonSorted(item)).join(", ")}]`;
-  }
-  if (value !== null && typeof value === "object") {
-    const entries = Object.entries(value as Record<string, unknown>).sort(([a], [b]) =>
-      a.localeCompare(b),
-    );
-    return `{${entries.map(([k, v]) => `${JSON.stringify(k)}: ${pythonJsonSorted(v)}`).join(", ")}}`;
-  }
-  return JSON.stringify(value);
-}
 
 export function normalize(job: Job): OfferEvent {
   return createOfferEvent({
@@ -60,7 +46,7 @@ export async function task(
   const getFromId = options.deps?.getFromId ?? ((id) => client.getFromId(id));
 
   // Hash the API keys, not field names: matches Python's json.dumps(..., sort_keys=True).
-  const scan = createHash("sha256").update(pythonJsonSorted(params), "utf8").digest("hex");
+  const scan = scanHash(params, { sortKeys: true });
   let offset = 0;
 
   // Replaying from zero is intentional: offset-based results can move between runs.

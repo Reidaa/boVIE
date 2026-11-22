@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import {
   type DbPool,
   formatUtcDateTime,
@@ -19,6 +20,36 @@ export class SourceSilent extends Error {
     super(message);
     this.name = "SourceSilent";
   }
+}
+
+// Python's json.dumps defaults: ", " and ": " separators, DEL and non-ASCII escaped as \uXXXX.
+function pythonJsonDumps(value: unknown, sortKeys: boolean): string {
+  if (Array.isArray(value)) {
+    return `[${value.map((item) => pythonJsonDumps(item, sortKeys)).join(", ")}]`;
+  }
+  if (value !== null && typeof value === "object") {
+    const entries = Object.entries(value as Record<string, unknown>);
+    if (sortKeys) {
+      entries.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+    }
+    return `{${entries.map(([k, v]) => `${pythonJsonDumps(k, sortKeys)}: ${pythonJsonDumps(v, sortKeys)}`).join(", ")}}`;
+  }
+  return JSON.stringify(value).replace(
+    /[\u007f-\uffff]/g,
+    (c) => `\\u${c.charCodeAt(0).toString(16).padStart(4, "0")}`,
+  );
+}
+
+/**
+ * Hash a collector's search parameters into its checkpoint `scan` key.
+ *
+ * Collectors call this once per run. The output matches the Python collectors'
+ * sha256(json.dumps(params[, sort_keys=True])), so existing checkpoints stay valid.
+ */
+export function scanHash(params: unknown, options: { sortKeys?: boolean } = {}): string {
+  return createHash("sha256")
+    .update(pythonJsonDumps(params, options.sortKeys ?? false), "utf8")
+    .digest("hex");
 }
 
 export async function upgrade(

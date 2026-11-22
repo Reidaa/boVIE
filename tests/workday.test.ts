@@ -112,6 +112,13 @@ describe("workday collector", () => {
     expect(() => makeBoard({ url: "https://example.wd3.myworkdayjobs.com/" })).toThrow();
   });
 
+  test("board accepts snake_case filters like the Python config", () => {
+    const board = makeBoard({ search_text: "data", applied_facets: { a: ["1"] } });
+    expect(board.searchText).toBe("data");
+    expect(board.appliedFacets).toEqual({ a: ["1"] });
+    expect(() => makeBoard({ search_text: "a", searchText: "b" })).toThrow();
+  });
+
   for (const text of ["", "  ", "[]"]) {
     test(`boards are required (${JSON.stringify(text)})`, () => {
       expect(() => loadBoards(text)).toThrow(/WORKDAY_BOARDS/);
@@ -314,11 +321,32 @@ describe("workday collector", () => {
     }
   });
 
-  test("a failed board does not stop the others", async () => {
+  const brokenResponses: Array<[string, () => Promise<Response>]> = [
+    ["HTTP error", async () => new Response(null, { status: 422 })],
+    [
+      "connection error",
+      async () => {
+        // Bun's fetch rejects with TypeError when the connection is refused.
+        throw new TypeError("Unable to connect");
+      },
+    ],
+    [
+      "body read error",
+      async () =>
+        new Response(
+          new ReadableStream({
+            start(controller) {
+              controller.error(new TypeError("Connection reset"));
+            },
+          }),
+        ),
+    ],
+  ];
+  test.each(brokenResponses)("a failed board does not stop the others (%s)", async (_, fail) => {
     const serve = makePages([[makePosting("job")]]);
     const handler: FetchLike = async (input, init) => {
       if (new URL(input).hostname.startsWith("broken.")) {
-        return new Response(null, { status: 422 });
+        return fail();
       }
       return serve(input, init);
     };
