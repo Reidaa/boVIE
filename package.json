@@ -1,7 +1,7 @@
 {
   "name": "bovie",
   "private": true,
-  "packageManager": "pnpm@12.18.0",
+  "packageManager": "pnpm@12.23.0",
   "scripts": {
     "build": "turbo run build",
     "check": "turbo run check",
@@ -12,8 +12,8 @@
     "verify": "turbo run lint format:check check test verify:packages"
   },
   "devDependencies": {
-    "railway": "3.16.0",
-    "turbo": "2.11.10"
+    "railway": "3.19.1",
+    "turbo": "2.11.13"
   },
   "type": "module"
 }
