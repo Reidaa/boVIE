@@ -49,8 +49,9 @@ The Compose passwords are local development examples. Railway generates its own 
 Use the [README](../README.md) for commands and the [WTTJ](wttj-api.md) and [Workday](workday-api.md)
 request contracts for observed API behavior.
 
-Railway production uses four native MySQL services and
-explicit Dockerfiles for application and broker services. Pull requests get temporary copies.
+Railway production uses one shared Railway MySQL server with a database per app:
+`collector_business_france`, `collector_wttj`, `collector_workday`, and `discord`.
+Application and broker services use explicit Dockerfiles. Pull requests get temporary copies.
 See [Railway deployment](railway.md).
 Migration commands accept `--wait-timeout` for initial database startup.
 Only connection attempts are retried. A failed schema migration stops deployment.
